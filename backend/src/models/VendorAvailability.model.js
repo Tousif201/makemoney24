@@ -1,3 +1,5 @@
+import mongoose, { Schema, model } from "mongoose";
+
 const vendorAvailabilitySchema = new Schema({
   vendorId: { type: Schema.Types.ObjectId, ref: 'Vendor', required: true },
 

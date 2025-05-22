@@ -1,5 +1,8 @@
 // ============================
 // File: models/Vendor.js
+
+import mongoose, { Schema, model } from "mongoose";
+
 // ============================
 const vendorSchema = new Schema({
   name: String,
