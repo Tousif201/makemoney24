@@ -1,4 +1,4 @@
-const User = require("../models/user.model"); // Import your User model (if needed for uniqueness check)
+import { User } from "../models/User.model.js"
 
 /**
  * Generates a unique and user-friendly referral code.
