@@ -35,7 +35,7 @@ async function sendEmail(recipient, otp) {
         <p style="font-size: 14px; color: #888;">This OTP is valid for <strong>5 minutes</strong>. Do not share it with anyone for security reasons.</p>
         <p style="font-size: 14px; color: #888;">If you did not request a password reset, you can safely ignore this email.</p>
         <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
-        <p style="font-size: 12px; color: #aaa; text-align: center;">&copy; ${new Date().getFullYear()} Your Company. All rights reserved.</p>
+        <p style="font-size: 12px; color: #aaa; text-align: center;">&copy; ${new Date().getFullYear()} . All rights reserved.</p>
       </div>
     </div>
   `,
