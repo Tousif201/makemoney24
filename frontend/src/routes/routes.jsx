@@ -16,6 +16,7 @@ import CartDrawer from "../components/CartDrawer";
 import Services from "../pages/Services";
 import Login from "../pages/Login";
 import Signup from "../pages/Signup";
+import OtpVerify from "../pages/OtpVerify";
 
 const routes = [
   { path: "/", element: <Home /> },
@@ -28,6 +29,7 @@ const routes = [
   { path: "/services", element: <Services /> },
   { path: "/login", element: <Login /> },
   { path: "/signup", element: <Signup /> },
+  { path: "/otp/:email", element: <OtpVerify /> },
   // { path: "/contact", element: <Contact /> },
   { path: "/item/:id", element: <ItemDetail /> },
   { path: "/product", element: <ProductCard /> },

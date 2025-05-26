@@ -1,69 +1,60 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
-import shop from "../assets/login/shoping.jpg"
+import { registerUser } from "../../api/auth"; // Adjust path as needed
+import shop from "../assets/login/shopping.jpg";
 
 export default function Signup() {
+  const navigate = useNavigate();
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    password: "",
+    referralCode: ""
+  });
+
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSignup = async (e) => {
+    e.preventDefault();
+    try {
+      await registerUser(form);
+      navigate(`/otp/${encodeURIComponent(form.email)}`);
+    } catch (err) {
+      
+      alert(err.message || "Something went wrong");
+    }
+  };
+
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-gray-900 overflow-hidden">
-      <motion.div
-        className="absolute inset-0 z-0"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1 }}
-        style={{
-          backgroundImage: `url(${shop})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          filter: " brightness(0.5)"
-        }}
-      />
-      <motion.div
-        className="relative z-10 w-full max-w-md bg-white/30 backdrop-blur-md p-8 rounded-xl text-white shadow-2xl"
-        initial={{ y: 60, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ type: "spring", stiffness: 100 }}
-      >
-        <h2 className="text-3xl font-bold text-center mb-6">Signup</h2>
-        <form className="space-y-4">
-          <input
-            type="text" required
-            placeholder="Full Name"
-            className="w-full p-3 rounded bg-white text-black"
-          />
-          <input
-            type="email" required
-            placeholder="Email"
-            className="w-full p-3 rounded bg-white text-black"
-          />
-          <input
-            type="phone" required
-            placeholder="Phone"
-            className="w-full p-3 rounded bg-white text-black"
-          />
-          <input
-            type="password" required
-            placeholder="Password"
-            className="w-full p-3 rounded bg-white text-black"
-          />
-          <input
-            type="referralcode" required
-            placeholder="referralcode(optional)"
-            className="w-full p-3 rounded bg-white text-black"
-          />
-          <button
-            type="submit"
-            className="w-full p-3 rounded font-semibold bg-[#B641FF] hover:bg-[#B209FF]"
-          >
-            Signup
-          </button>
-        </form>
-        <p className="text-center mt-4 text-sm">
-          Already have an account?{" "}
-          <Link to="/login" className="underline font-medium">
-            Login
-          </Link>
-        </p>
-      </motion.div>
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="flex w-full max-w-5xl border-amber-400 border-2 shadow-lg rounded-xl overflow-hidden">
+        {/* Form */}
+        <motion.div
+          className="w-full md:w-1/2 bg-white p-10"
+          initial={{ x: -50, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 80 }}
+        >
+          <h2 className="text-3xl font-bold text-[#550b80] text-center mb-6">Signup</h2>
+          <form className="space-y-4" onSubmit={handleSignup}>
+            <input name="name" type="text" required placeholder="Full Name" className="w-full p-3 rounded bg-gray-100 text-black" onChange={handleChange} />
+            <input name="email" type="email" required placeholder="Email" className="w-full p-3 rounded bg-gray-100 text-black" onChange={handleChange} />
+            <input name="phone" type="tel" required placeholder="Phone" className="w-full p-3 rounded bg-gray-100 text-black" onChange={handleChange} />
+            <input name="password" type="password" required placeholder="Password" className="w-full p-3 rounded bg-gray-100 text-black" onChange={handleChange} />
+            <input name="referralCode" type="text" placeholder="Referral code" className="w-full p-3 rounded bg-gray-100 text-black" onChange={handleChange} />
+            <button type="submit" className="w-full p-3 bg-[#B641FF] hover:bg-[#B209FF] text-white rounded">Register</button>
+          </form>
+        </motion.div>
+
+        {/* Image */}
+        <motion.div className="hidden md:block md:w-1/2" initial={{ x: 50, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 1 }}>
+          <img src={shop} alt="Signup visual" className="w-full h-full object-cover brightness-75" />
+        </motion.div>
+      </div>
     </div>
   );
 }
