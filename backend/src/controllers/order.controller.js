@@ -1,0 +1,254 @@
+// ===================================
+// File: controllers/order.controller.js
+// ===================================
+import { Order } from '../models/Order.model.js';
+import { ProductService } from '../models/ProductService.model.js'; // To validate productServiceId and get price
+import mongoose from 'mongoose';
+
+// Helper function to validate ObjectId
+const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
+
+/**
+ * @desc Create a new order
+ * @route POST /api/orders
+ * @access Public (or Private, e.g., User role)
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
+export const createOrder = async (req, res) => {
+  try {
+    const { userId, vendorId, items } = req.body;
+
+    // Basic validation for required fields
+    if (!userId || !vendorId || !items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ message: 'User ID, Vendor ID, and at least one item are required.' });
+    }
+    if (!isValidObjectId(userId)) {
+      return res.status(400).json({ message: 'Invalid User ID format.' });
+    }
+    if (!isValidObjectId(vendorId)) {
+      return res.status(400).json({ message: 'Invalid Vendor ID format.' });
+    }
+
+    let calculatedTotalAmount = 0;
+    const orderItems = [];
+
+    for (const item of items) {
+      if (!item.productServiceId || !item.quantity || item.quantity < 1) {
+        return res.status(400).json({ message: 'Each item must have a valid productServiceId and quantity (min 1).' });
+      }
+      if (!isValidObjectId(item.productServiceId)) {
+        return res.status(400).json({ message: `Invalid Product/Service ID format for item: ${item.productServiceId}` });
+      }
+
+      // Fetch product/service to get its current price (snapshot)
+      const productService = await ProductService.findById(item.productServiceId);
+      if (!productService) {
+        return res.status(404).json({ message: `Product or Service with ID ${item.productServiceId} not found.` });
+      }
+
+      // If it's a product, check quantity and isInStock
+      if (productService.type === 'product') {
+        if (!productService.isInStock) {
+          return res.status(400).json({ message: `Product ${productService.title} is out of stock.` });
+        }
+        // If variants exist, you would need to check variant-specific quantity here
+        // For simplicity, assuming top-level quantity or no variants for now.
+        // If variants are used, `item.price` should come from the variant's price if applicable.
+      }
+
+      const itemPrice = productService.price; // Use the current price from the database
+      const itemTotal = itemPrice * item.quantity;
+      calculatedTotalAmount += itemTotal;
+
+      orderItems.push({
+        productServiceId: item.productServiceId,
+        quantity: item.quantity,
+        price: itemPrice // Store the price at the time of order
+      });
+    }
+
+    const newOrder = new Order({
+      userId,
+      vendorId,
+      items: orderItems,
+      totalAmount: calculatedTotalAmount,
+      // paymentStatus and orderStatus default to 'pending' and 'placed' respectively
+    });
+
+    const savedOrder = await newOrder.save();
+    res.status(201).json(savedOrder);
+  } catch (error) {
+    console.error('Error creating order:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+/**
+ * @desc Get all orders or filter by various criteria
+ * @route GET /api/orders
+ * @access Public (or Private, e.g., User/Vendor/Admin role)
+ * @param {Object} req - Express request object (query parameters: userId, vendorId, paymentStatus, orderStatus, startDate, endDate)
+ * @param {Object} res - Express response object
+ */
+export const getOrders = async (req, res) => {
+  try {
+    const { userId, vendorId, paymentStatus, orderStatus, startDate, endDate } = req.query;
+    const filter = {};
+
+    if (userId) {
+      if (!isValidObjectId(userId)) return res.status(400).json({ message: 'Invalid User ID format.' });
+      filter.userId = userId;
+    }
+    if (vendorId) {
+      if (!isValidObjectId(vendorId)) return res.status(400).json({ message: 'Invalid Vendor ID format.' });
+      filter.vendorId = vendorId;
+    }
+    if (paymentStatus) {
+      if (!['pending', 'completed', 'failed'].includes(paymentStatus)) {
+        return res.status(400).json({ message: 'Invalid paymentStatus value.' });
+      }
+      filter.paymentStatus = paymentStatus;
+    }
+    if (orderStatus) {
+      if (!['placed', 'confirmed', 'in-progress', 'delivered', 'cancelled'].includes(orderStatus)) {
+        return res.status(400).json({ message: 'Invalid orderStatus value.' });
+      }
+      filter.orderStatus = orderStatus;
+    }
+
+    if (startDate || endDate) {
+      filter.placedAt = {};
+      if (startDate) {
+        const start = new Date(startDate);
+        if (isNaN(start.getTime())) return res.status(400).json({ message: 'Invalid startDate format.' });
+        filter.placedAt.$gte = start;
+      }
+      if (endDate) {
+        const end = new Date(endDate);
+        if (isNaN(end.getTime())) return res.status(400).json({ message: 'Invalid endDate format.' });
+        // Set end of day to include all orders on endDate
+        end.setHours(23, 59, 59, 999);
+        filter.placedAt.$lte = end;
+      }
+    }
+
+    const orders = await Order.find(filter).sort({ placedAt: -1 })
+      .populate('userId', 'name email') // Populate user details (assuming User model has name, email)
+      .populate('vendorId', 'name') // Populate vendor details (assuming Vendor model has name)
+      .populate('items.productServiceId', 'title type price'); // Populate product/service details
+
+    res.status(200).json(orders);
+  } catch (error) {
+    console.error('Error fetching orders:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+/**
+ * @desc Get a single order by ID
+ * @route GET /api/orders/:id
+ * @access Public (or Private, e.g., User/Vendor/Admin role)
+ * @param {Object} req - Express request object (params: id)
+ * @param {Object} res - Express response object
+ */
+export const getOrderById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ message: 'Invalid Order ID format.' });
+    }
+
+    const order = await Order.findById(id)
+      .populate('userId', 'name email')
+      .populate('vendorId', 'name')
+      .populate('items.productServiceId', 'title type price');
+
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found.' });
+    }
+    res.status(200).json(order);
+  } catch (error) {
+    console.error('Error fetching order by ID:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+/**
+ * @desc Update an existing order (typically only status)
+ * @route PUT /api/orders/:id
+ * @access Public (or Private, e.g., Vendor/Admin role)
+ * @param {Object} req - Express request object (params: id, body: fields to update)
+ * @param {Object} res - Express response object
+ */
+export const updateOrder = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { paymentStatus, orderStatus } = req.body; // Typically only these are updated
+
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ message: 'Invalid Order ID format.' });
+    }
+
+    const updateFields = {};
+    if (paymentStatus !== undefined) {
+      if (!['pending', 'completed', 'failed'].includes(paymentStatus)) {
+        return res.status(400).json({ message: 'Invalid paymentStatus value.' });
+      }
+      updateFields.paymentStatus = paymentStatus;
+    }
+    if (orderStatus !== undefined) {
+      if (!['placed', 'confirmed', 'in-progress', 'delivered', 'cancelled'].includes(orderStatus)) {
+        return res.status(400).json({ message: 'Invalid orderStatus value.' });
+      }
+      // Optional: Add logic for order status transitions (e.g., cannot go from 'delivered' to 'placed')
+      // const existingOrder = await Order.findById(id);
+      // if (existingOrder && existingOrder.orderStatus === 'delivered' && orderStatus === 'placed') {
+      //   return res.status(400).json({ message: 'Cannot change status from delivered to placed.' });
+      // }
+      updateFields.orderStatus = orderStatus;
+    }
+
+    // Set updatedAt field automatically via schema middleware
+    updateFields.updatedAt = Date.now();
+
+    const updatedOrder = await Order.findByIdAndUpdate(
+      id,
+      { $set: updateFields },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedOrder) {
+      return res.status(404).json({ message: 'Order not found.' });
+    }
+    res.status(200).json(updatedOrder);
+  } catch (error) {
+    console.error('Error updating order:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+/**
+ * @desc Delete an order
+ * @route DELETE /api/orders/:id
+ * @access Public (or Private, e.g., Admin role)
+ * @param {Object} req - Express request object (params: id)
+ * @param {Object} res - Express response object
+ */
+export const deleteOrder = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ message: 'Invalid Order ID format.' });
+    }
+
+    const deletedOrder = await Order.findByIdAndDelete(id);
+    if (!deletedOrder) {
+      return res.status(404).json({ message: 'Order not found.' });
+    }
+    res.status(200).json({ message: 'Order deleted successfully.' });
+  } catch (error) {
+    console.error('Error deleting order:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};

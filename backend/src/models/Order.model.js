@@ -1,5 +1,5 @@
 // ============================
-// File: models/Order.js
+// File: models/Order.model.js
 // ============================
 import mongoose, { Schema, model } from "mongoose";
 
@@ -9,17 +9,17 @@ const orderSchema = new Schema({
 
   // Array of items in the order
   items: [{
-    productServiceId: { type: Schema.Types.ObjectId, ref: 'ProductService' },
-    quantity: { type: Number, default: 1 },
-    price: { type: Number } // Snapshot of price at order time
+    productServiceId: { type: Schema.Types.ObjectId, ref: 'ProductService', required: true },
+    quantity: { type: Number, default: 1, min: 1 },
+    price: { type: Number, required: true, min: 0 } // Snapshot of price at order time
   }],
 
-  totalAmount: { type: Number, required: true },
+  totalAmount: { type: Number, required: true, min: 0 },
 
-  paymentStatus: { 
-    type: String, 
-    enum: ['pending', 'completed', 'failed'], 
-    default: 'pending' 
+  paymentStatus: {
+    type: String,
+    enum: ['pending', 'completed', 'failed'],
+    default: 'pending'
   },
 
   orderStatus: {
@@ -31,5 +31,16 @@ const orderSchema = new Schema({
   placedAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });
+
+// Add indexes for efficient querying
 orderSchema.index({ userId: 1, vendorId: 1 });
+orderSchema.index({ paymentStatus: 1 });
+orderSchema.index({ orderStatus: 1 });
+
+// Middleware to update `updatedAt` on save
+orderSchema.pre('save', function(next) {
+  this.updatedAt = Date.now();
+  next();
+});
+
 export const Order = model('Order', orderSchema);

@@ -7,6 +7,9 @@ import reviewRoutes from "./review.routes.js";
 import uploadRoutes from "./upload.routes.js";
 import categoriesRoutes from "./category.routes.js";
 import productServicesRoutes from "./productService.routes.js";
+import bannerRoutes from "./banner.routes.js";
+import bookingRouter from "./booking.routes.js";
+import ordersRouter from "./order.routes.js";
 const router = express.Router();
 
 // Mount the routers
@@ -18,6 +21,9 @@ router.use("/reviews", reviewRoutes);
 router.use("/uploadFiles", uploadRoutes);
 router.use("/categories", categoriesRoutes);
 router.use("/product-services", productServicesRoutes);
+router.use("banners", bannerRoutes);
+router.use("bookings", bookingRouter);
+router.use("/orders", ordersRouter);
 // router.use("/users", userRouter);
 
 export default router;
