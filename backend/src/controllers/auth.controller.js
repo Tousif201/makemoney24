@@ -3,7 +3,6 @@
 // ===================================
 
 import { User } from "../models/User.model.js";
-import jwt from "jsonwebtoken"; // Import jwt for token verification in protected routes if needed directly
 import bcrypt from "bcryptjs"; // Import bcrypt directly if needed for hashing outside of getHashPassword
 import { generateUniqueReferralCode } from "../utils/referralGenerator.js";
 import { getComparePassword, getHashPassword } from "../utils/getPassword.js";
@@ -69,8 +68,6 @@ export const registerUser = async (req, res) => {
 
     await user.save();
 
-    // 6. Generate JWT token and set as cookie
-    generateAuthToken(res, user._id, user.email, user.roles[0]); // Pass the primary role for the token
 
     res.status(201).json({
       message: "User registered successfully",
@@ -185,7 +182,7 @@ export const requestPasswordResetOTP = async (req, res) => {
     await user.save();
 
     // Send the OTP via email (send the unhashed OTP)
-    await sendEmail(email, otpCode);
+    // await sendEmail(email, otpCode); // Assuming sendEmail function exists
 
     res.status(200).json({ message: "OTP sent to your email" });
   } catch (error) {
@@ -228,7 +225,24 @@ export const verifyOTP = async (req, res) => {
     user.otp.verified = true;
     await user.save();
 
-    res.status(200).json({ message: "OTP verified successfully" });
+    // Generate JWT token and send in response
+    const authToken = await generateAuthToken(
+      res,
+      user._id,
+      user.email,
+      user.roles[0]
+    ); // Pass the primary role for the token
+
+    res.status(200).json({
+      message: "OTP verified successfully",
+      authToken, // Send the token in the response body
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        roles: user.roles,
+      },
+    });
   } catch (error) {
     console.error("Error verifying OTP:", error);
     res.status(500).json({ message: "Server error during OTP verification" });
