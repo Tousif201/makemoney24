@@ -13,7 +13,11 @@ const PORT = process.env.PORT || 3000;
 
 // --- Essential Middlewares ---
 // Enable All CORS Requests (configure specific origins in production)
-app.use(cors());
+app.use(cors({
+  origin: "*", // Allows all origins
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
 // Parse JSON request bodies
 app.use(express.json());
 // Optional: Parse URL-encoded request bodies
