@@ -113,10 +113,16 @@ export const loginUser = async (req, res) => {
     }
 
     // 3. Generate JWT token and set as cookie
-    generateAuthToken(res, user._id, user.email, user.roles[0]); // Pass the primary role for the token
+    const authToken = await generateAuthToken(
+      res,
+      user._id,
+      user.email,
+      user.roles[0]
+    ); // Pass the primary role for the token
 
     res.status(200).json({
       message: "Logged in successfully",
+      authToken,
       user: {
         _id: user._id,
         name: user.name,
