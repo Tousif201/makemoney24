@@ -1,5 +1,5 @@
 // ============================
-// File: models/Review.js
+// File: models/Review.model.js
 // ============================
 import mongoose, { Schema, model } from "mongoose";
 
@@ -17,4 +17,6 @@ const reviewSchema = new Schema({
 
   createdAt: { type: Date, default: Date.now }
 });
+reviewSchema.index({ itemId: 1, itemType: 1 });
+
 export const Review = model('Review', reviewSchema);
