@@ -34,15 +34,15 @@ export const uploadFiles = async (req, res) => {
     });
 
     // Log the files being sent to Uploadthing for debugging
-    console.log(
-      "Files prepared for Uploadthing:",
-      filesToUpload.map((f) => ({ name: f.name, type: f.type, size: f.size }))
-    );
+    // console.log(
+    //   "Files prepared for Uploadthing:",
+    //   filesToUpload.map((f) => ({ name: f.name, type: f.type, size: f.size }))
+    // );
 
     const response = await utapi.uploadFiles(filesToUpload);
 
     // Log the full response from Uploadthing for debugging
-    console.log("Response from Uploadthing:", response);
+    // console.log("Response from Uploadthing:", response);
 
     // Basic validation of the Uploadthing response
     // Now checking for file.data and file.data.ufsUrl
@@ -55,12 +55,10 @@ export const uploadFiles = async (req, res) => {
         "Uploadthing response malformed or missing ufsUrl:",
         response
       );
-      return res
-        .status(500)
-        .json({
-          message:
-            "Uploadthing returned an invalid response or missing file URLs.",
-        });
+      return res.status(500).json({
+        message:
+          "Uploadthing returned an invalid response or missing file URLs.",
+      });
     }
 
     const uploadedMedia = response.map((file) => {
@@ -118,28 +116,26 @@ export const deleteFiles = async (req, res) => {
     const response = await utapi.deleteFiles(fileKeys);
 
     // Log the full response from Uploadthing for debugging
-    console.log("Response from Uploadthing delete:", response);
+    // console.log("Response from Uploadthing delete:", response);
 
-    // Check if the deletion was successful for all files
-    // Uploadthing's deleteFiles returns an array of { key: string, status: "success" | "failed" }
-    const deletedKeys = response
-      .filter((item) => item.status === "success")
-      .map((item) => item.key);
-
-    const failedKeys = response
-      .filter((item) => item.status === "failed")
-      .map((item) => item.key);
-
-    if (deletedKeys.length > 0) {
+    // Adjusting logic based on the actual DeleteFileResponse structure
+    // It returns an object like { success: boolean, deletedCount: number }
+    if (response.success) {
       res.status(200).json({
-        message: `Successfully deleted ${deletedKeys.length} file(s).`,
-        deletedKeys: deletedKeys,
-        failedKeys: failedKeys.length > 0 ? failedKeys : undefined, // Only include if there were failures
+        message: `Successfully deleted ${response.deletedCount} file(s).`,
+        deletedKeys: fileKeys, // Assuming all provided keys were attempted and succeeded if response.success is true
+        failedKeys: [],
       });
     } else {
-      res.status(400).json({
-        message: "No files were deleted successfully.",
-        failedKeys: failedKeys,
+      // If response.success is false, it means the operation failed for some reason.
+      // The `deletedCount` might still be non-zero if some files were deleted before an error occurred,
+      // but generally, if success is false, it's safer to consider all as failed or partially failed.
+      res.status(500).json({
+        message: "Failed to delete files from Uploadthing.",
+        // In a real application, you might want more granular error details from Uploadthing
+        // to determine which specific keys failed. For now, we'll indicate all as potentially failed.
+        failedKeys: fileKeys,
+        deletedCount: response.deletedCount, // Still report how many were deleted if any
       });
     }
   } catch (error) {
