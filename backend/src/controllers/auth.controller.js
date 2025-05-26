@@ -7,6 +7,7 @@ import bcrypt from "bcryptjs"; // Import bcrypt directly if needed for hashing o
 import { generateUniqueReferralCode } from "../utils/referralGenerator.js";
 import { getComparePassword, getHashPassword } from "../utils/getPassword.js";
 import { generateAuthToken } from "../utils/generateAuthToken.js";
+import { sendEmail } from "../utils/nodeMailerOtp.js";
 
 /**
  * @desc Register a new user
@@ -38,7 +39,12 @@ export const registerUser = async (req, res) => {
     // 3. Generate unique referral code for the new user
     const referralCode = await generateUniqueReferralCode();
 
-    // 4. Create new user
+    // 4. Generate OTP for email verification
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const hashedOtpCode = await bcrypt.hash(otpCode, 10);
+    const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes expiry
+
+    // 5. Create new user
     user = new User({
       name,
       email,
@@ -49,9 +55,15 @@ export const registerUser = async (req, res) => {
       referralCode,
       referredByCode: referredByCode || null,
       roles: roles || ["user"], // Default role to 'user' if not provided
+      otp: { // Store OTP details for verification
+        code: hashedOtpCode,
+        expiresAt: otpExpiresAt,
+        verified: false,
+        lastSentAt: new Date(),
+      },
     });
 
-    // 5. If referred, link to parent and update parent's profileScore
+    // 6. If referred, link to parent and update parent's profileScore
     if (referredByCode) {
       const parentUser = await User.findOne({ referralCode: referredByCode });
       if (parentUser) {
@@ -68,9 +80,12 @@ export const registerUser = async (req, res) => {
 
     await user.save();
 
+    // 7. Send the OTP via email (send the unhashed OTP)
+    await sendEmail(email, otpCode);
 
+    // 8. Do NOT generate JWT token here. User must verify OTP first.
     res.status(201).json({
-      message: "User registered successfully",
+      message: "User registered successfully. Please check your email for OTP verification.",
       user: {
         _id: user._id,
         name: user.name,
