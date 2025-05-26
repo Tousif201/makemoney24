@@ -1,6 +1,8 @@
 // ============================
 // File: models/Membership.js
 // ============================
+import mongoose, { Schema, model } from "mongoose";
+
 const membershipSchema = new Schema({
   userId: { type: Schema.Types.ObjectId, ref: 'User' },
   amountPaid: Number,

@@ -1,6 +1,8 @@
 // ============================
 // File: models/ProductService.js
 // ============================
+import mongoose, { Schema, model } from "mongoose";
+
 const productServiceSchema = new Schema({
   vendorId: { type: Schema.Types.ObjectId, ref: "Vendor" },
   categoryId: { type: Schema.Types.ObjectId, ref: "Category" },
@@ -16,7 +18,16 @@ const productServiceSchema = new Schema({
       url: String,
     },
   ],
-
+  // Variants only for products
+  variants: [
+    {
+      color: { type: String },
+      size: { type: String },
+      sku: { type: String }, // Optional: unique identifier per variant
+      quantity: { type: Number, default: 0 },
+      images: [String], // optional: if you want variant-level images
+    },
+  ],
   pincode: String,
   isBookable: { type: Boolean, default: false }, // only true for services
 

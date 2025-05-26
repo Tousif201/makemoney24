@@ -1,5 +1,5 @@
 // ============================
-// File: models/User.js
+// File: models/User.model.js
 // ============================
 import mongoose, { Schema, model } from "mongoose";
 

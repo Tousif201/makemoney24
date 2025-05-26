@@ -1,6 +1,8 @@
 // ============================
 // File: models/Review.js
 // ============================
+import mongoose, { Schema, model } from "mongoose";
+
 const reviewSchema = new Schema({
   userId: { type: Schema.Types.ObjectId, ref: 'User' },
   itemId: { type: Schema.Types.ObjectId },

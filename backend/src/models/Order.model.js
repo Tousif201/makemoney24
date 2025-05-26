@@ -1,6 +1,8 @@
 // ============================
 // File: models/Order.js
 // ============================
+import mongoose, { Schema, model } from "mongoose";
+
 const orderSchema = new Schema({
   userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   vendorId: { type: Schema.Types.ObjectId, ref: 'Vendor', required: true },

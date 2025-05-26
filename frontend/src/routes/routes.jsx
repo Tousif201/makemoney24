@@ -14,6 +14,8 @@ import HomePageAnimation from "../pages/HomePageAnimation";
 import BrandSlider from "../components/BrandSlider";
 import CartDrawer from "../components/CartDrawer";
 import Services from "../pages/Services";
+import Login from "../pages/Login";
+import Signup from "../pages/Signup";
 
 const routes = [
   { path: "/", element: <Home /> },
@@ -24,8 +26,8 @@ const routes = [
   { path: "/homePageAnimation", element: <HomePageAnimation /> },
   { path: "/brandSlider", element: <BrandSlider /> },
   { path: "/services", element: <Services /> },
-  // { path: "/login", element: <Login /> },
-  // { path: "/signup", element: <Signup /> },
+  { path: "/login", element: <Login /> },
+  { path: "/signup", element: <Signup /> },
   // { path: "/contact", element: <Contact /> },
   { path: "/item/:id", element: <ItemDetail /> },
   { path: "/product", element: <ProductCard /> },
