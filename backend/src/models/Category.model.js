@@ -1,6 +1,6 @@
 
 // ============================
-// File: models/Category.js
+// File: models/Category.model.js
 // ============================
 import mongoose, { Schema, model } from "mongoose";
 
@@ -10,4 +10,6 @@ const categorySchema = new Schema({
   type: { type: String, enum: ['product', 'service'], required: true },
   createdAt: { type: Date, default: Date.now }
 });
+categorySchema.index({ type: 1 });
+
 export const Category = model('Category', categorySchema);

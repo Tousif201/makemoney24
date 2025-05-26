@@ -5,6 +5,8 @@ import vendorsRouter from "./vendor.routes.js";
 import vendorAvailablityRouter from "./vendorAvailability.routes.js";
 import reviewRoutes from "./review.routes.js";
 import uploadRoutes from "./upload.routes.js";
+import categoriesRoutes from "./category.routes.js";
+import productServicesRoutes from "./productService.routes.js";
 const router = express.Router();
 
 // Mount the routers
@@ -14,6 +16,8 @@ router.use("/vendors", vendorsRouter);
 router.use("/vendor-availability", vendorAvailablityRouter);
 router.use("/reviews", reviewRoutes);
 router.use("/uploadFiles", uploadRoutes);
+router.use("/categories", categoriesRoutes);
+router.use("/product-services", productServicesRoutes);
 // router.use("/users", userRouter);
 
 export default router;
