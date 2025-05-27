@@ -17,6 +17,7 @@ import Services from "../pages/Services";
 import Login from "../pages/Login";
 import Signup from "../pages/Signup";
 import OtpVerify from "../pages/OtpVerify";
+import DashboardHome from "../components/Dashboad";
 
 const routes = [
   { path: "/", element: <Home /> },
@@ -34,6 +35,7 @@ const routes = [
   { path: "/item/:id", element: <ItemDetail /> },
   { path: "/product", element: <ProductCard /> },
   { path: "/cartdrawer", element: <CartDrawer /> },
+  { path: "/dashboard", element: <DashboardHome /> },
 ];
 
 export default routes;
