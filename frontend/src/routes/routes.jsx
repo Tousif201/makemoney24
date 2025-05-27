@@ -17,10 +17,19 @@ import Services from "../pages/Services";
 import Login from "../pages/Login";
 import Signup from "../pages/Signup";
 import OtpVerify from "../pages/OtpVerify";
-import DashboardHome from "../components/Dashboad";
+import DashboardHome from "../pages/Dashboard";
+import DashboardLayout from "../layout/DashboardLayout";
+import MainLayout from "../layout/MainLayout";
 
 const routes = [
-  { path: "/", element: <Home /> },
+  {
+    path: "/",
+    element: (
+      <MainLayout>
+        <Home />{" "}
+      </MainLayout>
+    ),
+  },
   { path: "/about", element: <About /> },
   // { path: "/category/:categoryName", element: <CategoryPage /> },
   // { path: "/categories", element: <CategoryGrid /> },
@@ -35,7 +44,14 @@ const routes = [
   { path: "/item/:id", element: <ItemDetail /> },
   { path: "/product", element: <ProductCard /> },
   { path: "/cartdrawer", element: <CartDrawer /> },
-  { path: "/dashboard", element: <DashboardHome /> },
+  {
+    path: "/dashboard",
+    element: (
+      <DashboardLayout>
+        <DashboardHome />
+      </DashboardLayout>
+    ),
+  },
 ];
 
 export default routes;
