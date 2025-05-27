@@ -16,132 +16,203 @@ import {
   DollarSign,
   ListChecks,
   Coins,
+  Building2,
+  ShoppingCart,
+  LayoutGrid,
+  Tag,
+  ShieldCheck,
+  Milestone,
 } from "lucide-react";
 
 export const sidebarConfig = {
   shared: [{ label: "Home", icon: Home, href: "/dashboard" }],
+
   user: [
     {
-      label: "Packages",
-      icon: Package,
+      label: "Network",
+      icon: Users,
       items: [
-        { label: "All", href: "/dashboard/packages", icon: ListChecks },
         {
-          label: "Place Trade",
-          href: "/dashboard/packages/place-trade",
-          icon: TrendingUp,
+          label: "My Membership",
+          icon: ShieldCheck,
+          href: "/dashboard/membership",
         },
         {
-          label: "History",
-          href: "/dashboard/packages/history",
-          icon: History,
+          label: "Referrals",
+          icon: UserPlus,
+          href: "/dashboard/referrals",
         },
       ],
     },
+
     {
-      label: "Income Report",
+      label: "Income",
       icon: BarChart3,
       items: [
-        // {
-        //   label: "Referral Income",
-        //   href: "/dashboard/income/referral",
-        //   icon: UserPlus,
-        // },
         {
           label: "Level Income",
           href: "/dashboard/income/level",
           icon: Layers,
         },
         {
-          label: "Milestone Rewards",
+          label: "Rewards",
           href: "/dashboard/income/rewards",
           icon: Gift,
         },
       ],
     },
+
     {
       label: "Wallet",
       icon: Wallet,
       items: [
-        { label: "History", href: "/dashboard/wallet/history", icon: History },
-        { label: "Manage", href: "/dashboard/wallet/manage", icon: Settings },
+        {
+          label: "History",
+          href: "/dashboard/wallet/history",
+          icon: History,
+        },
+        {
+          label: "Manage",
+          href: "/dashboard/wallet/manage",
+          icon: Settings,
+        },
       ],
     },
-    // {
-    //   label: "Your Team",
-    //   icon: Users,
-    //   items: [
-    //     { label: "Direct", href: "/dashboard/team/direct", icon: UserPlus },
-    //     { label: "Levels", href: "/dashboard/team/levels", icon: Coins },
-    //   ],
-    // },
+    {
+      label: "Orders",
+      icon: ShoppingCart,
+      href: "/dashboard/orders",
+    },
+    {
+      label: "Profile Settings",
+      icon: Settings,
+      href: "/dashboard/profile",
+    },
   ],
-  admin: [
+
+  vendor: [
+    {
+      label: "Orders",
+      icon: ShoppingCart,
+      href: "/dashboard/orders",
+    },
+    {
+      label: "Products",
+      icon: Package,
+      href: "/dashboard/products",
+    },
+    {
+      label: "Profile Settings",
+      icon: Settings,
+      href: "/dashboard/profile",
+    },
+  ],
+
+  "franchise-admin": [
+    {
+      label: "Vendors",
+      icon: Package,
+      href: "/dashboard/vendors",
+    },
     {
       label: "Users",
       icon: Users,
-      items: [{ label: "All Users", href: "/dashboard/users", icon: Users }],
+      href: "/dashboard/users",
     },
+    {
+      label: "Rewards",
+      icon: Milestone,
+      href: "/dashboard/income/rewards",
+    },
+  ],
+
+  "sales-rep": [
+    {
+      label: "Vendors",
+      icon: Package,
+      href: "/dashboard/sales-rep/vendors",
+    },
+    {
+      label: "Franchises",
+      icon: Building2,
+      href: "/dashboard/sales-rep/franchises",
+    },
+  ],
+
+  admin: [
+    {
+      label: "Distribution",
+      icon: Package,
+      items: [
+        {
+          label: "Vendors",
+          href: "/dashboard/admin/vendors",
+          icon: Package,
+        },
+        {
+          label: "Franchises",
+          href: "/dashboard/admin/vendors/franchises",
+          icon: UserPlus,
+        },
+      ],
+    },
+
     {
       label: "Reports",
       icon: DollarSign,
       items: [
         {
-          label: "Package History",
-          href: "/dashboard/finance/package-history",
+          label: "Sales",
+          href: "/dashboard/admin/reports/sales",
           icon: FileText,
         },
         {
-          label: "Level Income",
-          href: "/dashboard/income/level",
+          label: "Membership",
+          href: "/dashboard/admin/reports/membership",
           icon: Layers,
         },
-        // {
-        //   label: "Referral Income History",
-        //   href: "/dashboard/finance/referral-income",
-        //   icon: UserPlus,
-        // },
-        // {
-        //   label: "Level Income History",
-        //   href: "/dashboard/finance/level-income",
-        //   icon: Layers,
-        // },
+        {
+          label: "Reward Distribution",
+          href: "/dashboard/admin/reports/rewards",
+          icon: UserPlus,
+        },
       ],
     },
-    // {
-    //   label: "Packages",
-    //   icon: Package,
-    //   items: [
-    //     {
-    //       label: "Manage Packages",
-    //       href: "/dashboard/packages/manage",
-    //       icon: Settings,
-    //     },
-    //   ],
-    // },
-    // {
-    //   label: "Wallet",
-    //   icon: Wallet,
-    //   items: [
-    //     { label: "History", href: "/dashboard/wallet/history", icon: History },
-    //     { label: "Manage", href: "/dashboard/wallet/manage", icon: Settings },
-    //   ],
-    // },
+    {
+      label: "Rewards",
+      icon: Milestone,
+      items: [
+        {
+          label: "Membership",
+          href: "/dashboard/admin/manage/membership-milestones",
+          icon: FileText,
+        },
+        {
+          label: "Cashbacks",
+          href: "/dashboard/admin/manage/cashbacks-milestones",
+          icon: Layers,
+        },
+        {
+          label: "Franchise",
+          href: "/dashboard/admin/manage/franchise-milestones",
+          icon: UserPlus,
+        },
+      ],
+    },
+    {
+      label: "Users",
+      icon: Users,
+      href: "/dashboard/admin/users",
+    },
     {
       label: "Transactions",
       icon: Banknote,
-      items: [
-        {
-          label: "Deposit",
-          href: "/dashboard/transactions/deposit",
-          icon: FileText,
-        },
-        {
-          label: "Withdrawal",
-          href: "/dashboard/transactions/withdrawal",
-          icon: History,
-        },
-      ],
+      href: "/dashboard/admin/transactions",
+    },
+    {
+      label: "Banners",
+      icon: Tag,
+      href: "/dashboard/admin/banners",
     },
   ],
 };
