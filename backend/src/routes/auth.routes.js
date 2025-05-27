@@ -25,7 +25,7 @@ router.post("/reset-password", resetPassword);
 
 // Protected routes
 router.post("/logout", protect, logoutUser); // Only logged-in users can logout
-router.get("/profile", protect, getUserProfile); // Get user profile
+router.post("/profile", getUserProfile); // Get user profile
 
 // Example of role-based authorization
 router.get("/admin-dashboard", protect, authorize("admin", "franchise-admin"), (req, res) => {
