@@ -53,7 +53,7 @@ const ordersData = [
 
 export default function VendorOrders() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 my-8 mx-8">
       <div className="space-y-2">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Orders</h1>
         <p className="text-gray-600 text-sm sm:text-base">
@@ -61,12 +61,12 @@ export default function VendorOrders() {
         </p>
       </div>
 
-      <Tabs defaultValue="all" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
+      <Tabs defaultValue="all" className="space-y-4 ">
+        <TabsList className="grid w-full grid-cols-4 sm:grid-cols-4 bg-purple-500">
           <TabsTrigger value="all" className="text-xs sm:text-sm">
             All Orders
           </TabsTrigger>
-          <TabsTrigger value="new" className="text-xs sm:text-sm">
+          <TabsTrigger value="new" className="text-xs sm:text-sm ">
             New
           </TabsTrigger>
           <TabsTrigger value="progress" className="text-xs sm:text-sm">

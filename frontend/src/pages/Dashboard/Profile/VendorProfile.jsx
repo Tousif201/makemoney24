@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 export default function VendorProfile() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 my-8 mx-8">
       <div className="space-y-2">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
           Profile & Settings

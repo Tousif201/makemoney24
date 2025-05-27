@@ -100,7 +100,7 @@ export default function VendorHome() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-            <div className="w-full h-[400px] sm:h-[150px] md:h-[400px] overflow-hidden">
+            <div className="w-full overflow-hidden">
 
                 <OrdersTrendChart />
               </div>

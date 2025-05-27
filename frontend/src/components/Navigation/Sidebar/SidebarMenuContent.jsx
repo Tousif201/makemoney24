@@ -71,7 +71,7 @@ export default function SidebarMenuContent() {
                       ${
                         openCollapsibleIndex === idx ||
                         item.items.some((sub) => isActive(sub.href))
-                          ? "bg-green-100 text-green-700"
+                          ? "bg-purple-100 text-purple-700"
                           : "hover:bg-gray-100 text-gray-600"
                       }`}
                   >
@@ -91,7 +91,7 @@ export default function SidebarMenuContent() {
                         className={`w-full rounded px-2 py-1.5 text-sm transition
                           ${
                             isActive(sub.href)
-                              ? "bg-green-200 text-green-800 font-semibold"
+                              ? "bg-purple-200 text-green-800 font-semibold"
                               : "hover:bg-gray-50 text-gray-600"
                           }`}
                       >
@@ -112,7 +112,7 @@ export default function SidebarMenuContent() {
                   className={`w-full rounded-md px-3 py-2 text-base font-medium transition
                     ${
                       isActive(item.href)
-                        ? "bg-green-200 text-green-800 shadow-sm"
+                        ? "bg-purple-300 text-purple-800 shadow-sm"
                         : "hover:bg-gray-100 text-gray-700"
                     }`}
                 >
@@ -129,14 +129,14 @@ export default function SidebarMenuContent() {
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              className="w-full rounded-md px-3 py-2 text-base font-medium text-red-600 hover:bg-red-50 transition"
+              className="w-full rounded-md px-3 py-2 text-xl font-medium text-red-600 hover:bg-red-400 transition"
             >
               <button
                 onClick={() => {
                   console.log("Logout clicked");
                   handleMenuClick();
                 }}
-                className="w-full text-left"
+                className="w-full text-left mt-5"
               >
                 Logout
               </button>

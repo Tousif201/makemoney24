@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { registerUser } from "../../api/auth"; // Adjust path as needed
 import shop from "../assets/login/shopping.jpg";
-
+import { Link } from "react-router-dom";
 export default function Signup() {
   const navigate = useNavigate();
   const [form, setForm] = useState({
@@ -48,6 +48,15 @@ export default function Signup() {
             <input name="referralCode" type="text" placeholder="Referral code" className="w-full p-3 rounded bg-gray-100 text-black" onChange={handleChange} />
             <button type="submit" className="w-full p-3 bg-[#B641FF] hover:bg-[#B209FF] text-white rounded">Register</button>
           </form>
+          <p className="text-center mt-4 text-sm text-gray-700">
+            Already have an account?{" "}
+            <Link
+              to="/login"
+              className="text-[#550b80] underline font-medium"
+            >
+              Login
+            </Link>
+          </p>
         </motion.div>
 
         {/* Image */}

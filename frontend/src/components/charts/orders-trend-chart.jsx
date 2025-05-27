@@ -22,10 +22,10 @@ const chartConfig = {
 
 export function OrdersTrendChart() {
   return (
-    <div className="h-[200px] sm:h-[250px] w-full">
+    <div className=" w-full">
       <ChartContainer config={chartConfig}>
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+          <LineChart data={chartData} margin={{ top: 5, right: 10, left: 1, bottom: 5 }}>
             <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
             <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
             <ChartTooltip content={<ChartTooltipContent />} />

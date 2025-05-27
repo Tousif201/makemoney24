@@ -23,6 +23,8 @@ import MainLayout from "../layout/MainLayout";
 import OrdersPage from "../pages/Dashboard/Orders";
 import ProductsPage from "../pages/Dashboard/Products";
 import ProfilePage from "../pages/Dashboard/Profile";
+import Create from "../pages/Dashboard/Products/Create";
+import EditProduct from "../pages/Dashboard/Products/EditProduct";
 
 const routes = [
   {
@@ -71,7 +73,22 @@ const routes = [
       </DashboardLayout>
     ),
   },
-
+  {
+    path: "/dashboard/products/create",
+    element:(
+      <DashboardLayout>
+        <Create />
+      </DashboardLayout>
+    )
+  },
+  {
+    path: "/dashboard/products/edit/:id",
+    element:(
+      <DashboardLayout>
+        <EditProduct />
+      </DashboardLayout>
+    )
+  },
   {
     path: "/dashboard/profile",
     element: (

@@ -1,6 +1,8 @@
 import { Plus, MoreHorizontal, Eye, Edit, Package, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+
 import {
   Card,
   CardContent,
@@ -54,8 +56,14 @@ const productsData = [
 ];
 
 export default function ProductsPage() {
+  const navigate = useNavigate();
+
+  const handleAddClick = () => {
+    navigate("/dashboard/products/create");
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 my-8 mx-8">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div className="space-y-1">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
@@ -65,7 +73,10 @@ export default function ProductsPage() {
             Manage your product catalog and inventory
           </p>
         </div>
-        <Button className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto">
+        <Button
+          className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto"
+          onClick={handleAddClick}
+        >
           <Plus className="h-4 w-4 mr-2" />
           Add New Product
         </Button>
@@ -103,16 +114,29 @@ export default function ProductsPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
+                        <DropdownMenuItem
+                          onSelect={() =>
+                            navigate(`/dashboard/products/view/${product.id}`)
+                          }
+                        >
                           <Eye className="h-4 w-4 mr-2" />
                           View Details
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
+
+                        {/* ← Here is the Edit action → */}
+                        <DropdownMenuItem
+                          onSelect={() =>
+                            navigate(`/dashboard/products/edit/${product.id}`)
+                          }
+                        >
                           <Edit className="h-4 w-4 mr-2" />
                           Edit Product
                         </DropdownMenuItem>
 
-                        <DropdownMenuItem className="text-red-600">
+                        <DropdownMenuItem
+                          className="text-red-600"
+                          onSelect={() => console.log("Delete", product.id)}
+                        >
                           <Trash2 className="h-4 w-4 mr-2" />
                           Delete
                         </DropdownMenuItem>
@@ -196,16 +220,26 @@ export default function ProductsPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
+                          <DropdownMenuItem
+                            onSelect={() =>
+                              navigate(`/dashboard/products/view/${product.id}`)
+                            }
+                          >
                             <Eye className="h-4 w-4 mr-2" />
                             View Details
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem
+                            onSelect={() =>
+                              navigate(`/dashboard/products/edit/${product.id}`)
+                            }
+                          >
                             <Edit className="h-4 w-4 mr-2" />
                             Edit Product
                           </DropdownMenuItem>
-
-                          <DropdownMenuItem className="text-red-600">
+                          <DropdownMenuItem
+                            className="text-red-600"
+                            onSelect={() => console.log("Delete", product.id)}
+                          >
                             <Trash2 className="h-4 w-4 mr-2" />
                             Delete
                           </DropdownMenuItem>
