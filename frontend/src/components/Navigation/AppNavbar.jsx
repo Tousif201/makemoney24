@@ -2,7 +2,7 @@
 import React from "react";
 import { useBreadcrumbTitle } from "./breadcrumb-provider";
 import { SidebarTrigger } from "../ui/sidebar";
-import { useSession } from "../../hooks/useSession";
+import { useSession } from "../../context/SessionContext";
 
 function AppNavbar() {
   const breadcrumbTitle = useBreadcrumbTitle();

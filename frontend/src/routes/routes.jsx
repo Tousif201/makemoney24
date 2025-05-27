@@ -20,6 +20,9 @@ import OtpVerify from "../pages/OtpVerify";
 import DashboardHome from "../pages/Dashboard";
 import DashboardLayout from "../layout/DashboardLayout";
 import MainLayout from "../layout/MainLayout";
+import OrdersPage from "../pages/Dashboard/Orders";
+import ProductsPage from "../pages/Dashboard/Products";
+import ProfilePage from "../pages/Dashboard/Profile";
 
 const routes = [
   {
@@ -49,6 +52,31 @@ const routes = [
     element: (
       <DashboardLayout>
         <DashboardHome />
+      </DashboardLayout>
+    ),
+  },
+  {
+    path: "/dashboard/orders",
+    element: (
+      <DashboardLayout>
+        <OrdersPage />
+      </DashboardLayout>
+    ),
+  },
+  {
+    path: "/dashboard/products",
+    element: (
+      <DashboardLayout>
+        <ProductsPage />
+      </DashboardLayout>
+    ),
+  },
+
+  {
+    path: "/dashboard/profile",
+    element: (
+      <DashboardLayout>
+        <ProfilePage />
       </DashboardLayout>
     ),
   },

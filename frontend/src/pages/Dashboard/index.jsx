@@ -1,13 +1,13 @@
 import React from "react";
-import { useSession } from "../../hooks/useSession";
 import AdminHome from "../../components/Dashboad/Admin/AdminHome";
 import VendorHome from "../../components/Dashboad/Vendor/VendorHome";
 import UserHome from "../../components/Dashboad/User/UserHome";
 import FranchiseHome from "../../components/Dashboad/Franchise/FranchiseHome";
 import SalesRepHome from "../../components/Dashboad/SalesRep/SalesRepHome";
+import { useSession } from "../../context/SessionContext";
 
 function DashboardHome() {
-  const { user, session, loading } = useSession();
+  const { user, loading } = useSession();
 
   if (loading) {
     return <div>Loading session...</div>;

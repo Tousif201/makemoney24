@@ -1,16 +1,19 @@
-import { useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 import { jwtDecode } from "jwt-decode";
-import { getUserProfile } from "../../api/auth";
+import { getUserProfile } from "../../api/auth"; // Adjust path if needed
 
-export function useSession() {
+const SessionContext = createContext(null);
+
+export const SessionProvider = ({ children }) => {
   const [session, setSession] = useState(null);
-  const [user, setUser] = useState(null); // Store full user profile
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const initializeSession = async () => {
       try {
         const token = localStorage.getItem("authToken");
+
         if (!token) {
           setSession(null);
           setUser(null);
@@ -31,8 +34,7 @@ export function useSession() {
 
         setSession(decoded);
 
-        // ✅ Important: Pass { userId } to getUserProfile
-        const userProfile = await getUserProfile(decoded.id );
+        const userProfile = await getUserProfile(decoded.id);
         setUser(userProfile);
       } catch (err) {
         console.error("Session error:", err);
@@ -46,5 +48,17 @@ export function useSession() {
     initializeSession();
   }, []);
 
-  return { session, user, loading };
-}
+  return (
+    <SessionContext.Provider value={{ session, user, loading }}>
+      {children}
+    </SessionContext.Provider>
+  );
+};
+
+export const useSession = () => {
+  const context = useContext(SessionContext);
+  if (!context) {
+    throw new Error("useSession must be used within a SessionProvider");
+  }
+  return context;
+};

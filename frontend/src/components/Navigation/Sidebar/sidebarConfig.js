@@ -92,15 +92,16 @@ export const sidebarConfig = {
 
   vendor: [
     {
-      label: "Orders",
-      icon: ShoppingCart,
-      href: "/dashboard/orders",
-    },
-    {
       label: "Products",
       icon: Package,
       href: "/dashboard/products",
     },
+    {
+      label: "Orders",
+      icon: ShoppingCart,
+      href: "/dashboard/orders",
+    },
+
     {
       label: "Profile Settings",
       icon: Settings,

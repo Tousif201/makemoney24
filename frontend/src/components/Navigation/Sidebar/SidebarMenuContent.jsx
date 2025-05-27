@@ -16,8 +16,8 @@ import {
 } from "@/components/ui/collapsible";
 import { sidebarConfig } from "./sidebarConfig";
 import { useLocation, Link } from "react-router-dom";
-import { useSession } from "../../../hooks/useSession";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useSession } from "../../../context/SessionContext";
 
 export default function SidebarMenuContent() {
   const { session, loading } = useSession();
