@@ -49,10 +49,9 @@ export default function SidebarMenuContent({ role }) {
                 <SidebarGroupLabel asChild>
                   <CollapsibleTrigger
                     className={`flex items-center justify-between w-full px-3 py-2 rounded-md transition
-                      ${
-                        openCollapsibleIndex === idx || item.items.some((subItem) => isActive(subItem.href))
-                          ? "bg-green-700/30 text-green-300"
-                          : "hover:bg-muted/10 text-gray-300"
+                      ${openCollapsibleIndex === idx || item.items.some((subItem) => isActive(subItem.href))
+                        ? "bg-green-700/30 text-green-400"
+                        : "hover:bg-muted/10 text-gray-300"
                       }`}
                   >
                     <div className="flex items-center space-x-3">
@@ -72,10 +71,9 @@ export default function SidebarMenuContent({ role }) {
                       <SidebarMenuButton
                         asChild
                         className={`w-full text-sm rounded px-2 py-1.5 transition
-                          ${
-                            isActive(subItem.href)
-                              ? "bg-green-600 text-white font-semibold shadow-sm"
-                              : "hover:bg-muted/5 text-gray-400"
+                          ${isActive(subItem.href)
+                            ? "bg-green-600 text-white font-semibold shadow-sm"
+                            : "hover:bg-muted/5 text-gray-400"
                           }`}
                       >
                         <Link
@@ -96,10 +94,9 @@ export default function SidebarMenuContent({ role }) {
                 <SidebarMenuButton
                   asChild
                   className={`w-full text-lg font-medium px-3 py-2 rounded-md transition
-                    ${
-                      isActive(item.href)
-                        ? "bg-green-600 text-white shadow-sm"
-                        : "hover:bg-muted/10 text-gray-300"
+                    ${isActive(item.href)
+                      ? "bg-green-600 text-white shadow-sm"
+                      : "hover:bg-muted/10 text-gray-700"
                     }`}
                 >
                   <Link

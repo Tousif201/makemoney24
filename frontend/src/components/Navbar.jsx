@@ -8,7 +8,7 @@ export default function Navbar() {
   const session = localStorage.getItem("authToken");
   return (
     <header className="bg-white shadow-md">
-      <div className="max-w-7xl mx-auto py-2 px-2 sm:px-4 flex justify-between ">
+      <div className="w-full  mx-auto py-2 px-2 sm:px-4 flex justify-between">
         {/* Logo - Left */}
         <div className="flex items-center  space-x-2">
           <Link to="/">
@@ -34,7 +34,7 @@ export default function Navbar() {
 
         {/* Login/Signup - Right */}
         {session ? (
-          <Button>Dashboard</Button>
+          <Button className="mt-3">Dashboard</Button>
         ) : (
           <div className="hidden sm:flex items-center space-x-2">
             <Link

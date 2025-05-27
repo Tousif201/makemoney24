@@ -4,8 +4,9 @@ import {
   SidebarHeader,
   SidebarMenuButton,
 } from "@/components/ui/sidebar";
+import { Link } from "react-router-dom";
 import SidebarMenuContent from "./SidebarMenuContent";
-
+import logo from "../../../assets/makemoney.png"
 // Sidebar Header Component
 function SidebarHeaderContent() {
   return (
@@ -14,17 +15,17 @@ function SidebarHeaderContent() {
         className="h-auto flex justify-center items-center"
         asChild
       >
-        <a href="#">
+        <Link to="#">
           <img
-            src="/logo.png"
-            className="h-16 w-16 text-gray-900 dark:text-purple rounded-2xl"
+            src={logo}
+            className="h-20 w-20 text-gray-900 dark:text-purple rounded-2xl"
           />{" "}
           <div className="flex flex-col">
-            <span className=" text-gray-800 dark:text-gray-200 text-xl font-semibold uppercase">
-              Zentor
-            </span>
+            {/* <span className=" text-gray-800 dark:text-gray-200 text-xl font-semibold uppercase">
+            
+            </span> */}
           </div>
-        </a>
+        </Link>
       </SidebarMenuButton>
     </SidebarHeader>
   );
@@ -35,7 +36,7 @@ export function AppSidebar() {
   const role = "user";
 
   return (
-    <Sidebar variant="floating" className={"bg-[#1C1F30] "} collapsible="icon">
+    <Sidebar variant="floating" className={" "} collapsible="icon">
       <SidebarHeaderContent />
       <SidebarContent className={""}>
         <SidebarMenuContent role={role} />
