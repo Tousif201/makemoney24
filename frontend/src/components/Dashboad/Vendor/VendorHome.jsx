@@ -71,7 +71,7 @@ const ordersData = [
 
 export default function VendorHome() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 mx-8 my-8">
       <div className="space-y-2">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
           Overview
@@ -100,7 +100,10 @@ export default function VendorHome() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <OrdersTrendChart />
+            <div className="w-full h-[400px] sm:h-[150px] md:h-[400px] overflow-hidden">
+
+                <OrdersTrendChart />
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -122,6 +125,7 @@ export default function VendorHome() {
           </Card>
         </div>
       </div>
+
 
       {/* Commission Breakdown */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
