@@ -55,7 +55,8 @@ export const registerUser = async (req, res) => {
       referralCode,
       referredByCode: referredByCode || null,
       roles: roles || ["user"], // Default role to 'user' if not provided
-      otp: { // Store OTP details for verification
+      otp: {
+        // Store OTP details for verification
         code: hashedOtpCode,
         expiresAt: otpExpiresAt,
         verified: false,
@@ -85,7 +86,8 @@ export const registerUser = async (req, res) => {
 
     // 8. Do NOT generate JWT token here. User must verify OTP first.
     res.status(201).json({
-      message: "User registered successfully. Please check your email for OTP verification.",
+      message:
+        "User registered successfully. Please check your email for OTP verification.",
       user: {
         _id: user._id,
         name: user.name,
@@ -312,27 +314,37 @@ export const resetPassword = async (req, res) => {
  * @access Private
  */
 export const getUserProfile = async (req, res) => {
-  // req.user will be available due to the protect middleware
-  const user = await User.findById(req.user.id).select("-password"); // Exclude password from the response
+  const { userId } = req.body;
 
-  if (user) {
-    res.status(200).json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      phone: user.phone,
-      pincode: user.pincode,
-      isMember: user.isMember,
-      parent: user.parent,
-      joinedAt: user.joinedAt,
-      profileScore: user.profileScore,
-      purchaseWallet: user.purchaseWallet,
-      withdrawableWallet: user.withdrawableWallet,
-      referralCode: user.referralCode,
-      referredByCode: user.referredByCode,
-      roles: user.roles,
-    });
-  } else {
-    res.status(404).json({ message: "User not found" });
+  if (!userId) {
+    return res.status(400).json({ message: "User ID is required" });
+  }
+
+  try {
+    const user = await User.findById(userId).select("-password");
+
+    if (user) {
+      res.status(200).json({
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        pincode: user.pincode,
+        isMember: user.isMember,
+        parent: user.parent,
+        joinedAt: user.joinedAt,
+        profileScore: user.profileScore,
+        purchaseWallet: user.purchaseWallet,
+        withdrawableWallet: user.withdrawableWallet,
+        referralCode: user.referralCode,
+        referredByCode: user.referredByCode,
+        roles: user.roles,
+      });
+    } else {
+      res.status(404).json({ message: "User not found" });
+    }
+  } catch (error) {
+    console.error("Error fetching user:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
