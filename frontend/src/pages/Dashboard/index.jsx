@@ -19,8 +19,6 @@ function DashboardHome() {
 
   return (
     <div>
-      <h1>Welcome, {user.name || "User"}!</h1>
-
       {/* Role-based dashboard views */}
       {user.roles?.includes("admin") && <AdminHome />}
 

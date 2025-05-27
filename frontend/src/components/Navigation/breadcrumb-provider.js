@@ -19,9 +19,12 @@ function generateBreadcrumbMap(config) {
     }
   }
 
-  traverse(config.shared || []);
-  traverse(config.user || []);
-  traverse(config.admin || []);
+  // Traverse all roles and shared config
+  Object.values(config).forEach((section) => {
+    if (Array.isArray(section)) {
+      traverse(section);
+    }
+  });
 
   return map;
 }
@@ -30,10 +33,12 @@ const breadcrumbMap = generateBreadcrumbMap(sidebarConfig);
 
 // Resolve the last label for a given pathname
 function resolveBreadcrumbTitle(pathname) {
+  // Exact match
   if (breadcrumbMap[pathname]) {
     return breadcrumbMap[pathname].slice(-1)[0];
   }
 
+  // Fallback: match longest prefix
   const matchedPath = Object.keys(breadcrumbMap)
     .filter((path) => pathname.startsWith(path))
     .sort((a, b) => b.length - a.length)[0];
