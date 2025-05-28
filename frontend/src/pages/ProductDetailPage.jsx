@@ -1,6 +1,9 @@
 import { useState } from "react";
 // No need to import Image from 'next/image' or Link from 'next/link'
 import { Button } from "@/components/ui/button";
+// import {ShoppingCart} from "lucide-react";
+import { toast } from "sonner";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -119,7 +122,7 @@ export default function ProductDetailPage() {
                   {Math.round(
                     ((product.originalPrice - product.price) /
                       product.originalPrice) *
-                      100
+                    100
                   )}
                   % OFF
                 </Badge>
@@ -130,11 +133,10 @@ export default function ProductDetailPage() {
                 <button
                   key={index}
                   onClick={() => setSelectedImage(index)}
-                  className={`relative aspect-square overflow-hidden rounded-lg border-2 ${
-                    selectedImage === index
-                      ? "border-blue-500"
-                      : "border-gray-200"
-                  }`}
+                  className={`relative aspect-square overflow-hidden rounded-lg border-2 ${selectedImage === index
+                    ? "border-blue-500"
+                    : "border-gray-200"
+                    }`}
                 >
                   {/* Replaced Next.js Image with standard <img> */}
                   <img
@@ -160,11 +162,10 @@ export default function ProductDetailPage() {
                   {[...Array(5)].map((_, i) => (
                     <Star
                       key={i}
-                      className={`h-5 w-5 ${
-                        i < Math.floor(product.rating)
-                          ? "fill-yellow-400 text-yellow-400"
-                          : "text-gray-300"
-                      }`}
+                      className={`h-5 w-5 ${i < Math.floor(product.rating)
+                        ? "fill-yellow-400 text-yellow-400"
+                        : "text-gray-300"
+                        }`}
                     />
                   ))}
                   <span className="ml-2 text-sm text-gray-600">
@@ -195,11 +196,10 @@ export default function ProductDetailPage() {
                     <button
                       key={index}
                       onClick={() => setSelectedVariant(index)}
-                      className={`px-4 py-2 border rounded-lg ${
-                        selectedVariant === index
-                          ? "border-blue-500 bg-blue-50"
-                          : "border-gray-200"
-                      }`}
+                      className={`px-4 py-2 border rounded-lg ${selectedVariant === index
+                        ? "border-blue-500 bg-blue-50"
+                        : "border-gray-200"
+                        }`}
                     >
                       {variant.color}
                     </button>
@@ -240,6 +240,7 @@ export default function ProductDetailPage() {
             {/* Action Buttons */}
             <div className="space-y-4">
               <div className="flex gap-4">
+
                 <Button
                   size="lg"
                   className="flex-1"
@@ -253,11 +254,22 @@ export default function ProductDetailPage() {
                         product.portfolio[0]?.url ||
                         product.variants[selectedVariant]?.images[0],
                       vendor: product.vendorId.name,
-                      type: product.type, // 'product' | 'service'
+                      type: product.type,
                       variant: {
                         color: product.variants[selectedVariant]?.color,
                         size: product.variants[selectedVariant]?.size,
                         sku: product.variants[selectedVariant]?.sku,
+                      },
+                    });
+
+                    toast.success("Item Added Successfully", {
+                      description: `${product.title} 0% discount applied automatically!`,
+                      duration: 3000,
+                      icon: "🔥",
+                      style: {
+                        borderRadius: "10px",
+                        background: "##6CAEA8",  // Tailwind slate-900
+                        color: "black"
                       },
                     });
                   }}
@@ -265,6 +277,7 @@ export default function ProductDetailPage() {
                   <ShoppingCart className="mr-2 h-5 w-5" />
                   Add to Cart
                 </Button>
+
                 <Button size="lg" variant="outline">
                   <Heart className="h-5 w-5" />
                 </Button>
@@ -388,11 +401,10 @@ export default function ProductDetailPage() {
                         {[...Array(5)].map((_, i) => (
                           <Star
                             key={i}
-                            className={`h-4 w-4 ${
-                              i < Math.floor(product.rating)
-                                ? "fill-yellow-400 text-yellow-400"
-                                : "text-gray-300"
-                            }`}
+                            className={`h-4 w-4 ${i < Math.floor(product.rating)
+                              ? "fill-yellow-400 text-yellow-400"
+                              : "text-gray-300"
+                              }`}
                           />
                         ))}
                       </div>

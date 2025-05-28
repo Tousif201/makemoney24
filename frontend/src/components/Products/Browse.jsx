@@ -33,7 +33,7 @@ export default function BrowsePage() {
       title: "Premium Leather Office Chair",
       price: 12499,
       originalPrice: 15999,
-      image: "https://images.unsplash.com/photo-1616627981169-d0928fb3a1d0?auto=format&fit=crop&w=400&q=80",
+      image: "https://images.pexels.com/photos/6044926/pexels-photo-6044926.jpeg",
       rating: 4.5,
       vendor: "Urban Living Furniture",
       category: "Office Furniture",
@@ -169,7 +169,7 @@ export default function BrowsePage() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Filters Sidebar */}
           <div className="lg:col-span-1">
-            <Card className="sticky top-4">
+            <Card className="sticky top-10">
               <CardContent className="p-6">
                 <div className="flex items-center mb-6">
                   <Filter className="h-5 w-5 mr-2" />
@@ -274,7 +274,7 @@ export default function BrowsePage() {
                   >
                     <CardContent className={`p-0 ${viewMode === "list" ? "flex w-full" : ""}`}>
                       <div
-                        className={`relative overflow-hidden ${viewMode === "list" ? "w-48 h-32" : "h-48"} ${viewMode === "grid" ? "rounded-t-lg" : "rounded-l-lg"}`}
+                        className={`relative overflow-hidden ${viewMode === "list" ? "w-48 h-32" : "h-68"} ${viewMode === "grid" ? "rounded-t-lg" : "rounded-l-lg"}`}
                       >
                         {/* Replaced Next.js Image with standard <img> */}
                         <img

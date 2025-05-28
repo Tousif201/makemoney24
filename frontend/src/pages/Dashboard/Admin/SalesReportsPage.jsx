@@ -184,7 +184,7 @@ export default function SalesReportsPage() {
               <CardTitle className="text-sm font-medium">
                 Total Orders
               </CardTitle>
-              <Package className="h-4 w-4 text-muted-foreground" />
+              <Package className="h-4 w-4  text-purple-700" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{totalOrders}</div>
@@ -200,7 +200,7 @@ export default function SalesReportsPage() {
               <CardTitle className="text-sm font-medium">
                 Delivered Orders
               </CardTitle>
-              <Package className="h-4 w-4 text-muted-foreground" />
+              <Package className="h-4 w-4  text-purple-700" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{totalDelivered}</div>
@@ -216,13 +216,13 @@ export default function SalesReportsPage() {
               <CardTitle className="text-sm font-medium">
                 Total Revenue
               </CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
+              <DollarSign className="h-4 w-4 text-purple-700" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
                 ${totalRevenue.toLocaleString()}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-purple-700">
                 <TrendingUp className="inline h-3 w-3 text-green-500" />
                 +8.2% from last period
               </p>
@@ -234,7 +234,7 @@ export default function SalesReportsPage() {
               <CardTitle className="text-sm font-medium">
                 Total Commission
               </CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
+              <DollarSign className="h-4 w-4 text-purple-700" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">

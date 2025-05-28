@@ -134,9 +134,9 @@ export default function CheckoutPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Checkout</h1>
-          <p className="text-gray-600">Complete your order</p>
+        <div className="mb-8 flex flex-col items-center justify-center">
+          <h1 className="text-3xl font-bold mb-2">CHECKOUT</h1>
+          <p className="text-gray-600">Complete Your Order Please</p>
         </div>
 
         <form onSubmit={handleSubmit}>
@@ -147,13 +147,13 @@ export default function CheckoutPage() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <MapPin className="h-5 w-5" />
+                    <MapPin className="h-5 w-5 text-orange-400" />
                     Shipping Information
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
+                    <div className="space-y-2">
                       <Label htmlFor="shipping-firstName">First Name</Label>
                       <Input
                         id="shipping-firstName"
@@ -164,7 +164,7 @@ export default function CheckoutPage() {
                         required
                       />
                     </div>
-                    <div>
+                    <div className="space-y-2">
                       <Label htmlFor="shipping-lastName">Last Name</Label>
                       <Input
                         id="shipping-lastName"
@@ -177,7 +177,7 @@ export default function CheckoutPage() {
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
+                    <div className="space-y-2">
                       <Label htmlFor="shipping-email">Email</Label>
                       <Input
                         id="shipping-email"
@@ -189,7 +189,7 @@ export default function CheckoutPage() {
                         required
                       />
                     </div>
-                    <div>
+                    <div className="space-y-2">
                       <Label htmlFor="shipping-phone">Phone</Label>
                       <Input
                         id="shipping-phone"
@@ -201,7 +201,7 @@ export default function CheckoutPage() {
                       />
                     </div>
                   </div>
-                  <div>
+                  <div className="space-y-2">
                     <Label htmlFor="shipping-address">Address</Label>
                     <Textarea
                       id="shipping-address"
@@ -213,7 +213,7 @@ export default function CheckoutPage() {
                     />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
+                    <div className="space-y-2">
                       <Label htmlFor="shipping-city">City</Label>
                       <Input
                         id="shipping-city"
@@ -224,7 +224,7 @@ export default function CheckoutPage() {
                         required
                       />
                     </div>
-                    <div>
+                    <div className="space-y-2">
                       <Label htmlFor="shipping-state">State</Label>
                       <Select
                         value={shippingInfo.state}
@@ -244,7 +244,7 @@ export default function CheckoutPage() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div>
+                    <div className="space-y-2">
                       <Label htmlFor="shipping-pincode">Pincode</Label>
                       <Input
                         id="shipping-pincode"
@@ -263,7 +263,7 @@ export default function CheckoutPage() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <User className="h-5 w-5" />
+                    <User className="h-5 w-5 text-yellow-600" />
                     Billing Information
                   </CardTitle>
                 </CardHeader>
@@ -374,12 +374,12 @@ export default function CheckoutPage() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <CreditCard className="h-5 w-5" />
+                    <CreditCard className="h-5 w-5 text-teal-500" />
                     Payment Information
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div>
+                  <div className="space-y-2">
                     <Label htmlFor="cardholder-name">Cardholder Name</Label>
                     <Input
                       id="cardholder-name"
@@ -391,7 +391,7 @@ export default function CheckoutPage() {
                       required
                     />
                   </div>
-                  <div>
+                  <div className="space-y-2">
                     <Label htmlFor="card-number">Card Number</Label>
                     <Input
                       id="card-number"
@@ -404,7 +404,7 @@ export default function CheckoutPage() {
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
-                    <div>
+                    <div className="space-y-2">
                       <Label htmlFor="expiry-date">Expiry Date</Label>
                       <Input
                         id="expiry-date"
@@ -416,7 +416,7 @@ export default function CheckoutPage() {
                         required
                       />
                     </div>
-                    <div>
+                    <div className="space-y-2">
                       <Label htmlFor="cvv">CVV</Label>
                       <Input
                         id="cvv"
@@ -430,7 +430,7 @@ export default function CheckoutPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Lock className="h-4 w-4" />
+                    <Lock className="h-4 w-4 text-green-400" />
                     <span>
                       Your payment information is secure and encrypted
                     </span>
@@ -441,7 +441,7 @@ export default function CheckoutPage() {
 
             {/* Right Column - Order Summary */}
             <div className="lg:col-span-1">
-              <Card className="sticky top-4">
+              <Card className="sticky top-20">
                 <CardHeader>
                   <CardTitle>Order Summary</CardTitle>
                 </CardHeader>
@@ -522,16 +522,18 @@ export default function CheckoutPage() {
                       </>
                     ) : (
                       <>
-                        <Lock className="mr-2 h-4 w-4" />
+                        <Lock className="mr-2 h-4 w-4 text-green-400" />
                         Place Order
                       </>
                     )}
                   </Button>
 
-                  <p className="text-xs text-gray-500 text-center">
-                    By placing your order, you agree to our Terms of Service and
-                    Privacy Policy.
-                  </p>
+                  <label className="flex items-start text-xs text-gray-500">
+                    <input type="checkbox" className="mr-2 mt-1" />
+                    <span>
+                      By placing your order, you agree to our <span className="underline">Terms of Service</span> and <span className="underline">Privacy Policy</span>.
+                    </span>
+                  </label>
                 </CardContent>
               </Card>
             </div>

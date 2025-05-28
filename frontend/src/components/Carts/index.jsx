@@ -30,7 +30,7 @@ export function CartSheet() {
           <SheetTitle>Shopping Cart ({totalItems} items)</SheetTitle>
         </SheetHeader>
 
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-auto">
           {items.length === 0 ? (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
@@ -40,11 +40,12 @@ export function CartSheet() {
                 <Link to="/browse">
                   <Button onClick={() => setIsOpen(false)}>Continue Shopping</Button>
                 </Link>
+                
               </div>
             </div>
           ) : (
             <>
-              <div className="flex-1 overflow-y-auto py-4">
+              <div className="flex-1 overflow-y-auto py-4 mx-5">
                 <div className="space-y-4">
                   {items.map((item) => (
                     <div key={`${item.id}-${item.variant?.color}-${item.variant?.size}`} className="flex gap-4">
@@ -129,7 +130,7 @@ export function CartSheet() {
                 </div>
               </div>
 
-              <div className="border-t pt-4 space-y-4">
+              <div className="border-t pt-4 space-y-4 mx-4">
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span>Subtotal</span>
@@ -153,7 +154,7 @@ export function CartSheet() {
                     </Button>
                   </Link>
                   <Link to="/browse" onClick={() => setIsOpen(false)}>
-                    <Button variant="outline" className="w-full">
+                    <Button variant="outline" className="w-full mt-0.5">
                       Continue Shopping
                     </Button>
                   </Link>

@@ -43,6 +43,7 @@ import CheckoutSuccessPage from "../components/Checkout/Success";
 import CheckoutPage from "../components/Checkout/CheckoutPage";
 import BrowsePage from "../components/Products/Browse";
 import ProductDetailPage from "../pages/ProductDetailPage";
+import { Toaster } from "sonner";
 
 const routes = [
   {
@@ -61,6 +62,7 @@ const routes = [
       </MainLayout>
     ),
   },
+
   {
     path: "/checkout",
     element: (
