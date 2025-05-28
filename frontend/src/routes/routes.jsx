@@ -1,13 +1,6 @@
-// /src/routes/routes.jsx
 import Home from "../pages/Home";
 import About from "../pages/About";
-// import CategoryPage from "../pages/category/CategoryPage";
-// import CategoryGrid from "../pages/CategoryGrid";
-// import Services from "../pages/Services";
-// import Login from "../pages/auth/Login";
-// import Signup from "../pages/auth/Signup";
-// import Contact from "../pages/Contact";
-import ItemDetail from "../pages/ItemsDetails";
+import ItemDetail from "../pages/ProductDetailPage";
 import ProductCard from "../components/ProductCard";
 import ProductList from "../components/ProductList";
 import HomePageAnimation from "../pages/HomePageAnimation";
@@ -46,6 +39,10 @@ import MembershipMilestonesPage from "../pages/Dashboard/Admin/MembershipMilesto
 import MembershipReportsPage from "../pages/Dashboard/Admin/MembershipReportsPage";
 import RewardsDistributionPage from "../pages/Dashboard/Admin/RewardsDistributionPage";
 import SalesReportsPage from "../pages/Dashboard/Admin/SalesReportsPage";
+import CheckoutSuccessPage from "../components/Checkout/Success";
+import CheckoutPage from "../components/Checkout/CheckoutPage";
+import BrowsePage from "../components/Products/Browse";
+import ProductDetailPage from "../pages/ProductDetailPage";
 
 const routes = [
   {
@@ -56,20 +53,119 @@ const routes = [
       </MainLayout>
     ),
   },
-  { path: "/about", element: <About /> },
-  // { path: "/category/:categoryName", element: <CategoryPage /> },
-  // { path: "/categories", element: <CategoryGrid /> },
-  { path: "/products", element: <ProductList /> },
-  { path: "/homePageAnimation", element: <HomePageAnimation /> },
-  { path: "/brandSlider", element: <BrandSlider /> },
-  { path: "/services", element: <Services /> },
-  { path: "/login", element: <Login /> },
-  { path: "/signup", element: <Signup /> },
-  { path: "/otp/:email", element: <OtpVerify /> },
-  // { path: "/contact", element: <Contact /> },
-  { path: "/item/:id", element: <ItemDetail /> },
-  { path: "/product", element: <ProductCard /> },
-  { path: "/cartdrawer", element: <CartDrawer /> },
+  {
+    path: "/checkout/success",
+    element: (
+      <MainLayout>
+        <CheckoutSuccessPage />
+      </MainLayout>
+    ),
+  },
+  {
+    path: "/checkout",
+    element: (
+      <MainLayout>
+        <CheckoutPage />
+      </MainLayout>
+    ),
+  },
+  {
+    path: "/browse",
+    element: (
+      <MainLayout>
+        <BrowsePage />
+      </MainLayout>
+    ),
+  },
+
+  {
+    path: "/about",
+    element: (
+      <MainLayout>
+        <About />
+      </MainLayout>
+    ),
+  },
+  {
+    path: "/products",
+    element: (
+      <MainLayout>
+        <ProductList />
+      </MainLayout>
+    ),
+  },
+  {
+    path: "/homePageAnimation",
+    element: (
+      <MainLayout>
+        <HomePageAnimation />
+      </MainLayout>
+    ),
+  },
+  {
+    path: "/brandSlider",
+    element: (
+      <MainLayout>
+        <BrandSlider />
+      </MainLayout>
+    ),
+  },
+  {
+    path: "/services",
+    element: (
+      <MainLayout>
+        <Services />
+      </MainLayout>
+    ),
+  },
+  {
+    path: "/login",
+    element: (
+      <MainLayout>
+        <Login />
+      </MainLayout>
+    ),
+  },
+  {
+    path: "/signup",
+    element: (
+      <MainLayout>
+        <Signup />
+      </MainLayout>
+    ),
+  },
+  {
+    path: "/otp/:email",
+    element: (
+      <MainLayout>
+        <OtpVerify />
+      </MainLayout>
+    ),
+  },
+  {
+    path: "/item/:id",
+    element: (
+      <MainLayout>
+        <ProductDetailPage />
+      </MainLayout>
+    ),
+  },
+  {
+    path: "/product",
+    element: (
+      <MainLayout>
+        <ProductCard />
+      </MainLayout>
+    ),
+  },
+  {
+    path: "/cartdrawer",
+    element: (
+      <MainLayout>
+        <CartDrawer />
+      </MainLayout>
+    ),
+  },
   {
     path: "/dashboard",
     element: (
@@ -286,6 +382,11 @@ const routes = [
         <BannersPage />
       </DashboardLayout>
     ),
+  },
+
+  {
+    path: "*",
+    element: <h1>404 - Page Not Found</h1>,
   },
 ];
 

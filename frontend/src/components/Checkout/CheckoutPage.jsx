@@ -1,0 +1,543 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom"; // Changed from 'next/navigation'
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { CreditCard, MapPin, User, Lock } from "lucide-react";
+import { useCart } from "../../context/CartContext";
+
+export default function CheckoutPage() {
+  const navigate = useNavigate(); // Using useNavigate from react-router-dom
+  const { items, getTotalPrice, clearCart } = useCart();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [sameAsShipping, setSameAsShipping] = useState(true);
+
+  const [shippingInfo, setShippingInfo] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    address: "",
+    city: "",
+    state: "",
+    pincode: "",
+    country: "India",
+  });
+
+  const [billingInfo, setBillingInfo] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    address: "",
+    city: "",
+    state: "",
+    pincode: "",
+    country: "India",
+  });
+
+  const [paymentInfo, setPaymentInfo] = useState({
+    cardNumber: "",
+    expiryDate: "",
+    cvv: "",
+    cardholderName: "",
+  });
+
+  const totalPrice = getTotalPrice();
+  const shippingCost = 0; // Free shipping
+  const tax = Math.round(totalPrice * 0.18); // 18% GST
+  const finalTotal = totalPrice + shippingCost + tax;
+
+  const handleShippingChange = (field, value) => {
+    // Removed type annotations
+    setShippingInfo((prev) => ({ ...prev, [field]: value }));
+    if (sameAsShipping) {
+      setBillingInfo((prev) => ({ ...prev, [field]: value }));
+    }
+  };
+
+  const handleBillingChange = (field, value) => {
+    // Removed type annotations
+    setBillingInfo((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handlePaymentChange = (field, value) => {
+    // Removed type annotations
+    setPaymentInfo((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    // Removed type annotation
+    e.preventDefault();
+    setIsProcessing(true);
+
+    // Simulate payment processing
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+
+    // Create order data
+    const orderData = {
+      id: `ORD-${Date.now()}`,
+      items,
+      shippingInfo,
+      billingInfo: sameAsShipping ? shippingInfo : billingInfo,
+      paymentInfo: {
+        ...paymentInfo,
+        cardNumber: `****-****-****-${paymentInfo.cardNumber.slice(-4)}`,
+      },
+      totals: {
+        subtotal: totalPrice,
+        shipping: shippingCost,
+        tax,
+        total: finalTotal,
+      },
+      status: "confirmed",
+      createdAt: new Date().toISOString(),
+    };
+
+    // Store order in localStorage
+    localStorage.setItem("lastOrder", JSON.stringify(orderData));
+
+    // Clear cart
+    clearCart();
+
+    // Redirect to success page
+    navigate("/checkout/success"); // Using navigate for redirection
+  };
+
+  if (items.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Your cart is empty</h1>
+          <p className="text-gray-600 mb-6">
+            Add some items to proceed with checkout
+          </p>
+          <Button onClick={() => navigate("/browse")}>Continue Shopping</Button>{" "}
+          {/* Using navigate */}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2">Checkout</h1>
+          <p className="text-gray-600">Complete your order</p>
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Left Column - Forms */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Shipping Information */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <MapPin className="h-5 w-5" />
+                    Shipping Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="shipping-firstName">First Name</Label>
+                      <Input
+                        id="shipping-firstName"
+                        value={shippingInfo.firstName}
+                        onChange={(e) =>
+                          handleShippingChange("firstName", e.target.value)
+                        }
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="shipping-lastName">Last Name</Label>
+                      <Input
+                        id="shipping-lastName"
+                        value={shippingInfo.lastName}
+                        onChange={(e) =>
+                          handleShippingChange("lastName", e.target.value)
+                        }
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="shipping-email">Email</Label>
+                      <Input
+                        id="shipping-email"
+                        type="email"
+                        value={shippingInfo.email}
+                        onChange={(e) =>
+                          handleShippingChange("email", e.target.value)
+                        }
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="shipping-phone">Phone</Label>
+                      <Input
+                        id="shipping-phone"
+                        value={shippingInfo.phone}
+                        onChange={(e) =>
+                          handleShippingChange("phone", e.target.value)
+                        }
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="shipping-address">Address</Label>
+                    <Textarea
+                      id="shipping-address"
+                      value={shippingInfo.address}
+                      onChange={(e) =>
+                        handleShippingChange("address", e.target.value)
+                      }
+                      required
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="shipping-city">City</Label>
+                      <Input
+                        id="shipping-city"
+                        value={shippingInfo.city}
+                        onChange={(e) =>
+                          handleShippingChange("city", e.target.value)
+                        }
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="shipping-state">State</Label>
+                      <Select
+                        value={shippingInfo.state}
+                        onValueChange={(value) =>
+                          handleShippingChange("state", value)
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select state" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="delhi">Delhi</SelectItem>
+                          <SelectItem value="mumbai">Mumbai</SelectItem>
+                          <SelectItem value="bangalore">Bangalore</SelectItem>
+                          <SelectItem value="chennai">Chennai</SelectItem>
+                          <SelectItem value="kolkata">Kolkata</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="shipping-pincode">Pincode</Label>
+                      <Input
+                        id="shipping-pincode"
+                        value={shippingInfo.pincode}
+                        onChange={(e) =>
+                          handleShippingChange("pincode", e.target.value)
+                        }
+                        required
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Billing Information */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <User className="h-5 w-5" />
+                    Billing Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="same-as-shipping"
+                      checked={sameAsShipping}
+                      onCheckedChange={(checked) => {
+                        setSameAsShipping(checked); // No need for 'as boolean'
+                        if (checked) {
+                          setBillingInfo(shippingInfo);
+                        }
+                      }}
+                    />
+                    <Label htmlFor="same-as-shipping">
+                      Same as shipping address
+                    </Label>
+                  </div>
+
+                  {!sameAsShipping && (
+                    <>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="billing-firstName">First Name</Label>
+                          <Input
+                            id="billing-firstName"
+                            value={billingInfo.firstName}
+                            onChange={(e) =>
+                              handleBillingChange("firstName", e.target.value)
+                            }
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="billing-lastName">Last Name</Label>
+                          <Input
+                            id="billing-lastName"
+                            value={billingInfo.lastName}
+                            onChange={(e) =>
+                              handleBillingChange("lastName", e.target.value)
+                            }
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Label htmlFor="billing-address">Address</Label>
+                        <Textarea
+                          id="billing-address"
+                          value={billingInfo.address}
+                          onChange={(e) =>
+                            handleBillingChange("address", e.target.value)
+                          }
+                          required
+                        />
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <Label htmlFor="billing-city">City</Label>
+                          <Input
+                            id="billing-city"
+                            value={billingInfo.city}
+                            onChange={(e) =>
+                              handleBillingChange("city", e.target.value)
+                            }
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="billing-state">State</Label>
+                          <Select
+                            value={billingInfo.state}
+                            onValueChange={(value) =>
+                              handleBillingChange("state", value)
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select state" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="delhi">Delhi</SelectItem>
+                              <SelectItem value="mumbai">Mumbai</SelectItem>
+                              <SelectItem value="bangalore">
+                                Bangalore
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label htmlFor="billing-pincode">Pincode</Label>
+                          <Input
+                            id="billing-pincode"
+                            value={billingInfo.pincode}
+                            onChange={(e) =>
+                              handleBillingChange("pincode", e.target.value)
+                            }
+                            required
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Payment Information */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CreditCard className="h-5 w-5" />
+                    Payment Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label htmlFor="cardholder-name">Cardholder Name</Label>
+                    <Input
+                      id="cardholder-name"
+                      value={paymentInfo.cardholderName}
+                      onChange={(e) =>
+                        handlePaymentChange("cardholderName", e.target.value)
+                      }
+                      placeholder="John Doe"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="card-number">Card Number</Label>
+                    <Input
+                      id="card-number"
+                      value={paymentInfo.cardNumber}
+                      onChange={(e) =>
+                        handlePaymentChange("cardNumber", e.target.value)
+                      }
+                      placeholder="1234 5678 9012 3456"
+                      required
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="expiry-date">Expiry Date</Label>
+                      <Input
+                        id="expiry-date"
+                        value={paymentInfo.expiryDate}
+                        onChange={(e) =>
+                          handlePaymentChange("expiryDate", e.target.value)
+                        }
+                        placeholder="MM/YY"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="cvv">CVV</Label>
+                      <Input
+                        id="cvv"
+                        value={paymentInfo.cvv}
+                        onChange={(e) =>
+                          handlePaymentChange("cvv", e.target.value)
+                        }
+                        placeholder="123"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Lock className="h-4 w-4" />
+                    <span>
+                      Your payment information is secure and encrypted
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Right Column - Order Summary */}
+            <div className="lg:col-span-1">
+              <Card className="sticky top-4">
+                <CardHeader>
+                  <CardTitle>Order Summary</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-3">
+                    {items.map((item) => (
+                      <div
+                        key={`${item.id}-${item.variant?.color}-${item.variant?.size}`}
+                        className="flex gap-3"
+                      >
+                        <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-100">
+                          {/* Replaced Next.js Image with standard <img> */}
+                          <img
+                            src={item.image || "/placeholder.svg"}
+                            alt={item.title}
+                            className="object-cover w-full h-full"
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-sm font-medium line-clamp-2">
+                            {item.title}
+                          </h4>
+                          <p className="text-xs text-gray-500">{item.vendor}</p>
+                          {item.variant && (
+                            <div className="flex gap-1 mt-1">
+                              {item.variant.color && (
+                                <Badge variant="outline" className="text-xs">
+                                  {item.variant.color}
+                                </Badge>
+                              )}
+                            </div>
+                          )}
+                          <div className="flex justify-between items-center mt-1">
+                            <span className="text-xs text-gray-600">
+                              Qty: {item.quantity}
+                            </span>
+                            <span className="text-sm font-medium">
+                              ₹{(item.price * item.quantity).toLocaleString()}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <Separator />
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Subtotal</span>
+                      <span>₹{totalPrice.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span>Shipping</span>
+                      <span className="text-green-600">Free</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span>Tax (GST 18%)</span>
+                      <span>₹{tax.toLocaleString()}</span>
+                    </div>
+                    <Separator />
+                    <div className="flex justify-between font-medium text-lg">
+                      <span>Total</span>
+                      <span>₹{finalTotal.toLocaleString()}</span>
+                    </div>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    size="lg"
+                    disabled={isProcessing}
+                  >
+                    {isProcessing ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <Lock className="mr-2 h-4 w-4" />
+                        Place Order
+                      </>
+                    )}
+                  </Button>
+
+                  <p className="text-xs text-gray-500 text-center">
+                    By placing your order, you agree to our Terms of Service and
+                    Privacy Policy.
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
