@@ -35,6 +35,17 @@ import ManageWalletPage from "../pages/Dashboard/Users/ManageWalletPage";
 import UsersPage from "../pages/Dashboard/Franchise/UsersPage";
 import FranchiseVendorsPage from "../pages/Dashboard/Franchise/FranchiseVendorsPage";
 import RewardsPage from "../pages/Dashboard/Rewards";
+import AdminVendorsPage from "../pages/Dashboard/Admin/AdminVendorsPage";
+import AdminFranchisePage from "../pages/Dashboard/Admin/AdminFranchisePage";
+import BannersPage from "../pages/Dashboard/Admin/BannersPage";
+import TransactionsPage from "../pages/Dashboard/Admin/TransactionsPage";
+import AdminUsersPage from "../pages/Dashboard/Admin/AdminUsersPage";
+import CashbackMilestonesPage from "../pages/Dashboard/Admin/CashbackMilestonesPage";
+import FranchiseMilestonesPage from "../pages/Dashboard/Admin/FranchiseMilestonesPage";
+import MembershipMilestonesPage from "../pages/Dashboard/Admin/MembershipMilestonesPage";
+import MembershipReportsPage from "../pages/Dashboard/Admin/MembershipReportsPage";
+import RewardsDistributionPage from "../pages/Dashboard/Admin/RewardsDistributionPage";
+import SalesReportsPage from "../pages/Dashboard/Admin/SalesReportsPage";
 
 const routes = [
   {
@@ -184,6 +195,95 @@ const routes = [
     element: (
       <DashboardLayout>
         <UsersPage />
+      </DashboardLayout>
+    ),
+  },
+
+  {
+    path: "/dashboard/admin/vendors",
+    element: (
+      <DashboardLayout>
+        <AdminVendorsPage />
+      </DashboardLayout>
+    ),
+  },
+  {
+    path: "/dashboard/admin/vendors/franchises",
+    element: (
+      <DashboardLayout>
+        <AdminFranchisePage />
+      </DashboardLayout>
+    ),
+  },
+  {
+    path: "/dashboard/admin/reports/sales",
+    element: (
+      <DashboardLayout>
+        <SalesReportsPage />
+      </DashboardLayout>
+    ),
+  },
+  {
+    path: "/dashboard/admin/reports/membership",
+    element: (
+      <DashboardLayout>
+        <MembershipReportsPage />
+      </DashboardLayout>
+    ),
+  },
+  {
+    path: "/dashboard/admin/reports/rewards",
+    element: (
+      <DashboardLayout>
+        <RewardsDistributionPage />
+      </DashboardLayout>
+    ),
+  },
+  {
+    path: "/dashboard/admin/manage/membership-milestones",
+    element: (
+      <DashboardLayout>
+        <MembershipMilestonesPage />
+      </DashboardLayout>
+    ),
+  },
+  {
+    path: "/dashboard/admin/manage/cashbacks-milestones",
+    element: (
+      <DashboardLayout>
+        <CashbackMilestonesPage />
+      </DashboardLayout>
+    ),
+  },
+  {
+    path: "/dashboard/admin/manage/franchise-milestones",
+    element: (
+      <DashboardLayout>
+        <FranchiseMilestonesPage />
+      </DashboardLayout>
+    ),
+  },
+  {
+    path: "/dashboard/admin/users",
+    element: (
+      <DashboardLayout>
+        <AdminUsersPage />
+      </DashboardLayout>
+    ),
+  },
+  {
+    path: "/dashboard/admin/transactions",
+    element: (
+      <DashboardLayout>
+        <TransactionsPage />
+      </DashboardLayout>
+    ),
+  },
+  {
+    path: "/dashboard/admin/banners",
+    element: (
+      <DashboardLayout>
+        <BannersPage />
       </DashboardLayout>
     ),
   },
