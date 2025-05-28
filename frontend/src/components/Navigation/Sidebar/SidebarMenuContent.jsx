@@ -68,11 +68,10 @@ export default function SidebarMenuContent() {
                 <SidebarGroupLabel asChild>
                   <CollapsibleTrigger
                     className={`flex w-full items-center justify-between rounded-md px-3 py-2 transition
-                      ${
-                        openCollapsibleIndex === idx ||
+                      ${openCollapsibleIndex === idx ||
                         item.items.some((sub) => isActive(sub.href))
-                          ? "bg-purple-100 text-purple-700"
-                          : "hover:bg-gray-100 text-gray-600"
+                        ? "bg-purple-100 text-purple-700"
+                        : "hover:bg-gray-100 text-gray-600"
                       }`}
                   >
                     <div className="flex items-center space-x-3">
@@ -89,10 +88,9 @@ export default function SidebarMenuContent() {
                       <SidebarMenuButton
                         asChild
                         className={`w-full rounded px-2 py-1.5 text-sm transition
-                          ${
-                            isActive(sub.href)
-                              ? "bg-purple-200 text-green-800 font-semibold"
-                              : "hover:bg-gray-50 text-gray-600"
+                          ${isActive(sub.href)
+                            ? "bg-purple-200 text-green-800 font-semibold"
+                            : "hover:bg-gray-50 text-gray-600"
                           }`}
                       >
                         <Link to={sub.href} onClick={handleMenuClick} className="flex items-center space-x-2">
@@ -110,10 +108,9 @@ export default function SidebarMenuContent() {
                 <SidebarMenuButton
                   asChild
                   className={`w-full rounded-md px-3 py-2 text-base font-medium transition
-                    ${
-                      isActive(item.href)
-                        ? "bg-purple-300 text-purple-800 shadow-sm"
-                        : "hover:bg-gray-100 text-gray-700"
+                    ${isActive(item.href)
+                      ? "bg-purple-300 text-purple-800 shadow-sm"
+                      : "hover:bg-gray-100 text-gray-700"
                     }`}
                 >
                   <Link to={item.href} onClick={handleMenuClick} className="flex items-center space-x-3">
@@ -126,21 +123,8 @@ export default function SidebarMenuContent() {
           )}
 
           {/* -------- Logout button -------- */}
+
           <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              className="w-full rounded-md px-3 py-2 text-xl font-medium text-red-600 hover:bg-red-400 transition"
-            >
-              <button
-                onClick={() => {
-                  console.log("Logout clicked");
-                  handleMenuClick();
-                }}
-                className="w-full text-left mt-5"
-              >
-                Logout
-              </button>
-            </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarGroupContent>
