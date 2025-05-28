@@ -76,8 +76,8 @@ export default function UserHome() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-purple-900">Welcome back, John!</h1>
-            <p className="text-purple-600">Here's what's happening with your business today.</p>
+            <h1 className="text-3xl font-bold ">Welcome back, John!</h1>
+            <p className="text-gray-500">Here's what's happening with your business today.</p>
           </div>
         </div>
       </div>
@@ -87,12 +87,12 @@ export default function UserHome() {
         {stats.map((stat) => (
           <Card key={stat.title} className="border-purple-100">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-purple-700">{stat.title}</CardTitle>
+              <CardTitle className="text-sm font-medium ">{stat.title}</CardTitle>
               <stat.icon className="h-4 w-4 text-purple-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-purple-900">{stat.value}</div>
-              <p className="text-xs text-purple-600">{stat.change}</p>
+              <div className="text-2xl font-bold ">{stat.value}</div>
+              <p className="text-xs text-green-600">{stat.change}</p>
             </CardContent>
           </Card>
         ))}
@@ -101,8 +101,8 @@ export default function UserHome() {
       {/* Quick Actions */}
       <Card className="border-purple-100">
         <CardHeader>
-          <CardTitle className="text-purple-900">Quick Actions</CardTitle>
-          <CardDescription className="text-purple-600">Access your most used features quickly</CardDescription>
+          <CardTitle className="">Quick Actions</CardTitle>
+          <CardDescription className="">Access your most used features quickly</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -111,10 +111,10 @@ export default function UserHome() {
                 <Card className="cursor-pointer transition-colors hover:bg-purple-50 border-purple-100">
                   <CardContent className="p-4">
                     <div className="flex items-start space-x-3">
-                      <action.icon className="h-6 w-6 text-purple-600 mt-1" />
+                      <action.icon className="h-6 w-6  text-purple-600 mt-1" />
                       <div>
-                        <h3 className="font-medium text-purple-900">{action.title}</h3>
-                        <p className="text-sm text-purple-600">{action.description}</p>
+                        <h3 className="font-medium ">{action.title}</h3>
+                        <p className="text-sm text-gray-500">{action.description}</p>
                       </div>
                     </div>
                   </CardContent>
@@ -129,7 +129,7 @@ export default function UserHome() {
       <div className="grid gap-4 md:grid-cols-2">
         <Card className="border-purple-100">
           <CardHeader>
-            <CardTitle className="text-purple-900">Recent Referrals</CardTitle>
+            <CardTitle className="">Recent Referrals</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -140,8 +140,8 @@ export default function UserHome() {
               ].map((referral) => (
                 <div key={referral.name} className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium text-purple-900">{referral.name}</p>
-                    <p className="text-sm text-purple-600">{referral.date}</p>
+                    <p className="font-medium ">{referral.name}</p>
+                    <p className="text-sm ">{referral.date}</p>
                   </div>
                   <span className="font-medium text-green-600">{referral.commission}</span>
                 </div>
@@ -155,7 +155,7 @@ export default function UserHome() {
 
         <Card className="border-purple-100">
           <CardHeader>
-            <CardTitle className="text-purple-900">Recent Transactions</CardTitle>
+            <CardTitle className="">Recent Transactions</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -166,8 +166,8 @@ export default function UserHome() {
               ].map((transaction, index) => (
                 <div key={index} className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium text-purple-900">{transaction.type}</p>
-                    <p className="text-sm text-purple-600">{transaction.date}</p>
+                    <p className="font-medium ">{transaction.type}</p>
+                    <p className="text-sm ">{transaction.date}</p>
                   </div>
                   <span
                     className={`font-medium ${transaction.amount.startsWith("-") ? "text-red-600" : "text-green-600"}`}

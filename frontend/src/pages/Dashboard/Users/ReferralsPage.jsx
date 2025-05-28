@@ -155,8 +155,8 @@ export default function ReferralsPage() {
     <div className="flex-1 space-y-6 p-6">
       <div className="flex items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-purple-900">Referrals</h1>
-          <p className="text-purple-600">
+          <h1 className="text-3xl font-bold ">Referrals</h1>
+          <p className="text-gray-500">
             Track your referral network and earnings
           </p>
         </div>
@@ -165,15 +165,15 @@ export default function ReferralsPage() {
       {/* Referral Code Card */}
       <Card className="border-purple-200">
         <CardHeader>
-          <CardTitle className="text-purple-900">Your Referral Code</CardTitle>
-          <CardDescription className="text-purple-600">
+          <CardTitle className="">Your Referral Code</CardTitle>
+          <CardDescription className="">
             Share this code with friends to earn commissions
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-4">
             <div className="flex-1 p-3 bg-purple-50 rounded-lg border border-purple-200">
-              <code className="text-lg font-mono text-purple-900">
+              <code className="text-lg font-mono ">
                 {referralCode}
               </code>
             </div>
@@ -189,36 +189,35 @@ export default function ReferralsPage() {
       </Card>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
-        {Object.entries(levelData).map(([level, data], index) => (
-          <Card key={level} className="border-purple-100">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-purple-700">
-                Level {index + 1} ({data.commission})
-              </CardTitle>
-              <Users className="h-4 w-4 text-purple-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-purple-900">
-                {data.users.length}
-              </div>
-              <p className="text-xs text-purple-600">Active referrals</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+     <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+  {Object.entries(levelData).map(([level, data], index) => (
+    <Card key={level} className="border-purple-100">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">
+          Level {index + 1} ({data.commission})
+        </CardTitle>
+        <Users className="h-4 w-4 text-purple-600" />
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{data.users.length}</div>
+        <p className="text-xs">Active referrals</p>
+      </CardContent>
+    </Card>
+  ))}
+</div>
 
-      {/* Referral Levels Tabs */}
+
+      
       <Card className="border-purple-200">
         <CardHeader>
-          <CardTitle className="text-purple-900">Referral Network</CardTitle>
-          <CardDescription className="text-purple-600">
+          <CardTitle className="">Referral Network</CardTitle>
+          <CardDescription className="">
             View your multi-level referral structure and earnings
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="level1" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+        <CardContent  className="">
+          <Tabs defaultValue="level1" className="w-full  ">
+            <TabsList className="grid w-full grid-cols-4 bg-purple-100">
               <TabsTrigger value="level1">Level 1 (30%)</TabsTrigger>
               <TabsTrigger value="level2">Level 2 (10%)</TabsTrigger>
               <TabsTrigger value="level3">Level 3 (5%)</TabsTrigger>
@@ -227,10 +226,10 @@ export default function ReferralsPage() {
 
             <TabsContent value="level1" className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-purple-900">
+                <h3 className="text-lg font-semibold ">
                   Direct Referrals
                 </h3>
-                <Badge className="bg-purple-100 text-purple-800">
+                <Badge className="bg-purple-400 ">
                   30% Commission
                 </Badge>
               </div>
@@ -239,10 +238,10 @@ export default function ReferralsPage() {
 
             <TabsContent value="level2" className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-purple-900">
+                <h3 className="text-lg font-semibold ">
                   Level 2 Referrals
                 </h3>
-                <Badge className="bg-purple-100 text-purple-800">
+                <Badge className="bg-purple-400 ">
                   10% Commission
                 </Badge>
               </div>
@@ -251,10 +250,10 @@ export default function ReferralsPage() {
 
             <TabsContent value="level3" className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-purple-900">
+                <h3 className="text-lg font-semibold ">
                   Level 3 Referrals
                 </h3>
-                <Badge className="bg-purple-100 text-purple-800">
+                <Badge className="bg-purple-400 ">
                   5% Commission
                 </Badge>
               </div>
@@ -263,10 +262,10 @@ export default function ReferralsPage() {
 
             <TabsContent value="level4" className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-purple-900">
+                <h3 className="text-lg font-semibold ">
                   Level 4 Referrals
                 </h3>
-                <Badge className="bg-purple-100 text-purple-800">
+                <Badge className="bg-purple-400 ">
                   2% Commission
                 </Badge>
               </div>

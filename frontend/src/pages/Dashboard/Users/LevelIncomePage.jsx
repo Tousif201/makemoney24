@@ -66,7 +66,7 @@ export default function LevelIncomePage() {
       commission: "5%",
       referrals: 2,
       income: 120,
-      color: "bg-purple-100 text-purple-800",
+      color: "bg-purple-100 ",
     },
     {
       level: 4,
@@ -87,8 +87,8 @@ export default function LevelIncomePage() {
     <div className="flex-1 space-y-6 p-6">
       <div className="flex items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-purple-900">Level Income</h1>
-          <p className="text-purple-600">
+          <h1 className="text-3xl font-bold ">Level Income</h1>
+          <p className="text-gray-500">
             Track your multi-level commission earnings
           </p>
         </div>
@@ -98,65 +98,65 @@ export default function LevelIncomePage() {
       <div className="grid gap-4 md:grid-cols-4">
         <Card className="border-purple-100">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-purple-700">
+            <CardTitle className="text-sm font-medium ">
               Total Income
             </CardTitle>
             <DollarSign className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-900">
+            <div className="text-2xl font-bold ">
               ₹{totalIncome.toLocaleString()}
             </div>
-            <p className="text-xs text-purple-600">All time earnings</p>
+            <p className="text-xs ">All time earnings</p>
           </CardContent>
         </Card>
 
         <Card className="border-purple-100">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-purple-700">
+            <CardTitle className="text-sm font-medium ">
               This Month
             </CardTitle>
-            <Calendar className="h-4 w-4 text-purple-600" />
+            <Calendar className="h-4 w-4  text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-900">
+            <div className="text-2xl font-bold ">
               ₹{currentMonthIncome.toLocaleString()}
             </div>
-            <p className="text-xs text-purple-600">March 2024 earnings</p>
+            <p className="text-xs ">March 2024 earnings</p>
           </CardContent>
         </Card>
 
         <Card className="border-purple-100">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-purple-700">
+            <CardTitle className="text-sm font-medium ">
               Active Levels
             </CardTitle>
             <TrendingUp className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-900">4</div>
-            <p className="text-xs text-purple-600">Earning levels</p>
+            <div className="text-2xl font-bold ">4</div>
+            <p className="text-xs ">Earning levels</p>
           </CardContent>
         </Card>
 
         <Card className="border-purple-100">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-purple-700">
+            <CardTitle className="text-sm font-medium ">
               Total Referrals
             </CardTitle>
             <Users className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-900">
+            <div className="text-2xl font-bold ">
               {levelStats.reduce((sum, level) => sum + level.referrals, 0)}
             </div>
-            <p className="text-xs text-purple-600">Across all levels</p>
+            <p className="text-xs ">Across all levels</p>
           </CardContent>
         </Card>
       </div>
 
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-2 bg-purple-100">
           <TabsTrigger value="overview">Level Overview</TabsTrigger>
           <TabsTrigger value="monthly">Monthly Breakdown</TabsTrigger>
         </TabsList>
@@ -165,10 +165,10 @@ export default function LevelIncomePage() {
           {/* Level Stats */}
           <Card className="border-purple-200">
             <CardHeader>
-              <CardTitle className="text-purple-900">
+              <CardTitle className="">
                 Level-wise Performance
               </CardTitle>
-              <CardDescription className="text-purple-600">
+              <CardDescription className="">
                 Commission rates and earnings by level
               </CardDescription>
             </CardHeader>
@@ -178,7 +178,7 @@ export default function LevelIncomePage() {
                   <Card key={level.level} className="border-purple-100">
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-semibold text-purple-900">
+                        <h3 className="font-semibold ">
                           Level {level.level}
                         </h3>
                         <Badge className={level.color}>
@@ -187,13 +187,13 @@ export default function LevelIncomePage() {
                       </div>
                       <div className="space-y-1">
                         <div className="flex justify-between text-sm">
-                          <span className="text-purple-600">Referrals:</span>
-                          <span className="font-medium text-purple-900">
+                          <span className="">Referrals:</span>
+                          <span className="font-medium ">
                             {level.referrals}
                           </span>
                         </div>
                         <div className="flex justify-between text-sm">
-                          <span className="text-purple-600">Income:</span>
+                          <span className="">Income:</span>
                           <span className="font-medium text-green-600">
                             ₹{level.income}
                           </span>
@@ -211,10 +211,10 @@ export default function LevelIncomePage() {
           {/* Monthly Income Table */}
           <Card className="border-purple-200">
             <CardHeader>
-              <CardTitle className="text-purple-900">
+              <CardTitle className="">
                 Monthly Income Breakdown
               </CardTitle>
-              <CardDescription className="text-purple-600">
+              <CardDescription className="">
                 Detailed month-wise commission earnings
               </CardDescription>
             </CardHeader>
@@ -233,7 +233,7 @@ export default function LevelIncomePage() {
                 <TableBody>
                   {monthlyIncome.map((month, index) => (
                     <TableRow key={index}>
-                      <TableCell className="font-medium text-purple-900">
+                      <TableCell className="font-medium ">
                         {month.month}
                       </TableCell>
                       <TableCell className="text-green-600 font-medium">
@@ -248,7 +248,7 @@ export default function LevelIncomePage() {
                       <TableCell className="text-green-600 font-medium">
                         ₹{month.level4}
                       </TableCell>
-                      <TableCell className="font-bold text-purple-900">
+                      <TableCell className="font-bold ">
                         ₹{month.total}
                       </TableCell>
                     </TableRow>

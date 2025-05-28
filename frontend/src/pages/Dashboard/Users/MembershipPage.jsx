@@ -84,8 +84,8 @@ export default function MembershipPage() {
     <div className="flex-1 space-y-6 p-6">
       <div className="flex items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-purple-900">My Membership</h1>
-          <p className="text-purple-600">Your membership status and benefits</p>
+          <h1 className="text-3xl font-bold ">My Membership</h1>
+          <p className="text-gray-500">Your membership status and benefits</p>
         </div>
       </div>
 
@@ -93,7 +93,7 @@ export default function MembershipPage() {
         <Card className="border-purple-200">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className="text-purple-900">
+              <CardTitle className="">
                 Membership Status
               </CardTitle>
               <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
@@ -103,35 +103,35 @@ export default function MembershipPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center gap-3">
-              <Shield className="h-8 w-8 text-purple-600" />
+              <Shield className="h-8 w-8  text-purple-600" />
               <div>
-                <h3 className="font-semibold text-purple-900">
+                <h3 className="font-semibold ">
                   Premium Member
                 </h3>
-                <p className="text-sm text-purple-600">All benefits unlocked</p>
+                <p className="text-sm  text-gray-600">All benefits unlocked</p>
               </div>
             </div>
 
             <div className="space-y-2">
               <div className="flex justify-between">
-                <span className="text-purple-700">Member Since:</span>
-                <span className="font-medium text-purple-900">
+                <span className="">Member Since:</span>
+                <span className="font-medium ">
                   March 15, 2024
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-purple-700">Payment Amount:</span>
-                <span className="font-medium text-purple-900">₹1,200</span>
+                <span className="">Payment Amount:</span>
+                <span className="font-medium ">₹1,200</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-purple-700">Payment Date:</span>
-                <span className="font-medium text-purple-900">
+                <span className="">Payment Date:</span>
+                <span className="font-medium ">
                   March 15, 2024
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-purple-700">Payment Method:</span>
-                <span className="font-medium text-purple-900">UPI</span>
+                <span className="">Payment Method:</span>
+                <span className="font-medium ">UPI</span>
               </div>
             </div>
           </CardContent>
@@ -139,8 +139,8 @@ export default function MembershipPage() {
 
         <Card className="border-purple-200">
           <CardHeader>
-            <CardTitle className="text-purple-900">Member Benefits</CardTitle>
-            <CardDescription className="text-purple-600">
+            <CardTitle className="">Member Benefits</CardTitle>
+            <CardDescription className="">
               Exclusive perks available to you
             </CardDescription>
           </CardHeader>
@@ -149,7 +149,7 @@ export default function MembershipPage() {
               {benefits.map((benefit, index) => (
                 <div key={index} className="flex items-center gap-3">
                   <Check className="h-5 w-5 text-green-600" />
-                  <span className="text-purple-700">{benefit}</span>
+                  <span className="">{benefit}</span>
                 </div>
               ))}
             </div>
@@ -159,22 +159,22 @@ export default function MembershipPage() {
 
       <Card className="border-purple-200">
         <CardHeader>
-          <CardTitle className="text-purple-900">Payment History</CardTitle>
+          <CardTitle className="text-purple-90">Payment History</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
             <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
               <div className="flex items-center gap-3">
-                <Calendar className="h-5 w-5 text-purple-600" />
+                <Calendar className="h-5 w-5 text-purple-60" />
                 <div>
-                  <p className="font-medium text-purple-900">
+                  <p className="font-medium text-purple-90">
                     Membership Payment
                   </p>
-                  <p className="text-sm text-purple-600">March 15, 2024</p>
+                  <p className="text-sm text-purple-60">March 15, 2024</p>
                 </div>
               </div>
               <div className="text-right">
-                <p className="font-medium text-purple-900">₹1,200</p>
+                <p className="font-medium text-purple-90">₹1,200</p>
                 <Badge
                   variant="outline"
                   className="text-green-700 border-green-200"
