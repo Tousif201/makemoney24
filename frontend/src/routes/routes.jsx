@@ -30,9 +30,11 @@ import FranchisePage from "../pages/Dashboard/SalesRep/FranchisePage";
 import MembershipPage from "../pages/Dashboard/Users/MembershipPage";
 import ReferralsPage from "../pages/Dashboard/Users/ReferralsPage";
 import LevelIncomePage from "../pages/Dashboard/Users/LevelIncomePage";
-import RewardsPage from "../pages/Dashboard/Users/RewardsPage";
 import WalletHistoryPage from "../pages/Dashboard/Users/WalletHistoryPage";
 import ManageWalletPage from "../pages/Dashboard/Users/ManageWalletPage";
+import UsersPage from "../pages/Dashboard/Franchise/UsersPage";
+import FranchiseVendorsPage from "../pages/Dashboard/Franchise/FranchiseVendorsPage";
+import RewardsPage from "../pages/Dashboard/Rewards";
 
 const routes = [
   {
@@ -152,14 +154,16 @@ const routes = [
         <RewardsPage />
       </DashboardLayout>
     ),
-  },  {
+  },
+  {
     path: "/dashboard/wallet/history",
     element: (
       <DashboardLayout>
         <WalletHistoryPage />
       </DashboardLayout>
     ),
-  },{
+  },
+  {
     path: "/dashboard/wallet/manage",
     element: (
       <DashboardLayout>
@@ -167,7 +171,22 @@ const routes = [
       </DashboardLayout>
     ),
   },
-  
+  {
+    path: "/dashboard/vendors",
+    element: (
+      <DashboardLayout>
+        <FranchiseVendorsPage />
+      </DashboardLayout>
+    ),
+  },
+  {
+    path: "/dashboard/users",
+    element: (
+      <DashboardLayout>
+        <UsersPage />
+      </DashboardLayout>
+    ),
+  },
 ];
 
 export default routes;

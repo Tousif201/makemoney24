@@ -109,6 +109,18 @@ export const sidebarConfig = {
     },
   ],
 
+  "sales-rep": [
+    {
+      label: "Vendors",
+      icon: Package,
+      href: "/dashboard/sales-rep/vendors",
+    },
+    {
+      label: "Franchises",
+      icon: Building2,
+      href: "/dashboard/sales-rep/franchises",
+    },
+  ],
   "franchise-admin": [
     {
       label: "Vendors",
@@ -125,22 +137,24 @@ export const sidebarConfig = {
       icon: Milestone,
       href: "/dashboard/income/rewards",
     },
-  ],
-
-  "sales-rep": [
-    {
-      label: "Vendors",
-      icon: Package,
-      href: "/dashboard/sales-rep/vendors",
+        {
+      label: "Wallet",
+      icon: Wallet,
+      items: [
+        {
+          label: "History",
+          href: "/dashboard/wallet/history",
+          icon: History,
+        },
+        {
+          label: "Manage",
+          href: "/dashboard/wallet/manage",
+          icon: Settings,
+        },
+      ],
     },
-    {
-      label: "Franchises",
-      icon: Building2,
-      href: "/dashboard/sales-rep/franchises",
-    },
   ],
-
-  admin: [
+ admin: [
     {
       label: "Distribution",
       icon: Package,
@@ -216,4 +230,6 @@ export const sidebarConfig = {
       href: "/dashboard/admin/banners",
     },
   ],
+
+ 
 };
