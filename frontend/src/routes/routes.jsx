@@ -27,6 +27,12 @@ import Create from "../pages/Dashboard/Products/Create";
 import EditProduct from "../pages/Dashboard/Products/EditProduct";
 import VendorsPage from "../pages/Dashboard/SalesRep/VendorsPage";
 import FranchisePage from "../pages/Dashboard/SalesRep/FranchisePage";
+import MembershipPage from "../pages/Dashboard/Users/MembershipPage";
+import ReferralsPage from "../pages/Dashboard/Users/ReferralsPage";
+import LevelIncomePage from "../pages/Dashboard/Users/LevelIncomePage";
+import RewardsPage from "../pages/Dashboard/Users/RewardsPage";
+import WalletHistoryPage from "../pages/Dashboard/Users/WalletHistoryPage";
+import ManageWalletPage from "../pages/Dashboard/Users/ManageWalletPage";
 
 const routes = [
   {
@@ -115,6 +121,53 @@ const routes = [
       </DashboardLayout>
     ),
   },
+  {
+    path: "/dashboard/membership",
+    element: (
+      <DashboardLayout>
+        <MembershipPage />
+      </DashboardLayout>
+    ),
+  },
+  {
+    path: "/dashboard/referrals",
+    element: (
+      <DashboardLayout>
+        <ReferralsPage />
+      </DashboardLayout>
+    ),
+  },
+  {
+    path: "/dashboard/income/level",
+    element: (
+      <DashboardLayout>
+        <LevelIncomePage />
+      </DashboardLayout>
+    ),
+  },
+  {
+    path: "/dashboard/income/rewards",
+    element: (
+      <DashboardLayout>
+        <RewardsPage />
+      </DashboardLayout>
+    ),
+  },  {
+    path: "/dashboard/wallet/history",
+    element: (
+      <DashboardLayout>
+        <WalletHistoryPage />
+      </DashboardLayout>
+    ),
+  },{
+    path: "/dashboard/wallet/manage",
+    element: (
+      <DashboardLayout>
+        <ManageWalletPage />
+      </DashboardLayout>
+    ),
+  },
+  
 ];
 
 export default routes;
