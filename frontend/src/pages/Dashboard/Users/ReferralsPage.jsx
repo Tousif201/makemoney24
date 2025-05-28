@@ -162,7 +162,7 @@ export default function ReferralsPage() {
         </div>
       </div>
 
-      {/* Referral Code Card */}
+     
       <Card className="border-purple-200">
         <CardHeader>
           <CardTitle className="">Your Referral Code</CardTitle>
@@ -216,8 +216,8 @@ export default function ReferralsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent  className="">
-          <Tabs defaultValue="level1" className="w-full  ">
-            <TabsList className="grid w-full md:grid-cols-4  grid-cols-2 gap-1.5 bg-purple-100">
+          <Tabs defaultValue="level1" className="w-full ">
+            <TabsList className="grid w-full mb-4 md:grid-cols-4  grid-cols-2 gap-1.5 bg-purple-100">
               <TabsTrigger value="level1">Level 1 (30%)</TabsTrigger>
               <TabsTrigger value="level2">Level 2 (10%)</TabsTrigger>
               <TabsTrigger value="level3">Level 3 (5%)</TabsTrigger>
