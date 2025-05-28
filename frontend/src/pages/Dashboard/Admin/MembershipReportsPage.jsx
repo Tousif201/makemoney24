@@ -340,7 +340,7 @@ export default function MembershipReportsPage() {
       </div>
     </div>
 
-    {/* Table */}
+    
     <div className="overflow-x-auto rounded-md border">
       <Table>
         <TableHeader>
