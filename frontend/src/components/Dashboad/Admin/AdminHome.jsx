@@ -113,23 +113,22 @@ const monthlyGrowth = [
 export default function AdminHome() {
   return (
     <div>
-      <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4">
-        <div className="flex flex-1 items-center justify-between">
-          <div>
-            <h1 className="text-lg font-semibold">Dashboard Overview</h1>
-            <p className="text-sm text-muted-foreground">
-              Welcome back! Here's what's happening with your business today.
-            </p>
-          </div>
-          <Badge
-            variant="outline"
-            className="bg-green-50 text-green-700 border-green-200"
-          >
-            <Activity className="w-3 h-3 mr-1" />
-            All Systems Operational
-          </Badge>
-        </div>
-      </header>
+      <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between h-auto sm:h-16 px-4 py-3 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+  <div>
+    <h1 className="text-lg font-semibold">Dashboard Overview</h1>
+    <p className="text-sm text-muted-foreground">
+      Welcome back! Here's what's happening with your business today.
+    </p>
+  </div>
+  <Badge
+    variant="outline"
+    className="bg-green-50 text-green-700 border-green-200 w-fit text-sm"
+  >
+    <Activity className="w-3 h-3 mr-1" />
+    All Systems Operational
+  </Badge>
+</header>
+
 
       <div className="flex-1 space-y-8 p-6 bg-gradient-to-br from-background to-muted/20">
         {/* Key Metrics */}
@@ -234,7 +233,7 @@ export default function AdminHome() {
         </div>
 
         {/* Charts Section */}
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
           {/* Sales Overview */}
           <Card className="lg:col-span-2 border-0 shadow-lg">
             <CardHeader className="pb-4">
@@ -263,7 +262,7 @@ export default function AdminHome() {
                     color: "hsl(142, 76%, 36%)",
                   },
                 }}
-                className="h-[350px]"
+                className="aspect-[4/3] min-h-[200px] w-full"
               >
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart
@@ -366,7 +365,7 @@ export default function AdminHome() {
                   gold: { label: "Gold", color: "#FFD700" },
                   platinum: { label: "Platinum", color: "#E5E4E2" },
                 }}
-                className="h-[250px]"
+                className="aspect-[4/3] min-h-[200px] w-full"
               >
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -429,7 +428,9 @@ export default function AdminHome() {
         </div>
 
         {/* Bottom Section */}
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+
+
           {/* Growth Metrics */}
           <Card className="border-0 shadow-lg">
             <CardHeader>
@@ -448,7 +449,7 @@ export default function AdminHome() {
                     color: "hsl(38, 92%, 50%)",
                   },
                 }}
-                className="h-[200px]"
+                className="aspect-[4/3] min-h-[200px] w-full"
               >
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={monthlyGrowth}>

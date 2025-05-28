@@ -251,45 +251,47 @@ export default function UsersPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center gap-4 mb-6">
-              <div className="relative flex-1 max-w-sm">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input
-                  placeholder="Search users..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              <Select
-                value={membershipFilter}
-                onValueChange={setMembershipFilter}
-              >
-                <SelectTrigger className="w-[180px]">
-                  <Filter className="mr-2 h-4 w-4" />
-                  <SelectValue placeholder="Membership" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Memberships</SelectItem>
-                  <SelectItem value="bronze">Bronze</SelectItem>
-                  <SelectItem value="silver">Silver</SelectItem>
-                  <SelectItem value="gold">Gold</SelectItem>
-                  <SelectItem value="platinum">Platinum</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[150px]">
-                  <Filter className="mr-2 h-4 w-4" />
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="suspended">Suspended</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="flex flex-col gap-4 sm:flex-col md:flex-row md:items-center md:gap-4 mb-6">
+  {/* Search Input */}
+  <div className="relative w-full md:max-w-sm">
+    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+    <Input
+      placeholder="Search users..."
+      value={searchTerm}
+      onChange={(e) => setSearchTerm(e.target.value)}
+      className="pl-10 w-full"
+    />
+  </div>
+
+  {/* Membership Filter */}
+  <Select value={membershipFilter} onValueChange={setMembershipFilter}>
+    <SelectTrigger className="w-full md:w-[180px]">
+      <Filter className="mr-2 h-4 w-4" />
+      <SelectValue placeholder="Membership" />
+    </SelectTrigger>
+    <SelectContent>
+      <SelectItem value="all">All Memberships</SelectItem>
+      <SelectItem value="bronze">Bronze</SelectItem>
+      <SelectItem value="silver">Silver</SelectItem>
+      <SelectItem value="gold">Gold</SelectItem>
+      <SelectItem value="platinum">Platinum</SelectItem>
+    </SelectContent>
+  </Select>
+
+  {/* Status Filter */}
+  <Select value={statusFilter} onValueChange={setStatusFilter}>
+    <SelectTrigger className="w-full md:w-[150px]">
+      <Filter className="mr-2 h-4 w-4" />
+      <SelectValue placeholder="Status" />
+    </SelectTrigger>
+    <SelectContent>
+      <SelectItem value="all">All Status</SelectItem>
+      <SelectItem value="active">Active</SelectItem>
+      <SelectItem value="suspended">Suspended</SelectItem>
+      <SelectItem value="inactive">Inactive</SelectItem>
+    </SelectContent>
+  </Select>
+</div>
 
             <div className="rounded-md border">
               <Table>

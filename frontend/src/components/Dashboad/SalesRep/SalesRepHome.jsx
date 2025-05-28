@@ -102,8 +102,7 @@ export default function SalesRepHome() {
           </CreateFranchiseDialog>
         </div>
       </div>
-
-      
+    
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
           <Card key={stat.title}>
@@ -149,7 +148,6 @@ export default function SalesRepHome() {
            
           </CardContent>
         </Card>
-
        
         <Card>
           <CardHeader>

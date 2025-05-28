@@ -277,8 +277,8 @@ export default function TransactionsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center gap-4 mb-6">
-              <div className="relative flex-1 max-w-sm">
+            <div className="flex items-center flex-col w-full md:flex-row gap-4 mb-6">
+              <div className="relative flex-1 w-full md:max-w-sm">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
                   placeholder="Search transactions..."
@@ -288,7 +288,7 @@ export default function TransactionsPage() {
                 />
               </div>
               <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="s w-full md:max-w-sm">
                   <Filter className="mr-2 h-4 w-4" />
                   <SelectValue placeholder="Transaction Type" />
                 </SelectTrigger>
