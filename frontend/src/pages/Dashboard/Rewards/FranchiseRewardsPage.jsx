@@ -117,10 +117,10 @@ export default function FranchiseRewardsPage() {
     <div className="flex-1 space-y-6 p-6">
       <div className="flex items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-purple-900">
+          <h1 className="text-3xl font-bold text-gray-900">
             Franchise Rewards
           </h1>
-          <p className="text-purple-600">
+          <p className="text-gray-600">
             Track your milestone achievements and franchise rewards
           </p>
         </div>
@@ -130,16 +130,16 @@ export default function FranchiseRewardsPage() {
       <div className="grid gap-4 md:grid-cols-4">
         <Card className="border-purple-100">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-purple-700">
+            <CardTitle className="text-sm font-medium text-gray-700">
               Total Rewards Earned
             </CardTitle>
             <Trophy className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-900">
+            <div className="text-2xl font-bold text-gray-900">
               ₹{totalEarned.toLocaleString()}
             </div>
-            <p className="text-xs text-purple-600">
+            <p className="text-xs text-gray-600">
               From {completedRewards.length} milestones
             </p>
           </CardContent>
@@ -147,16 +147,16 @@ export default function FranchiseRewardsPage() {
 
         <Card className="border-purple-100">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-purple-700">
+            <CardTitle className="text-sm font-medium text-gray-700">
               Completed Milestones
             </CardTitle>
             <Award className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-900">
+            <div className="text-2xl font-bold text-gray-900">
               {completedRewards.length}
             </div>
-            <p className="text-xs text-purple-600">
+            <p className="text-xs text-gray-600">
               Out of {rewards.length} total
             </p>
           </CardContent>
@@ -164,31 +164,31 @@ export default function FranchiseRewardsPage() {
 
         <Card className="border-purple-100">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-purple-700">
+            <CardTitle className="text-sm font-medium text-gray-700">
               In Progress
             </CardTitle>
             <Target className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-900">
+            <div className="text-2xl font-bold text-gray-900">
               {inProgressRewards.length}
             </div>
-            <p className="text-xs text-purple-600">Active milestones</p>
+            <p className="text-xs text-gray-600">Active milestones</p>
           </CardContent>
         </Card>
 
         <Card className="border-purple-100">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-purple-700">
+            <CardTitle className="text-sm font-medium text-gray-700">
               Potential Earnings
             </CardTitle>
             <TrendingUp className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-900">
+            <div className="text-2xl font-bold text-gray-900">
               ₹{potentialEarnings.toLocaleString()}
             </div>
-            <p className="text-xs text-purple-600">From pending milestones</p>
+            <p className="text-xs text-gray-600">From pending milestones</p>
           </CardContent>
         </Card>
       </div>
@@ -196,8 +196,8 @@ export default function FranchiseRewardsPage() {
       {/* In Progress Milestones */}
       <Card className="border-purple-200">
         <CardHeader>
-          <CardTitle className="text-purple-900">Active Milestones</CardTitle>
-          <CardDescription className="text-purple-600">
+          <CardTitle className="text-gray-900">Active Milestones</CardTitle>
+          <CardDescription className="text-gray-600">
             Track your progress towards upcoming rewards
           </CardDescription>
         </CardHeader>
@@ -207,10 +207,10 @@ export default function FranchiseRewardsPage() {
               <div key={index} className="space-y-2">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h4 className="font-medium text-purple-900">
+                    <h4 className="font-medium text-gray-900">
                       {reward.milestone}
                     </h4>
-                    <p className="text-sm text-purple-600">
+                    <p className="text-sm text-gray-600">
                       {reward.description}
                     </p>
                   </div>
@@ -218,7 +218,7 @@ export default function FranchiseRewardsPage() {
                     <p className="font-medium text-green-600">
                       {reward.amount}
                     </p>
-                    <p className="text-sm text-purple-600">
+                    <p className="text-sm text-gray-600">
                       {reward.current.toLocaleString()} /{" "}
                       {reward.target.toLocaleString()}
                     </p>
@@ -228,7 +228,7 @@ export default function FranchiseRewardsPage() {
                   value={getProgressPercentage(reward.current, reward.target)}
                   className="h-2"
                 />
-                <p className="text-xs text-purple-500">
+                <p className="text-xs text-gray-500">
                   {getProgressPercentage(reward.current, reward.target).toFixed(
                     1
                   )}
@@ -243,10 +243,10 @@ export default function FranchiseRewardsPage() {
       {/* All Rewards Table */}
       <Card className="border-purple-200">
         <CardHeader>
-          <CardTitle className="text-purple-900">
+          <CardTitle className="text-gray-900">
             All Milestone Rewards
           </CardTitle>
-          <CardDescription className="text-purple-600">
+          <CardDescription className="text-gray-600">
             Complete history of franchise milestones
           </CardDescription>
         </CardHeader>
@@ -265,15 +265,15 @@ export default function FranchiseRewardsPage() {
             <TableBody>
               {rewards.map((reward, index) => (
                 <TableRow key={index}>
-                  <TableCell className="font-medium text-purple-900">
+                  <TableCell className="font-medium text-gray-900">
                     {reward.milestone}
                   </TableCell>
-                  <TableCell className="text-purple-700">
+                  <TableCell className="text-gray-700">
                     {reward.description}
                   </TableCell>
                   <TableCell>
                     <div className="space-y-1">
-                      <div className="text-sm text-purple-700">
+                      <div className="text-sm text-gray-700">
                         {reward.current.toLocaleString()} /{" "}
                         {reward.target.toLocaleString()}
                       </div>
@@ -289,7 +289,7 @@ export default function FranchiseRewardsPage() {
                   <TableCell className="font-medium text-green-600">
                     {reward.amount}
                   </TableCell>
-                  <TableCell className="text-purple-700">
+                  <TableCell className="text-gray-700">
                     {reward.date}
                   </TableCell>
                   <TableCell>

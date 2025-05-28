@@ -8,7 +8,7 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import SidebarMenuContent from "./SidebarMenuContent";
 import logo from "../../../assets/makemoney.png";
-import { logoutUser } from "../../../../api/auth"; // update the path as needed
+import { logoutUser } from "../../../../api/auth"; 
 import { useEffect } from "react";
 
 // Sidebar Header Component

@@ -60,8 +60,8 @@ export default function UsersRewardsPage() {
     <div className="flex-1 space-y-6 p-6">
       <div className="flex items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-purple-900">Rewards</h1>
-          <p className="text-purple-600">Track your milestone achievements and rewards</p>
+          <h1 className="text-3xl font-bold text-gray-900">Rewards</h1>
+          <p className="text-gray-600">Track your milestone achievements and rewards</p>
         </div>
       </div>
 
@@ -69,42 +69,42 @@ export default function UsersRewardsPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="border-purple-100">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-purple-700">Total Rewards Earned</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-700">Total Rewards Earned</CardTitle>
             <Trophy className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-900">₹{totalEarned.toLocaleString()}</div>
-            <p className="text-xs text-purple-600">From milestone achievements</p>
+            <div className="text-2xl font-bold text-gray-900">₹{totalEarned.toLocaleString()}</div>
+            <p className="text-xs text-gray-600">From milestone achievements</p>
           </CardContent>
         </Card>
 
         <Card className="border-purple-100">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-purple-700">Completed Milestones</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-700">Completed Milestones</CardTitle>
             <Target className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-900">
+            <div className="text-2xl font-bold text-gray-900">
               {rewards.filter((r) => r.status === "Completed").length}
             </div>
-            <p className="text-xs text-purple-600">Out of {rewards.length} total</p>
+            <p className="text-xs text-gray-600">Out of {rewards.length} total</p>
           </CardContent>
         </Card>
 
         <Card className="border-purple-100">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-purple-700">Pending Rewards</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-700">Pending Rewards</CardTitle>
             <Gift className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-900">
+            <div className="text-2xl font-bold text-gray-900">
               ₹
               {rewards
                 .filter((r) => r.status === "Pending")
                 .reduce((sum, reward) => sum + Number.parseInt(reward.amount.replace("₹", "").replace(",", "")), 0)
                 .toLocaleString()}
             </div>
-            <p className="text-xs text-purple-600">Potential earnings</p>
+            <p className="text-xs text-gray-600">Potential earnings</p>
           </CardContent>
         </Card>
       </div>
@@ -112,8 +112,8 @@ export default function UsersRewardsPage() {
       {/* Rewards Table */}
       <Card className="border-purple-200">
         <CardHeader>
-          <CardTitle className="text-purple-900">Milestone Rewards</CardTitle>
-          <CardDescription className="text-purple-600">Complete milestones to earn bonus rewards</CardDescription>
+          <CardTitle className="text-gray-900">Milestone Rewards</CardTitle>
+          <CardDescription className="text-gray-600">Complete milestones to earn bonus rewards</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -129,10 +129,10 @@ export default function UsersRewardsPage() {
             <TableBody>
               {rewards.map((reward, index) => (
                 <TableRow key={index}>
-                  <TableCell className="font-medium text-purple-900">{reward.milestone}</TableCell>
-                  <TableCell className="text-purple-700">{reward.description}</TableCell>
+                  <TableCell className="font-medium text-gray-900">{reward.milestone}</TableCell>
+                  <TableCell className="text-gray-700">{reward.description}</TableCell>
                   <TableCell className="font-medium text-green-600">{reward.amount}</TableCell>
-                  <TableCell className="text-purple-700">{reward.date}</TableCell>
+                  <TableCell className="text-gray-700">{reward.date}</TableCell>
                   <TableCell>
                     <Badge
                       variant="outline"

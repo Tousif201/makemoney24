@@ -168,8 +168,8 @@ export default function FranchiseVendorsPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-purple-900">Vendors</h1>
-            <p className="text-purple-600">
+            <h1 className="text-3xl font-bold text-gray-900">Vendors</h1>
+            <p className="text-gray-600">
               Manage your franchise vendor network
             </p>
           </div>
@@ -181,7 +181,7 @@ export default function FranchiseVendorsPage() {
               Add Vendor
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-md ">
             <DialogHeader>
               <DialogTitle>Create New Vendor Account</DialogTitle>
               <DialogDescription>
@@ -246,16 +246,16 @@ export default function FranchiseVendorsPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="border-purple-100">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-purple-700">
+            <CardTitle className="text-sm font-medium text-gray-700">
               Total Vendors
             </CardTitle>
             <Building2 className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-900">
+            <div className="text-2xl font-bold text-gray-900">
               {totalVendors}
             </div>
-            <p className="text-xs text-purple-600">
+            <p className="text-xs text-gray-600">
               {activeVendors} active vendors
             </p>
           </CardContent>
@@ -263,33 +263,33 @@ export default function FranchiseVendorsPage() {
 
         <Card className="border-purple-100">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-purple-700">
+            <CardTitle className="text-sm font-medium text-gray-700">
               Monthly Revenue
             </CardTitle>
             <TrendingUp className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-900">
+            <div className="text-2xl font-bold text-gray-900">
               ₹{totalRevenue.toLocaleString()}
             </div>
-            <p className="text-xs text-purple-600">From all vendors</p>
+            <p className="text-xs text-gray-600">From all vendors</p>
           </CardContent>
         </Card>
 
         <Card className="border-purple-100">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-purple-700">
+            <CardTitle className="text-sm font-medium text-gray-700">
               Average Rating
             </CardTitle>
             <Package className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-900">
+            <div className="text-2xl font-bold text-gray-900">
               {(
                 vendors.reduce((sum, v) => sum + v.rating, 0) / vendors.length
               ).toFixed(1)}
             </div>
-            <p className="text-xs text-purple-600">Vendor performance</p>
+            <p className="text-xs text-gray-600">Vendor performance</p>
           </CardContent>
         </Card>
       </div>
@@ -297,8 +297,8 @@ export default function FranchiseVendorsPage() {
       {/* Filters and Search */}
       <Card className="border-purple-200">
         <CardHeader>
-          <CardTitle className="text-purple-900">Vendor Management</CardTitle>
-          <CardDescription className="text-purple-600">
+          <CardTitle className="text-gray-900">Vendor Management</CardTitle>
+          <CardDescription className="text-gray-600">
             Search, filter, and manage your vendors
           </CardDescription>
         </CardHeader>
@@ -306,7 +306,7 @@ export default function FranchiseVendorsPage() {
           <div className="flex gap-4 mb-6">
             <div className="flex-1">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-purple-400 h-4 w-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
                   placeholder="Search vendors by name or email..."
                   value={searchTerm}
@@ -346,16 +346,16 @@ export default function FranchiseVendorsPage() {
                 <TableRow key={vendor.id}>
                   <TableCell>
                     <div>
-                      <p className="font-medium text-purple-900">
+                      <p className="font-medium text-gray-900">
                         {vendor.name}
                       </p>
-                      <p className="text-sm text-purple-600">{vendor.email}</p>
-                      <p className="text-sm text-purple-500">
+                      <p className="text-sm text-gray-600">{vendor.email}</p>
+                      <p className="text-sm text-gray-500">
                         {vendor.location}
                       </p>
                     </div>
                   </TableCell>
-                  <TableCell className="text-purple-700">
+                  <TableCell className="text-gray-700">
                     {vendor.category}
                   </TableCell>
                   <TableCell>
@@ -366,13 +366,13 @@ export default function FranchiseVendorsPage() {
                       {vendor.status}
                     </Badge>
                   </TableCell>
-                  <TableCell className="font-medium text-purple-900">
+                  <TableCell className="font-medium text-gray-900">
                     ₹{vendor.monthlyRevenue.toLocaleString()}
                   </TableCell>
-                  <TableCell className="text-purple-700">
+                  <TableCell className="text-gray-700">
                     {vendor.totalOrders}
                   </TableCell>
-                  <TableCell className="text-purple-700">
+                  <TableCell className="text-gray-700">
                     {vendor.rating}/5
                   </TableCell>
                   <TableCell>
@@ -402,7 +402,7 @@ export default function FranchiseVendorsPage() {
 
           {/* Pagination */}
           <div className="flex items-center justify-between mt-4">
-            <p className="text-sm text-purple-600">
+            <p className="text-sm text-gray-600">
               Showing {startIndex + 1} to{" "}
               {Math.min(startIndex + itemsPerPage, filteredVendors.length)} of{" "}
               {filteredVendors.length} vendors
@@ -413,7 +413,7 @@ export default function FranchiseVendorsPage() {
                 size="sm"
                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
-                className="border-purple-200 text-purple-700 hover:bg-purple-50"
+                className="border-purple-800 text-purple-700 hover:bg-purple-50"
               >
                 Previous
               </Button>
@@ -424,7 +424,7 @@ export default function FranchiseVendorsPage() {
                   setCurrentPage(Math.min(totalPages, currentPage + 1))
                 }
                 disabled={currentPage === totalPages}
-                className="border-purple-200 text-purple-700 hover:bg-purple-50"
+                className="border-purple-800 text-purple-700 hover:bg-purple-500"
               >
                 Next
               </Button>

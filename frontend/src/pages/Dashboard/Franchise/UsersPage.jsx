@@ -222,7 +222,7 @@ export default function UsersPage() {
   const getMembershipColor = (status) => {
     switch (status) {
       case "Premium":
-        return "text-purple-700 border-purple-200 bg-purple-50";
+        return "text-gray-700 border-purple-200 bg-purple-50";
       case "Basic":
         return "text-gray-700 border-gray-200 bg-gray-50";
       default:
@@ -244,8 +244,8 @@ export default function UsersPage() {
     <div className="flex-1 space-y-6 p-6">
       <div className="flex items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-purple-900">Users</h1>
-          <p className="text-purple-600">
+          <h1 className="text-3xl font-bold text-gray-900">Users</h1>
+          <p className="text-gray-600">
             Manage users referred by your franchise
           </p>
         </div>
@@ -255,31 +255,31 @@ export default function UsersPage() {
       <div className="grid gap-4 md:grid-cols-4">
         <Card className="border-purple-100">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-purple-700">
+            <CardTitle className="text-sm font-medium text-gray-700">
               Total Users
             </CardTitle>
             <Users className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-900">
+            <div className="text-2xl font-bold text-gray-900">
               {totalUsers}
             </div>
-            <p className="text-xs text-purple-600">Referred users</p>
+            <p className="text-xs text-gray-600">Referred users</p>
           </CardContent>
         </Card>
 
         <Card className="border-purple-100">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-purple-700">
+            <CardTitle className="text-sm font-medium text-gray-700">
               Premium Members
             </CardTitle>
             <ShieldCheck className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-900">
+            <div className="text-2xl font-bold text-gray-900">
               {premiumUsers}
             </div>
-            <p className="text-xs text-purple-600">
+            <p className="text-xs text-gray-600">
               {((premiumUsers / totalUsers) * 100).toFixed(1)}% conversion
             </p>
           </CardContent>
@@ -287,31 +287,31 @@ export default function UsersPage() {
 
         <Card className="border-purple-100">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-purple-700">
+            <CardTitle className="text-sm font-medium text-gray-700">
               Basic Users
             </CardTitle>
             <UserX className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-900">
+            <div className="text-2xl font-bold text-gray-900">
               {totalUsers - premiumUsers}
             </div>
-            <p className="text-xs text-purple-600">Non-premium users</p>
+            <p className="text-xs text-gray-600">Non-premium users</p>
           </CardContent>
         </Card>
 
         <Card className="border-purple-100">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-purple-700">
+            <CardTitle className="text-sm font-medium text-gray-700">
               Total Revenue
             </CardTitle>
             <Shield className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-900">
+            <div className="text-2xl font-bold text-gray-900">
               ₹{totalRevenue.toLocaleString()}
             </div>
-            <p className="text-xs text-purple-600">From all users</p>
+            <p className="text-xs text-gray-600">From all users</p>
           </CardContent>
         </Card>
       </div>
@@ -319,8 +319,8 @@ export default function UsersPage() {
       {/* Users Table */}
       <Card className="border-purple-200">
         <CardHeader>
-          <CardTitle className="text-purple-900">User Management</CardTitle>
-          <CardDescription className="text-purple-600">
+          <CardTitle className="text-gray-900">User Management</CardTitle>
+          <CardDescription className="text-gray-600">
             Search and filter your referred users
           </CardDescription>
         </CardHeader>
@@ -328,7 +328,7 @@ export default function UsersPage() {
           <div className="flex gap-4 mb-6">
             <div className="flex-1">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-purple-400 h-4 w-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
                   placeholder="Search by name, email, or referral code..."
                   value={searchTerm}
@@ -371,11 +371,11 @@ export default function UsersPage() {
                   <TableRow key={user.id}>
                     <TableCell>
                       <div>
-                        <p className="font-medium text-purple-900">
+                        <p className="font-medium text-gray-900">
                           {user.name}
                         </p>
-                        <p className="text-sm text-purple-600">{user.email}</p>
-                        <p className="text-sm text-purple-500">
+                        <p className="text-sm text-gray-600">{user.email}</p>
+                        <p className="text-sm text-gray-500">
                           {user.location}
                         </p>
                       </div>
@@ -389,22 +389,22 @@ export default function UsersPage() {
                         {user.membershipStatus}
                       </Badge>
                       {user.membershipDate && (
-                        <p className="text-xs text-purple-500 mt-1">
+                        <p className="text-xs text-gray-500 mt-1">
                           Since {user.membershipDate}
                         </p>
                       )}
                     </TableCell>
-                    <TableCell className="text-purple-700">
+                    <TableCell className="text-gray-700">
                       {user.joinDate}
                     </TableCell>
-                    <TableCell className="text-purple-700">
+                    <TableCell className="text-gray-700">
                       {user.totalOrders}
                     </TableCell>
-                    <TableCell className="font-medium text-purple-900">
+                    <TableCell className="font-medium text-gray-900">
                       ₹{user.totalSpent.toLocaleString()}
                     </TableCell>
                     <TableCell>
-                      <code className="text-sm bg-purple-50 px-2 py-1 rounded text-purple-700">
+                      <code className="text-sm bg-purple-50 px-2 py-1 rounded text-gray-700">
                         {user.referralCode}
                       </code>
                     </TableCell>
@@ -416,7 +416,7 @@ export default function UsersPage() {
 
           {/* Pagination */}
           <div className="flex items-center justify-between mt-4">
-            <p className="text-sm text-purple-600">
+            <p className="text-sm text-gray-600">
               Showing {startIndex + 1} to{" "}
               {Math.min(startIndex + itemsPerPage, filteredUsers.length)} of{" "}
               {filteredUsers.length} users
