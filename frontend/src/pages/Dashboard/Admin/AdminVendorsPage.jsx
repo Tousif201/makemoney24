@@ -8,7 +8,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -138,17 +137,16 @@ export default function AdminVendorsPage() {
   };
 
   return (
-    <div>
-   
-      <div className="flex-1 space-y-6 p-6">
-        <div className="flex items-center justify-between">
+    <div className="overflow-x-hidden px-4 md:px-6 py-6">
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h2 className="text-2xl font-bold tracking-tight">Vendors</h2>
             <p className="text-muted-foreground">
               Manage all vendors and their franchise relationships
             </p>
           </div>
-          <Button>
+          <Button className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto">
             <Plus className="mr-2 h-4 w-4" />
             Create Vendor
           </Button>
@@ -163,8 +161,8 @@ export default function AdminVendorsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center gap-4 mb-6">
-              <div className="relative flex-1 max-w-sm">
+            <div className="flex flex-col md:flex-row items-stretch md:items-center gap-4 mb-6">
+              <div className="relative w-full md:max-w-sm">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
                   placeholder="Search vendors..."
@@ -174,7 +172,7 @@ export default function AdminVendorsPage() {
                 />
               </div>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-full md:w-[180px]">
                   <Filter className="mr-2 h-4 w-4" />
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
@@ -187,7 +185,7 @@ export default function AdminVendorsPage() {
               </Select>
             </div>
 
-            <div className="rounded-md border">
+            <div className="overflow-x-auto rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -206,22 +204,26 @@ export default function AdminVendorsPage() {
                   {paginatedVendors.map((vendor) => (
                     <TableRow key={vendor.id}>
                       <TableCell className="font-medium">{vendor.id}</TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{vendor.name}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {vendor.email}
-                          </div>
+                      <TableCell className="max-w-[180px] truncate">
+                        <div className="font-medium truncate">{vendor.name}</div>
+                        <div className="text-sm text-muted-foreground truncate">
+                          {vendor.email}
                         </div>
                       </TableCell>
-                      <TableCell>{vendor.phone}</TableCell>
-                      <TableCell>{vendor.franchise}</TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {vendor.phone}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {vendor.franchise}
+                      </TableCell>
                       <TableCell>{getStatusBadge(vendor.status)}</TableCell>
-                      <TableCell>{vendor.joinDate}</TableCell>
-                      <TableCell className="font-medium">
+                      <TableCell className="whitespace-nowrap">
+                        {vendor.joinDate}
+                      </TableCell>
+                      <TableCell className="font-medium whitespace-nowrap">
                         {vendor.totalSales}
                       </TableCell>
-                      <TableCell className="font-medium text-green-600">
+                      <TableCell className="font-medium text-green-600 whitespace-nowrap">
                         {vendor.commission}
                       </TableCell>
                       <TableCell className="text-right">
@@ -253,7 +255,7 @@ export default function AdminVendorsPage() {
               </Table>
             </div>
 
-            <div className="flex items-center justify-between mt-4">
+            <div className="flex flex-col sm:flex-row items-center justify-between mt-4 gap-2">
               <div className="text-sm text-muted-foreground">
                 Showing {startIndex + 1} to{" "}
                 {Math.min(startIndex + itemsPerPage, filteredVendors.length)} of{" "}
@@ -263,9 +265,7 @@ export default function AdminVendorsPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() =>
-                    setCurrentPage((prev) => Math.max(prev - 1, 1))
-                  }
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1}
                 >
                   Previous

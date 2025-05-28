@@ -184,18 +184,18 @@ export default function MembershipReportsPage() {
 
   return (
     <div>
-      <div className="flex-1 space-y-8 p-6 bg-gradient-to-br from-background to-muted/20">
+      <div className=" p-4 bg-gradient-to-br ">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-bold tracking-tight">
+            <h2 className="text-2xl font-bold">
               Membership Reports
             </h2>
-            <p className="text-muted-foreground">
+            <p className="text-sm">
               Comprehensive analysis of membership purchases and referral
               activities
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex  items-center gap-2">
             <DatePickerWithRange />
             <Button variant="outline" className="bg-white">
               <Download className="mr-2 h-4 w-4" />
@@ -204,253 +204,244 @@ export default function MembershipReportsPage() {
           </div>
         </div>
 
-        {/* Summary Cards */}
-        <div className="grid gap-6 md:grid-cols-4">
-          <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-purple-50 to-purple-100/50">
-            <div className="absolute top-0 right-0 w-20 h-20 bg-purple-500/10 rounded-full -mr-10 -mt-10" />
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-purple-900">
-                Total Memberships
-              </CardTitle>
-              <div className="p-2 bg-purple-500 rounded-lg">
-                <Users className="h-4 w-4 text-white" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-purple-900">
-                {totalMemberships}
-              </div>
-              <p className="text-sm text-purple-700 mt-1">
-                {filteredReports.filter((r) => r.status === "Active").length}{" "}
-                active memberships
-              </p>
-              <Progress value={85} className="mt-3 h-2" />
-            </CardContent>
-          </Card>
+      {/* Summary Cards */}
+<div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 p-4 sm:p-6">
+  <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-purple-50 to-purple-100/50">
+    <div className="absolute top-0 right-0 w-16 sm:w-20 h-16 sm:h-20 bg-purple-500/10 rounded-full -mr-8 sm:-mr-10 -mt-8 sm:-mt-10" />
+    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+      <CardTitle className="text-xs sm:text-sm font-medium text-purple-900">
+        Total Memberships
+      </CardTitle>
+      <div className="p-1.5 sm:p-2 bg-purple-500 rounded-lg">
+        <Users className="h-3 sm:h-4 w-3 sm:w-4 text-white" />
+      </div>
+    </CardHeader>
+    <CardContent>
+      <div className="text-2xl sm:text-3xl font-bold text-purple-900">
+        {totalMemberships}
+      </div>
+      <p className="text-xs sm:text-sm text-purple-700 mt-1">
+        {filteredReports.filter((r) => r.status === "Active").length} active memberships
+      </p>
+      <Progress value={85} className="mt-2 sm:mt-3 h-1.5 sm:h-2" />
+    </CardContent>
+  </Card>
 
-          <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-green-50 to-green-100/50">
-            <div className="absolute top-0 right-0 w-20 h-20 bg-green-500/10 rounded-full -mr-10 -mt-10" />
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-green-900">
-                Total Referrals
-              </CardTitle>
-              <div className="p-2 bg-green-500 rounded-lg">
-                <UserPlus className="h-4 w-4 text-white" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-green-900">
-                {totalReferrals}
-              </div>
-              <p className="text-sm text-green-700 mt-1">
-                {(totalReferrals / totalMemberships).toFixed(1)} avg per member
-              </p>
-              <Progress value={72} className="mt-3 h-2" />
-            </CardContent>
-          </Card>
+  <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-green-50 to-green-100/50">
+    <div className="absolute top-0 right-0 w-16 sm:w-20 h-16 sm:h-20 bg-green-500/10 rounded-full -mr-8 sm:-mr-10 -mt-8 sm:-mt-10" />
+    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+      <CardTitle className="text-xs sm:text-sm font-medium text-green-900">
+        Total Referrals
+      </CardTitle>
+      <div className="p-1.5 sm:p-2 bg-green-500 rounded-lg">
+        <UserPlus className="h-3 sm:h-4 w-3 sm:w-4 text-white" />
+      </div>
+    </CardHeader>
+    <CardContent>
+      <div className="text-2xl sm:text-3xl font-bold text-green-900">
+        {totalReferrals}
+      </div>
+      <p className="text-xs sm:text-sm text-green-700 mt-1">
+        {(totalReferrals / totalMemberships).toFixed(1)} avg per member
+      </p>
+      <Progress value={72} className="mt-2 sm:mt-3 h-1.5 sm:h-2" />
+    </CardContent>
+  </Card>
 
-          <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-blue-50 to-blue-100/50">
-            <div className="absolute top-0 right-0 w-20 h-20 bg-blue-500/10 rounded-full -mr-10 -mt-10" />
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-blue-900">
-                Membership Revenue
-              </CardTitle>
-              <div className="p-2 bg-blue-500 rounded-lg">
-                <Crown className="h-4 w-4 text-white" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-blue-900">
-                ${totalRevenue.toLocaleString()}
-              </div>
-              <p className="text-sm text-blue-700 mt-1">
-                From membership sales
-              </p>
-              <Progress value={78} className="mt-3 h-2" />
-            </CardContent>
-          </Card>
+  <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-blue-50 to-blue-100/50">
+    <div className="absolute top-0 right-0 w-16 sm:w-20 h-16 sm:h-20 bg-blue-500/10 rounded-full -mr-8 sm:-mr-10 -mt-8 sm:-mt-10" />
+    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+      <CardTitle className="text-xs sm:text-sm font-medium text-blue-900">
+        Membership Revenue
+      </CardTitle>
+      <div className="p-1.5 sm:p-2 bg-blue-500 rounded-lg">
+        <Crown className="h-3 sm:h-4 w-3 sm:w-4 text-white" />
+      </div>
+    </CardHeader>
+    <CardContent>
+      <div className="text-2xl sm:text-3xl font-bold text-blue-900">
+        ${totalRevenue.toLocaleString()}
+      </div>
+      <p className="text-xs sm:text-sm text-blue-700 mt-1">
+        From membership sales
+      </p>
+      <Progress value={78} className="mt-2 sm:mt-3 h-1.5 sm:h-2" />
+    </CardContent>
+  </Card>
 
-          <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-orange-50 to-orange-100/50">
-            <div className="absolute top-0 right-0 w-20 h-20 bg-orange-500/10 rounded-full -mr-10 -mt-10" />
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-orange-900">
-                Referral Earnings
-              </CardTitle>
-              <div className="p-2 bg-orange-500 rounded-lg">
-                <TrendingUp className="h-4 w-4 text-white" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-orange-900">
-                ${totalReferralEarnings.toLocaleString()}
-              </div>
-              <p className="text-sm text-orange-700 mt-1">
-                Total referral commissions
-              </p>
-              <Progress value={65} className="mt-3 h-2" />
-            </CardContent>
-          </Card>
-        </div>
-
+  <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-orange-50 to-orange-100/50">
+    <div className="absolute top-0 right-0 w-16 sm:w-20 h-16 sm:h-20 bg-orange-500/10 rounded-full -mr-8 sm:-mr-10 -mt-8 sm:-mt-10" />
+    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+      <CardTitle className="text-xs sm:text-sm font-medium text-orange-900">
+        Referral Earnings
+      </CardTitle>
+      <div className="p-1.5 sm:p-2 bg-orange-500 rounded-lg">
+        <TrendingUp className="h-3 sm:h-4 w-3 sm:w-4 text-white" />
+      </div>
+    </CardHeader>
+    <CardContent>
+      <div className="text-2xl sm:text-3xl font-bold text-orange-900">
+        ${totalReferralEarnings.toLocaleString()}
+      </div>
+      <p className="text-xs sm:text-sm text-orange-700 mt-1">
+        Total referral commissions
+      </p>
+      <Progress value={65} className="mt-2 sm:mt-3 h-1.5 sm:h-2" />
+    </CardContent>
+  </Card>
+</div>
         <Card className="border-0 shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-xl">
-              Membership Purchase Reports
-            </CardTitle>
-            <CardDescription>
-              Detailed breakdown of membership purchases with referral
-              performance and user activity
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-4 mb-6">
-              <div className="relative flex-1 max-w-sm">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input
-                  placeholder="Search members..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              <Select
-                value={membershipFilter}
-                onValueChange={setMembershipFilter}
-              >
-                <SelectTrigger className="w-[180px]">
-                  <Filter className="mr-2 h-4 w-4" />
-                  <SelectValue placeholder="Membership Level" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Levels</SelectItem>
-                  <SelectItem value="bronze">Bronze</SelectItem>
-                  <SelectItem value="silver">Silver</SelectItem>
-                  <SelectItem value="gold">Gold</SelectItem>
-                  <SelectItem value="platinum">Platinum</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[150px]">
-                  <Filter className="mr-2 h-4 w-4" />
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="expired">Expired</SelectItem>
-                  <SelectItem value="suspended">Suspended</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+  <CardHeader className="p-4 sm:p-6">
+    <CardTitle className="text-lg sm:text-xl">
+      Membership Purchase Reports
+    </CardTitle>
+    <CardDescription className="text-xs sm:text-sm">
+      Detailed breakdown of membership purchases with referral performance and user activity
+    </CardDescription>
+  </CardHeader>
+  <CardContent className="p-4 sm:p-6">
+    {/* Filters */}
+    <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+      <div className="relative flex-1 max-w-full sm:max-w-sm">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-3 sm:h-4 w-3 sm:w-4" />
+        <Input
+          placeholder="Search members..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-9 sm:pl-10 text-sm"
+        />
+      </div>
+      <div className="flex flex-wrap gap-3 sm:gap-4">
+        <Select value={membershipFilter} onValueChange={setMembershipFilter}>
+          <SelectTrigger className="w-full sm:w-[160px] h-9 sm:h-10 text-sm">
+            <Filter className="mr-2 h-3 sm:h-4 w-3 sm:w-4" />
+            <SelectValue placeholder="Membership Level" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Levels</SelectItem>
+            <SelectItem value="bronze">Bronze</SelectItem>
+            <SelectItem value="silver">Silver</SelectItem>
+            <SelectItem value="gold">Gold</SelectItem>
+            <SelectItem value="platinum">Platinum</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-full sm:w-[140px] h-9 sm:h-10 text-sm">
+            <Filter className="mr-2 h-3 sm:h-4 w-3 sm:w-4" />
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="expired">Expired</SelectItem>
+            <SelectItem value="suspended">Suspended</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
 
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Member</TableHead>
-                    <TableHead>Membership</TableHead>
-                    <TableHead>Purchase Date</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Referrals</TableHead>
-                    <TableHead>Referral Earnings</TableHead>
-                    <TableHead>Total Spent</TableHead>
-                    <TableHead>Upgrade Path</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginatedReports.map((report) => (
-                    <TableRow key={report.userId}>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{report.userName}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {report.email}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {report.userId}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {getMembershipBadge(report.membershipLevel)}
-                      </TableCell>
-                      <TableCell>{report.purchaseDate}</TableCell>
-                      <TableCell className="font-medium">
-                        {report.amount}
-                      </TableCell>
-                      <TableCell>{getStatusBadge(report.status)}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <UserPlus className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">
-                            {report.referralsCount}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-medium text-green-600">
-                        {report.referralEarnings}
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        {report.totalSpent}
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm text-muted-foreground max-w-[150px]">
-                          {report.upgradeHistory.join(", ")}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-
-            <div className="flex items-center justify-between mt-4">
-              <div className="text-sm text-muted-foreground">
-                Showing {startIndex + 1} to{" "}
-                {Math.min(startIndex + itemsPerPage, filteredReports.length)} of{" "}
-                {filteredReports.length} members
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    setCurrentPage((prev) => Math.max(prev - 1, 1))
-                  }
-                  disabled={currentPage === 1}
-                >
-                  Previous
-                </Button>
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                    (page) => (
-                      <Button
-                        key={page}
-                        variant={currentPage === page ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setCurrentPage(page)}
-                        className="w-8 h-8 p-0"
-                      >
-                        {page}
-                      </Button>
-                    )
-                  )}
+    {/* Table */}
+    <div className="overflow-x-auto rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="text-xs sm:text-sm">Member</TableHead>
+            <TableHead className="text-xs sm:text-sm hidden sm:table-cell">Membership</TableHead>
+            <TableHead className="text-xs sm:text-sm hidden md:table-cell">Purchase Date</TableHead>
+            <TableHead className="text-xs sm:text-sm hidden sm:table-cell">Amount</TableHead>
+            <TableHead className="text-xs sm:text-sm hidden md:table-cell">Status</TableHead>
+            <TableHead className="text-xs sm:text-sm hidden lg:table-cell">Referrals</TableHead>
+            <TableHead className="text-xs sm:text-sm hidden lg:table-cell">Referral Earnings</TableHead>
+            <TableHead className="text-xs sm:text-sm hidden xl:table-cell">Total Spent</TableHead>
+            <TableHead className="text-xs sm:text-sm hidden xl:table-cell">Upgrade Path</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {paginatedReports.map((report) => (
+            <TableRow key={report.userId}>
+              <TableCell>
+                <div>
+                  <div className="font-medium text-sm sm:text-base">{report.userName}</div>
+                  <div className="text-xs text-muted-foreground sm:hidden">
+                    {getMembershipBadge(report.membershipLevel)} • {report.amount}
+                  </div>
+                  <div className="text-xs text-muted-foreground">{report.email}</div>
+                  
+                  <div className="text-xs text-muted-foreground">{report.userId}</div>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                  }
-                  disabled={currentPage === totalPages}
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+                </TableCell>
+              <TableCell className="hidden sm:table-cell">
+                {getMembershipBadge(report.membershipLevel)}
+              </TableCell>
+              <TableCell className="text-xs sm:text-sm hidden md:table-cell">{report.purchaseDate}</TableCell>
+              <TableCell className="font-medium text-xs sm:text-sm hidden sm:table-cell">{report.amount}</TableCell>
+              <TableCell className="hidden md:table-cell">{getStatusBadge(report.status)}</TableCell>
+              <TableCell className="hidden lg:table-cell">
+                <div className="flex items-center gap-1">
+                  <UserPlus className="h-3 sm:h-4 w-3 sm:w-4 text-muted-foreground" />
+                  <span className="font-medium text-xs sm:text-sm">{report.referralsCount}</span>
+                </div>
+              </TableCell>
+              <TableCell className="font-medium text-green-600 text-xs sm:text-sm hidden lg:table-cell">
+                {report.referralEarnings}
+              </TableCell>
+              <TableCell className="font-medium text-xs sm:text-sm hidden xl:table-cell">{report.totalSpent}</TableCell>
+              <TableCell className="hidden xl:table-cell">
+                <div className="text-xs sm:text-sm text-muted-foreground max-w-[120px] sm:max-w-[150px]">
+                  {report.upgradeHistory.join(", ")}
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+
+    {/* Pagination */}
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-4 gap-3 sm:gap-0">
+      <div className="text-xs sm:text-sm text-muted-foreground">
+        Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, filteredReports.length)} of {filteredReports.length} members
+      </div>
+      <div className="flex items-center justify-center sm:justify-end gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+          disabled={currentPage === 1}
+          className="h-8 sm:h-9 text-xs sm:text-sm"
+        >
+          Previous
+        </Button>
+        <div className="flex items-center gap-1">
+          {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+            const page = i + 1 + Math.max(0, currentPage - 3);
+            if (page > totalPages) return null;
+            return (
+              <Button
+                key={page}
+                variant={currentPage === page ? "default" : "outline"}
+                size="sm"
+                onClick={() => setCurrentPage(page)}
+                className="w-7 sm:w-8 h-7 sm:h-8 p-0 text-xs sm:text-sm"
+              >
+                {page}
+              </Button>
+            );
+          })}
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+          disabled={currentPage === totalPages}
+          className="h-8 sm:h-9 text-xs sm:text-sm"
+        >
+          Next
+        </Button>
+      </div>
+    </div>
+  </CardContent>
+</Card>
       </div>
     </div>
   );

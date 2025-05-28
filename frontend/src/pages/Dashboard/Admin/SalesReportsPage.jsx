@@ -160,21 +160,22 @@ export default function SalesReportsPage() {
   return (
     <div>
       <div className="flex-1 space-y-6 p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight">Sales Reports</h2>
-            <p className="text-muted-foreground">
-              Vendor-wise sales performance and order analytics
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <DatePickerWithRange />
-            <Button variant="outline">
-              <Download className="mr-2 h-4 w-4" />
-              Export
-            </Button>
-          </div>
-        </div>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+  <div>
+    <h2 className="text-2xl font-bold tracking-tight">Sales Reports</h2>
+    <p className="text-muted-foreground">
+      Vendor-wise sales performance and order analytics
+    </p>
+  </div>
+  <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+    <DatePickerWithRange />
+    <Button variant="outline" className="w-full sm:w-auto">
+      <Download className="mr-2 h-4 w-4" />
+      Export
+    </Button>
+  </div>
+</div>
+
 
         {/* Summary Cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

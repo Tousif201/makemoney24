@@ -29,7 +29,7 @@
     "clsx": "^2.1.1",
     "crypto-js": "^4.2.0",
     "date-fns": "^4.1.0",
-    "framer-motion": "^12.12.1",
+    "framer-motion": "^12.15.0",
     "jsonwebtoken": "^9.0.2",
     "jwt-decode": "^4.0.0",
     "link-react": "^3.0.0",
@@ -44,7 +44,7 @@
     "redux": "^5.0.1",
     "sooner": "^1.1.4",
     "sweetalert2": "^11.21.2",
-    "swiper": "^11.2.7",
+    "swiper": "^11.2.8",
     "tailwind-merge": "^3.3.0"
   },
   "devDependencies": {
