@@ -35,10 +35,8 @@ export function CreateFranchiseDialog({ children }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Handle form submission here
     console.log("Creating franchise:", formData);
     setOpen(false);
-    // Reset form
     setFormData({
       name: "",
       owner: "",
@@ -54,65 +52,76 @@ export function CreateFranchiseDialog({ children }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="max-w-[80vw] md:max-w-[550px] max-h-screen overflow-y-auto rounded-xl py-4 px-6 shadow-lg border">
         <DialogHeader>
-          <DialogTitle>Create New Franchise</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-xl font-semibold">
+            Create New Franchise
+          </DialogTitle>
+          <DialogDescription className="text-sm text-muted-foreground">
             Add a new franchise account to your portfolio. Fill in the details
             below.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="franchise-name">Franchise Name</Label>
-              <Input
-                id="franchise-name"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-                placeholder="Enter franchise name"
-                required
-              />
+          <div className="grid gap-6 py-2">
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="franchise-name">Franchise Name</Label>
+                <Input
+                  id="franchise-name"
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                  placeholder="Enter franchise name"
+                  required
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="owner">Owner Name</Label>
+                <Input
+                  id="owner"
+                  value={formData.owner}
+                  onChange={(e) =>
+                    setFormData({ ...formData, owner: e.target.value })
+                  }
+                  placeholder="Enter owner's full name"
+                  required
+                />
+              </div>
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="owner">Owner Name</Label>
-              <Input
-                id="owner"
-                value={formData.owner}
-                onChange={(e) =>
-                  setFormData({ ...formData, owner: e.target.value })
-                }
-                placeholder="Enter owner's full name"
-                required
-              />
+
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="franchise-email">Email</Label>
+                <Input
+                  id="franchise-email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
+                  placeholder="owner@franchise.com"
+                  required
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="franchise-phone">Phone</Label>
+                <Input
+                  id="franchise-phone"
+                  value={formData.phone}
+                  onChange={(e) =>
+                    setFormData({ ...formData, phone: e.target.value })
+                  }
+                  placeholder="+1 234-567-8900"
+                  required
+                />
+              </div>
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="franchise-email">Email</Label>
-              <Input
-                id="franchise-email"
-                type="email"
-                value={formData.email}
-                onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
-                placeholder="owner@franchise.com"
-                required
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="franchise-phone">Phone</Label>
-              <Input
-                id="franchise-phone"
-                value={formData.phone}
-                onChange={(e) =>
-                  setFormData({ ...formData, phone: e.target.value })
-                }
-                placeholder="+1 234-567-8900"
-                required
-              />
-            </div>
+
+
             <div className="grid gap-2">
               <Label htmlFor="franchise-location">Location</Label>
               <Input
@@ -125,35 +134,41 @@ export function CreateFranchiseDialog({ children }) {
                 required
               />
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="franchise-status">Status</Label>
-              <Select
-                value={formData.status}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, status: value })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="under-review">Under Review</SelectItem>
-                </SelectContent>
-              </Select>
+
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid gap-2 w-full md:w-1/2">
+                <Label htmlFor="franchise-status">Status</Label>
+                <Select
+                  value={formData.status}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, status: value })
+                  }
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="under-review">Under Review</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="investment">Initial Investment</Label>
+                <Input
+                  id="investment"
+                  value={formData.investment}
+                  onChange={(e) =>
+                    setFormData({ ...formData, investment: e.target.value })
+                  }
+                  placeholder="$50,000"
+                />
+              </div>
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="investment">Initial Investment</Label>
-              <Input
-                id="investment"
-                value={formData.investment}
-                onChange={(e) =>
-                  setFormData({ ...formData, investment: e.target.value })
-                }
-                placeholder="$50,000"
-              />
-            </div>
+
+
             <div className="grid gap-2">
               <Label htmlFor="franchise-description">Description</Label>
               <Textarea
@@ -167,16 +182,23 @@ export function CreateFranchiseDialog({ children }) {
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button type="submit">Create Franchise</Button>
+
+
+          <DialogFooter className="w-full px-0">
+            <div className="flex w-full justify-between">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" className=" bg-purple-700 hover:bg-purple-400">
+                Create Franchise
+              </Button>
+            </div>
           </DialogFooter>
+
         </form>
       </DialogContent>
     </Dialog>

@@ -15,8 +15,8 @@ export default function FranchisePage() {
           </div>
         </div>
         <CreateFranchiseDialog>
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
+          <Button className="bg-purple-700 hover:bg-purple-400">
+            <Plus className="mr-2 h-4 w-4 " />
             Add Franchise
           </Button>
         </CreateFranchiseDialog>

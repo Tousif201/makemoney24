@@ -16,6 +16,8 @@ import {
   Eye,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { CreateVendorDialog } from "./CreateVendorDialog";
+import { CreateFranchiseDialog } from "./CreateFranchiseDialog";
 
 export default function SalesRepHome() {
   const stats = [
@@ -86,22 +88,22 @@ export default function SalesRepHome() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Link to="/vendors">
-            <Button>
+          <CreateVendorDialog>
+            <Button className="bg-purple-700 hover:bg-purple-400" >
               <Plus className="mr-2 h-4 w-4" />
               Add Vendor
             </Button>
-          </Link>
-          <Link to="/franchise">
-            <Button variant="outline">
+          </CreateVendorDialog>
+          <CreateFranchiseDialog>
+            <Button className="bg-purple-700  hover:bg-purple-400">
               <Plus className="mr-2 h-4 w-4" />
               Add Franchise
             </Button>
-          </Link>
+          </CreateFranchiseDialog>
         </div>
       </div>
 
-      {/* Stats Cards */}
+      
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
           <Card key={stat.title}>
@@ -109,7 +111,9 @@ export default function SalesRepHome() {
               <CardTitle className="text-sm font-medium">
                 {stat.title}
               </CardTitle>
-              <stat.icon className={`h-4 w-4 ${stat.color}`} />
+              <div className="bg-purple-300 p-4 rounded-full">
+                 <stat.icon className={`h-4 w-4 `} />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stat.value}</div>
@@ -123,7 +127,7 @@ export default function SalesRepHome() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        {/* Quick Actions */}
+        
         <Card>
           <CardHeader>
             <CardTitle>Quick Actions</CardTitle>
@@ -142,18 +146,11 @@ export default function SalesRepHome() {
                 Manage Franchises
               </Button>
             </Link>
-            <Button className="w-full justify-start" variant="outline">
-              <TrendingUp className="mr-2 h-4 w-4" />
-              View Reports
-            </Button>
-            <Button className="w-full justify-start" variant="outline">
-              <Eye className="mr-2 h-4 w-4" />
-              Analytics
-            </Button>
+           
           </CardContent>
         </Card>
 
-        {/* Recent Activity */}
+       
         <Card>
           <CardHeader>
             <CardTitle>Recent Activity</CardTitle>

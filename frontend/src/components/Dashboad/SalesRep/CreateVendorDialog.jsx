@@ -33,10 +33,8 @@ export function CreateVendorDialog({ children }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Handle form submission here
     console.log("Creating vendor:", formData);
     setOpen(false);
-    // Reset form
     setFormData({
       name: "",
       email: "",
@@ -50,16 +48,18 @@ export function CreateVendorDialog({ children }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="max-w-[80vw] md:max-w-[550px] max-h-screen overflow-y-auto rounded-xl py-4 px-6 shadow-lg border">
         <DialogHeader>
-          <DialogTitle>Create New Vendor</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-xl font-semibold">
+            Create New Vendor
+          </DialogTitle>
+          <DialogDescription className="text-sm text-muted-foreground">
             Add a new vendor account to your portfolio. Fill in the details
             below.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
+          <div className="grid gap-4 py-2">
             <div className="grid gap-2">
               <Label htmlFor="name">Company Name</Label>
               <Input
@@ -72,61 +72,70 @@ export function CreateVendorDialog({ children }) {
                 required
               />
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
-                placeholder="contact@company.com"
-                required
-              />
+
+            {/* Phone and Email side by side */}
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="phone">Phone</Label>
+                <Input
+                  id="phone"
+                  value={formData.phone}
+                  onChange={(e) =>
+                    setFormData({ ...formData, phone: e.target.value })
+                  }
+                  placeholder="+1 234-567-8900"
+                  required
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
+                  placeholder="contact@company.com"
+                  required
+                />
+              </div>
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="phone">Phone</Label>
-              <Input
-                id="phone"
-                value={formData.phone}
-                onChange={(e) =>
-                  setFormData({ ...formData, phone: e.target.value })
-                }
-                placeholder="+1 234-567-8900"
-                required
-              />
+
+           
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="location">Location</Label>
+                <Input
+                  id="location"
+                  value={formData.location}
+                  onChange={(e) =>
+                    setFormData({ ...formData, location: e.target.value })
+                  }
+                  placeholder="City, State"
+                  required
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="status">Status</Label>
+                <Select
+                  value={formData.status}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, status: value })
+                  }
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="location">Location</Label>
-              <Input
-                id="location"
-                value={formData.location}
-                onChange={(e) =>
-                  setFormData({ ...formData, location: e.target.value })
-                }
-                placeholder="City, State"
-                required
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="status">Status</Label>
-              <Select
-                value={formData.status}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, status: value })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+
             <div className="grid gap-2">
               <Label htmlFor="description">Description</Label>
               <Textarea
@@ -140,17 +149,21 @@ export function CreateVendorDialog({ children }) {
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button type="submit">Create Vendor</Button>
+          <DialogFooter className="w-full mt-4">
+            <div className="flex w-full justify-between items-center">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" className=" bg-purple-700 hover:bg-purple-400">Create Vendor</Button>
+            </div>
           </DialogFooter>
+
         </form>
+
       </DialogContent>
     </Dialog>
   );

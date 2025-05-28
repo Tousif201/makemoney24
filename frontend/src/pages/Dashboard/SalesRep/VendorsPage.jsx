@@ -15,8 +15,8 @@ export default function VendorsPage() {
           </div>
         </div>
         <CreateVendorDialog>
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
+          <Button className=" bg-purple-700 hover:bg-purple-400">
+            <Plus className="mr-2 h-4 w-4 " />
             Add Vendor
           </Button>
         </CreateVendorDialog>
