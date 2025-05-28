@@ -217,7 +217,7 @@ export default function ReferralsPage() {
         </CardHeader>
         <CardContent  className="">
           <Tabs defaultValue="level1" className="w-full  ">
-            <TabsList className="grid w-full grid-cols-4 bg-purple-100">
+            <TabsList className="grid w-full md:grid-cols-4  grid-cols-2 gap-1.5 bg-purple-100">
               <TabsTrigger value="level1">Level 1 (30%)</TabsTrigger>
               <TabsTrigger value="level2">Level 2 (10%)</TabsTrigger>
               <TabsTrigger value="level3">Level 3 (5%)</TabsTrigger>
@@ -226,10 +226,10 @@ export default function ReferralsPage() {
 
             <TabsContent value="level1" className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold ">
+                <h3 className="text-sm font-semibold mt-5 sm:mt-5 md:mt-0">
                   Direct Referrals
                 </h3>
-                <Badge className="bg-purple-400 ">
+                <Badge className="bg-purple-400 mt-7 md:mt-0 sm:mt-4">
                   30% Commission
                 </Badge>
               </div>
@@ -238,10 +238,10 @@ export default function ReferralsPage() {
 
             <TabsContent value="level2" className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold ">
+                <h3 className="text-lg font-semibold mt-7 md:mt-0 sm:mt-4">
                   Level 2 Referrals
                 </h3>
-                <Badge className="bg-purple-400 ">
+                <Badge className="bg-purple-400 mt-7 md:mt-0 sm:mt-4 ">
                   10% Commission
                 </Badge>
               </div>
@@ -250,10 +250,10 @@ export default function ReferralsPage() {
 
             <TabsContent value="level3" className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold ">
+                <h3 className="text-lg font-semibold mt-5 md:mt-0 sm:mt-4">
                   Level 3 Referrals
                 </h3>
-                <Badge className="bg-purple-400 ">
+                <Badge className="bg-purple-400 mt-5 md:mt-0 sm:mt-4 ">
                   5% Commission
                 </Badge>
               </div>
@@ -262,10 +262,10 @@ export default function ReferralsPage() {
 
             <TabsContent value="level4" className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold ">
+                <h3 className="text-lg font-semibold mt-5 md:mt-0 sm:mt-4">
                   Level 4 Referrals
                 </h3>
-                <Badge className="bg-purple-400 ">
+                <Badge className="bg-purple-400 mt-5 md:mt-0 sm:mt-4">
                   2% Commission
                 </Badge>
               </div>
