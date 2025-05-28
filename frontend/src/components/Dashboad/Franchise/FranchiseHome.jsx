@@ -98,7 +98,7 @@ export default function FranchiseHome() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div className="flex flex-row  sm:flex-row items-start sm:items-center gap-4">
             <div className="flex-1 p-3 bg-purple-50 rounded-lg border border-purple-200 overflow-x-auto">
               <code className="text-lg font-mono break-words">{franchiseCode}</code>
             </div>
