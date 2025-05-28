@@ -141,8 +141,8 @@ export default function UserOrders() {
     <div className="flex-1 space-y-6 p-6">
       <div className="flex items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-purple-900">Orders</h1>
-          <p className="text-purple-600">View and manage all your orders</p>
+          <h1 className="text-3xl font-bold text-gray-900">Orders</h1>
+          <p className="text-gray-600">View and manage all your orders</p>
         </div>
       </div>
 
@@ -150,46 +150,46 @@ export default function UserOrders() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="border-purple-100">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-purple-700">
+            <CardTitle className="text-sm font-medium text-gray-700">
               Total Orders
             </CardTitle>
-            <Package className="h-4 w-4 text-purple-600" />
+            <Package className="h-4 w-4 text-purple-700" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-900">
+            <div className="text-2xl font-bold text-gray-900">
               {totalOrders}
             </div>
-            <p className="text-xs text-purple-600">All time orders</p>
+            <p className="text-xs text-gray-600">All time orders</p>
           </CardContent>
         </Card>
 
         <Card className="border-purple-100">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-purple-700">
+            <CardTitle className="text-sm font-medium text-gray-700">
               Delivered Orders
             </CardTitle>
             <CheckCircle className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-900">
+            <div className="text-2xl font-bold text-gray-900">
               {deliveredOrders}
             </div>
-            <p className="text-xs text-purple-600">Successfully delivered</p>
+            <p className="text-xs text-gray-600">Successfully delivered</p>
           </CardContent>
         </Card>
 
         <Card className="border-purple-100">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-purple-700">
+            <CardTitle className="text-sm font-medium text-gray-700">
               Total Spent
             </CardTitle>
-            <Truck className="h-4 w-4 text-purple-600" />
+            <Truck className="h-4 w-4 text-purple-700" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-900">
+            <div className="text-2xl font-bold text-gray-900">
               ₹{totalSpent.toLocaleString()}
             </div>
-            <p className="text-xs text-purple-600">
+            <p className="text-xs text-gray-600">
               Excluding cancelled orders
             </p>
           </CardContent>
@@ -201,8 +201,8 @@ export default function UserOrders() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-purple-900">Order History</CardTitle>
-              <CardDescription className="text-purple-600">
+              <CardTitle className="text-gray-900">Order History</CardTitle>
+              <CardDescription className="text-gray-600">
                 Complete details of all your orders
               </CardDescription>
             </div>
@@ -236,26 +236,26 @@ export default function UserOrders() {
             <TableBody>
               {filteredOrders.map((order) => (
                 <TableRow key={order.id}>
-                  <TableCell className="font-medium text-purple-900">
+                  <TableCell className="font-medium text-gray-900">
                     {order.id}
                   </TableCell>
-                  <TableCell className="text-purple-700">
+                  <TableCell className="text-gray-700">
                     {order.date}
                   </TableCell>
                   <TableCell>
                     <div className="max-w-48">
-                      <p className="text-purple-700 truncate">
+                      <p className="text-gray-700 truncate">
                         {order.items.join(", ")}
                       </p>
-                      <p className="text-sm text-purple-500">
+                      <p className="text-sm text-gray-500">
                         {order.items.length} item(s)
                       </p>
                     </div>
                   </TableCell>
-                  <TableCell className="font-medium text-purple-900">
+                  <TableCell className="font-medium text-gray-900">
                     {order.total}
                   </TableCell>
-                  <TableCell className="text-purple-700">
+                  <TableCell className="text-gray-700">
                     {order.paymentMethod}
                   </TableCell>
                   <TableCell>
@@ -275,7 +275,7 @@ export default function UserOrders() {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="border-purple-200 text-purple-700 hover:bg-purple-50"
+                          className="border-purple-200 text-gray-700 hover:bg-purple-50"
                         >
                           <Eye className="mr-1 h-3 w-3" />
                           View
@@ -290,10 +290,10 @@ export default function UserOrders() {
                         </DialogHeader>
                         <div className="space-y-4">
                           <div>
-                            <h4 className="font-medium text-purple-900">
+                            <h4 className="font-medium text-gray-900">
                               Items Ordered
                             </h4>
-                            <ul className="list-disc list-inside text-purple-700 text-sm">
+                            <ul className="list-disc list-inside text-gray-700 text-sm">
                               {order.items.map((item, index) => (
                                 <li key={index}>{item}</li>
                               ))}
@@ -301,31 +301,31 @@ export default function UserOrders() {
                           </div>
                           <div className="grid grid-cols-2 gap-4 text-sm">
                             <div>
-                              <span className="text-purple-600">
+                              <span className="text-gray-600">
                                 Order Date:
                               </span>
-                              <p className="font-medium text-purple-900">
+                              <p className="font-medium text-gray-900">
                                 {order.date}
                               </p>
                             </div>
                             <div>
-                              <span className="text-purple-600">
+                              <span className="text-gray-600">
                                 Total Amount:
                               </span>
-                              <p className="font-medium text-purple-900">
+                              <p className="font-medium text-gray-900">
                                 {order.total}
                               </p>
                             </div>
                             <div>
-                              <span className="text-purple-600">
+                              <span className="text-gray-600">
                                 Payment Method:
                               </span>
-                              <p className="font-medium text-purple-900">
+                              <p className="font-medium text-gray-900">
                                 {order.paymentMethod}
                               </p>
                             </div>
                             <div>
-                              <span className="text-purple-600">Status:</span>
+                              <span className="text-gray-600">Status:</span>
                               <Badge
                                 variant="outline"
                                 className={getStatusColor(order.status)}
@@ -335,20 +335,20 @@ export default function UserOrders() {
                             </div>
                             {order.trackingId !== "-" && (
                               <div className="col-span-2">
-                                <span className="text-purple-600">
+                                <span className="text-gray-600">
                                   Tracking ID:
                                 </span>
-                                <p className="font-medium text-purple-900">
+                                <p className="font-medium text-gray-900">
                                   {order.trackingId}
                                 </p>
                               </div>
                             )}
                             {order.deliveryDate !== "-" && (
                               <div className="col-span-2">
-                                <span className="text-purple-600">
+                                <span className="text-gray-600">
                                   Delivery Date:
                                 </span>
-                                <p className="font-medium text-purple-900">
+                                <p className="font-medium text-gray-900">
                                   {order.deliveryDate}
                                 </p>
                               </div>

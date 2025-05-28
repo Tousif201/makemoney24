@@ -130,8 +130,8 @@ export default function WalletHistoryPage() {
     <div className="flex-1 space-y-6 p-6">
       <div className="flex items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-purple-900">Wallet History</h1>
-          <p className="text-purple-600">
+          <h1 className="text-3xl font-bold text-gray-900">Wallet History</h1>
+          <p className="text-gray-600">
             Complete transaction history of your wallet
           </p>
         </div>
@@ -141,7 +141,7 @@ export default function WalletHistoryPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="border-purple-100">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-purple-700">
+            <CardTitle className="text-sm font-medium text-gray-700">
               Total Credits
             </CardTitle>
             <ArrowDownLeft className="h-4 w-4 text-green-600" />
@@ -150,13 +150,13 @@ export default function WalletHistoryPage() {
             <div className="text-2xl font-bold text-green-600">
               ₹{totalCredit.toLocaleString()}
             </div>
-            <p className="text-xs text-purple-600">Money received</p>
+            <p className="text-xs text-gray-600">Money received</p>
           </CardContent>
         </Card>
 
         <Card className="border-purple-100">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-purple-700">
+            <CardTitle className="text-sm font-medium text-gray-700">
               Total Debits
             </CardTitle>
             <ArrowUpRight className="h-4 w-4 text-red-600" />
@@ -165,20 +165,20 @@ export default function WalletHistoryPage() {
             <div className="text-2xl font-bold text-red-600">
               ₹{totalDebit.toLocaleString()}
             </div>
-            <p className="text-xs text-purple-600">Money spent/withdrawn</p>
+            <p className="text-xs text-gray-600">Money spent/withdrawn</p>
           </CardContent>
         </Card>
 
         <Card className="border-purple-100">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-purple-700">
+            <CardTitle className="text-sm font-medium text-gray-700">
               Current Balance
             </CardTitle>
-            <Calendar className="h-4 w-4 text-purple-600" />
+            <Calendar className="h-4 w-4 text-purple-700" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-900">₹8,450</div>
-            <p className="text-xs text-purple-600">Available balance</p>
+            <div className="text-2xl font-bold text-blue-600">₹8,450</div>
+            <p className="text-xs text-gray-600">Available balance</p>
           </CardContent>
         </Card>
       </div>
@@ -188,10 +188,10 @@ export default function WalletHistoryPage() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-purple-900">
+              <CardTitle className="text-gray-900">
                 Transaction History
               </CardTitle>
-              <CardDescription className="text-purple-600">
+              <CardDescription className="text-gray-600">
                 All your wallet transactions in chronological order
               </CardDescription>
             </div>
@@ -223,7 +223,7 @@ export default function WalletHistoryPage() {
             <TableBody>
               {filteredTransactions.map((transaction) => (
                 <TableRow key={transaction.id}>
-                  <TableCell className="font-medium text-purple-900">
+                  <TableCell className="font-medium text-gray-900">
                     {transaction.id}
                   </TableCell>
                   <TableCell>
@@ -233,7 +233,7 @@ export default function WalletHistoryPage() {
                       ) : (
                         <ArrowUpRight className="h-4 w-4 text-red-600" />
                       )}
-                      <span className="text-purple-700">
+                      <span className="text-gray-700">
                         {transaction.description}
                       </span>
                     </div>
@@ -249,10 +249,10 @@ export default function WalletHistoryPage() {
                       {transaction.amount}
                     </span>
                   </TableCell>
-                  <TableCell className="text-purple-700">
+                  <TableCell className="text-gray-700">
                     <div>
                       <div>{transaction.date}</div>
-                      <div className="text-sm text-purple-500">
+                      <div className="text-sm text-gray-500">
                         {transaction.time}
                       </div>
                     </div>
@@ -269,7 +269,7 @@ export default function WalletHistoryPage() {
                       {transaction.status}
                     </Badge>
                   </TableCell>
-                  <TableCell className="font-medium text-purple-900">
+                  <TableCell className="font-medium text-gray-900">
                     {transaction.balance}
                   </TableCell>
                 </TableRow>
