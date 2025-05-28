@@ -196,10 +196,12 @@ export default function BannersPage() {
   return (
     <div>
       <div className="flex-1 space-y-6 p-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 p-4 sm:p-6">
           <div>
-            <h2 className="text-2xl font-bold tracking-tight">Banners</h2>
-            <p className="text-muted-foreground">
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight">
+              Banners
+            </h2>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
               Create and manage promotional banners for your ecommerce store
             </p>
           </div>
@@ -208,22 +210,23 @@ export default function BannersPage() {
             onOpenChange={setIsCreateDialogOpen}
           >
             <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
+              <Button className="h-9 sm:h-10 text-xs sm:text-sm">
+                <Plus className="mr-2 h-3 sm:h-4 w-3 sm:w-4" />
                 Create Banner
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-[95vw] sm:max-w-2xl p-4 sm:p-6">
               <DialogHeader>
-                <DialogTitle>Create New Banner</DialogTitle>
-                <DialogDescription>
-                  Design a new promotional banner for your store with custom
-                  redirect URL.
+                <DialogTitle className="text-lg sm:text-xl">
+                  Create New Banner
+                </DialogTitle>
+                <DialogDescription className="text-xs sm:text-sm">
+                  Design a new promotional banner for your store with custom redirect URL.
                 </DialogDescription>
               </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="title" className="text-right">
+              <div className="grid gap-3 sm:gap-4 py-4">
+                <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-3 sm:gap-4">
+                  <Label htmlFor="title" className="text-right sm:mb-0 mb-1">
                     Title
                   </Label>
                   <Input
@@ -235,12 +238,12 @@ export default function BannersPage() {
                         title: e.target.value,
                       }))
                     }
-                    className="col-span-3"
+                    className="col-span-3 sm:col-span-3 h-9 sm:h-10 text-xs sm:text-sm"
                     placeholder="Banner title"
                   />
                 </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="description" className="text-right">
+                <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-3 sm:gap-4">
+                  <Label htmlFor="description" className="text-right sm:mb-0 mb-1">
                     Description
                   </Label>
                   <Textarea
@@ -252,12 +255,12 @@ export default function BannersPage() {
                         description: e.target.value,
                       }))
                     }
-                    className="col-span-3"
+                    className="col-span-3 sm:col-span-3 h-20 sm:h-24 text-xs sm:text-sm"
                     placeholder="Banner description"
                   />
                 </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="redirectUrl" className="text-right">
+                <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-3 sm:gap-4">
+                  <Label htmlFor="redirectUrl" className="text-right sm:mb-0 mb-1">
                     Redirect URL
                   </Label>
                   <Input
@@ -269,12 +272,12 @@ export default function BannersPage() {
                         redirectUrl: e.target.value,
                       }))
                     }
-                    className="col-span-3"
+                    className="col-span-3 sm:col-span-3 h-9 sm:h-10 text-xs sm:text-sm"
                     placeholder="/products/category"
                   />
                 </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="position" className="text-right">
+                <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-3 sm:gap-4">
+                  <Label htmlFor="position" className="text-right sm:mb-0 mb-1">
                     Position
                   </Label>
                   <Select
@@ -283,7 +286,7 @@ export default function BannersPage() {
                       setNewBanner((prev) => ({ ...prev, position: value }))
                     }
                   >
-                    <SelectTrigger className="col-span-3">
+                    <SelectTrigger className="col-span-3 sm:col-span-3 h-9 sm:h-10 text-xs sm:text-sm">
                       <SelectValue placeholder="Select position" />
                     </SelectTrigger>
                     <SelectContent>
@@ -294,8 +297,8 @@ export default function BannersPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="startDate" className="text-right">
+                <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-3 sm:gap-4">
+                  <Label htmlFor="startDate" className="text-right sm:mb-0 mb-1">
                     Start Date
                   </Label>
                   <Input
@@ -308,11 +311,11 @@ export default function BannersPage() {
                         startDate: e.target.value,
                       }))
                     }
-                    className="col-span-3"
+                    className="col-span-3 sm:col-span-3 h-9 sm:h-10 text-xs sm:text-sm"
                   />
                 </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="endDate" className="text-right">
+                <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-3 sm:gap-4">
+                  <Label htmlFor="endDate" className="text-right sm:mb-0 mb-1">
                     End Date
                   </Label>
                   <Input
@@ -325,12 +328,14 @@ export default function BannersPage() {
                         endDate: e.target.value,
                       }))
                     }
-                    className="col-span-3"
+                    className="col-span-3 sm:col-span-3 h-9 sm:h-10 text-xs sm:text-sm"
                   />
                 </div>
               </div>
-              <DialogFooter>
-                <Button onClick={handleCreateBanner}>Create Banner</Button>
+              <DialogFooter className="flex justify-end gap-2 sm:gap-3">
+                <Button onClick={handleCreateBanner} className="h-9 sm:h-10 text-xs sm:text-sm">
+                  Create Banner
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>

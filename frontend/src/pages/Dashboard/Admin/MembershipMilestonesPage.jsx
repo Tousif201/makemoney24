@@ -147,76 +147,75 @@ export default function MembershipMilestonesPage() {
   return (
     <div>
       <div className="flex-1 space-y-6 p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight">
-              Membership Milestones
-            </h2>
-            <p className="text-muted-foreground">
-              Manage membership milestone rewards and thresholds
-            </p>
-          </div>
-          <Dialog
-            open={isCreateDialogOpen}
-            onOpenChange={setIsCreateDialogOpen}
-          >
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Create Milestone
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Create New Milestone</DialogTitle>
-                <DialogDescription>
-                  Add a new membership milestone with its reward amount.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="milestone" className="text-right">
-                    Milestone
-                  </Label>
-                  <Input
-                    id="milestone"
-                    value={newMilestone.milestone}
-                    onChange={(e) =>
-                      setNewMilestone((prev) => ({
-                        ...prev,
-                        milestone: e.target.value,
-                      }))
-                    }
-                    className="col-span-3"
-                    placeholder="e.g., Diamond Member"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="reward" className="text-right">
-                    Reward
-                  </Label>
-                  <Input
-                    id="reward"
-                    value={newMilestone.reward}
-                    onChange={(e) =>
-                      setNewMilestone((prev) => ({
-                        ...prev,
-                        reward: e.target.value,
-                      }))
-                    }
-                    className="col-span-3"
-                    placeholder="e.g., $500"
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button onClick={handleCreateMilestone}>
-                  Create Milestone
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+  <div>
+    <h2 className="text-xl sm:text-2xl font-bold tracking-tight">
+      Membership Milestones
+    </h2>
+    <p className="text-muted-foreground text-sm sm:text-base">
+      Manage membership milestone rewards and thresholds
+    </p>
+  </div>
+
+  <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+    <DialogTrigger asChild>
+      <Button className="w-full sm:w-auto">
+        <Plus className="mr-2 h-4 w-4" />
+        Create Milestone
+      </Button>
+    </DialogTrigger>
+    <DialogContent className="max-w-md w-full">
+      <DialogHeader>
+        <DialogTitle>Create New Milestone</DialogTitle>
+        <DialogDescription>
+          Add a new membership milestone with its reward amount.
+        </DialogDescription>
+      </DialogHeader>
+      <div className="grid gap-4 py-4">
+        <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-4">
+          <Label htmlFor="milestone" className="sm:text-right">
+            Milestone
+          </Label>
+          <Input
+            id="milestone"
+            value={newMilestone.milestone}
+            onChange={(e) =>
+              setNewMilestone((prev) => ({
+                ...prev,
+                milestone: e.target.value,
+              }))
+            }
+            className="sm:col-span-3"
+            placeholder="e.g., Diamond Member"
+          />
         </div>
+        <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-4">
+          <Label htmlFor="reward" className="sm:text-right">
+            Reward
+          </Label>
+          <Input
+            id="reward"
+            value={newMilestone.reward}
+            onChange={(e) =>
+              setNewMilestone((prev) => ({
+                ...prev,
+                reward: e.target.value,
+              }))
+            }
+            className="sm:col-span-3"
+            placeholder="e.g., $500"
+          />
+        </div>
+      </div>
+      <DialogFooter>
+        <Button onClick={handleCreateMilestone} className="w-full sm:w-auto">
+          Create Milestone
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
+</div>
+
 
         {/* Summary Cards */}
         <div className="grid gap-4 md:grid-cols-3">
@@ -289,7 +288,7 @@ export default function MembershipMilestonesPage() {
                 <Input
                   placeholder="Search milestones..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                      onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
                 />
               </div>

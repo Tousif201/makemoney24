@@ -207,129 +207,68 @@ export default function FranchiseMilestonesPage() {
   return (
     <div>
       <div className="flex-1 space-y-8 p-6 bg-gradient-to-br from-background to-muted/20">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight">
-              Franchise Milestones
-            </h2>
-            <p className="text-muted-foreground">
-              Configure achievement rewards for franchise partners based on
-              performance and growth
-            </p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+  <div>
+    <h2 className="text-xl sm:text-2xl font-bold tracking-tight">
+      Franchise Milestones
+    </h2>
+    <p className="text-muted-foreground text-sm sm:text-base">
+      Configure achievement rewards for franchise partners based on performance and growth
+    </p>
+  </div>
+
+  <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+    <DialogTrigger asChild>
+      <Button className="w-full sm:w-auto bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800">
+        <Plus className="mr-2 h-4 w-4" />
+        Create Franchise Milestone
+      </Button>
+    </DialogTrigger>
+
+    <DialogContent className="max-w-2xl w-full">
+      <DialogHeader>
+        <DialogTitle>Create New Franchise Milestone</DialogTitle>
+        <DialogDescription>
+          Set up a new achievement milestone for franchise partners with specific targets and rewards.
+        </DialogDescription>
+      </DialogHeader>
+
+      <div className="grid gap-4 py-4">
+        {[
+          { id: "milestone", label: "Milestone Name", placeholder: "e.g., Platinum Revenue Achievement", value: newMilestone.milestone },
+          { id: "threshold", label: "Achievement Target", placeholder: "e.g., $500K revenue", value: newMilestone.threshold },
+          { id: "reward", label: "Reward Amount", placeholder: "e.g., $7,500", value: newMilestone.reward },
+          { id: "category", label: "Category", placeholder: "e.g., Revenue, Growth, Expansion", value: newMilestone.category },
+          { id: "description", label: "Description", placeholder: "Detailed description of the achievement", value: newMilestone.description },
+        ].map((field) => (
+          <div key={field.id} className="grid grid-cols-1 sm:grid-cols-4 items-center gap-4">
+            <Label htmlFor={field.id} className="sm:text-right">
+              {field.label}
+            </Label>
+            <Input
+              id={field.id}
+              value={field.value}
+              onChange={(e) =>
+                setNewMilestone((prev) => ({
+                  ...prev,
+                  [field.id]: e.target.value,
+                }))
+              }
+              className="sm:col-span-3"
+              placeholder={field.placeholder}
+            />
           </div>
-          <Dialog
-            open={isCreateDialogOpen}
-            onOpenChange={setIsCreateDialogOpen}
-          >
-            <DialogTrigger asChild>
-              <Button className="bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800">
-                <Plus className="mr-2 h-4 w-4" />
-                Create Franchise Milestone
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Create New Franchise Milestone</DialogTitle>
-                <DialogDescription>
-                  Set up a new achievement milestone for franchise partners with
-                  specific targets and rewards.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="milestone" className="text-right">
-                    Milestone Name
-                  </Label>
-                  <Input
-                    id="milestone"
-                    value={newMilestone.milestone}
-                    onChange={(e) =>
-                      setNewMilestone((prev) => ({
-                        ...prev,
-                        milestone: e.target.value,
-                      }))
-                    }
-                    className="col-span-3"
-                    placeholder="e.g., Platinum Revenue Achievement"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="threshold" className="text-right">
-                    Achievement Target
-                  </Label>
-                  <Input
-                    id="threshold"
-                    value={newMilestone.threshold}
-                    onChange={(e) =>
-                      setNewMilestone((prev) => ({
-                        ...prev,
-                        threshold: e.target.value,
-                      }))
-                    }
-                    className="col-span-3"
-                    placeholder="e.g., $500K revenue"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="reward" className="text-right">
-                    Reward Amount
-                  </Label>
-                  <Input
-                    id="reward"
-                    value={newMilestone.reward}
-                    onChange={(e) =>
-                      setNewMilestone((prev) => ({
-                        ...prev,
-                        reward: e.target.value,
-                      }))
-                    }
-                    className="col-span-3"
-                    placeholder="e.g., $7,500"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="category" className="text-right">
-                    Category
-                  </Label>
-                  <Input
-                    id="category"
-                    value={newMilestone.category}
-                    onChange={(e) =>
-                      setNewMilestone((prev) => ({
-                        ...prev,
-                        category: e.target.value,
-                      }))
-                    }
-                    className="col-span-3"
-                    placeholder="e.g., Revenue, Growth, Expansion"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="description" className="text-right">
-                    Description
-                  </Label>
-                  <Input
-                    id="description"
-                    value={newMilestone.description}
-                    onChange={(e) =>
-                      setNewMilestone((prev) => ({
-                        ...prev,
-                        description: e.target.value,
-                      }))
-                    }
-                    className="col-span-3"
-                    placeholder="Detailed description of the achievement"
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button onClick={handleCreateMilestone}>
-                  Create Milestone
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
+        ))}
+      </div>
+
+      <DialogFooter>
+        <Button onClick={handleCreateMilestone} className="w-full sm:w-auto">
+          Create Milestone
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
+</div>
 
         {/* Summary Cards */}
         <div className="grid gap-6 md:grid-cols-4">

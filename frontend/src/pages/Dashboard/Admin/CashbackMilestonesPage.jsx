@@ -180,129 +180,69 @@ export default function CashbackMilestonesPage() {
   return (
     <div>
       <div className="flex-1 space-y-8 p-6 bg-gradient-to-br from-background to-muted/20">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight">
-              Cashback Milestones
-            </h2>
-            <p className="text-muted-foreground">
-              Configure cashback rewards based on spending patterns and purchase
-              behavior
-            </p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+  <div>
+    <h2 className="text-xl sm:text-2xl font-bold tracking-tight">
+      Cashback Milestones
+    </h2>
+    <p className="text-muted-foreground text-sm sm:text-base">
+      Configure cashback rewards based on spending patterns and purchase behavior
+    </p>
+  </div>
+
+  <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+    <DialogTrigger asChild>
+      <Button className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800">
+        <Plus className="mr-2 h-4 w-4" />
+        Create Cashback Milestone
+      </Button>
+    </DialogTrigger>
+
+    <DialogContent className="max-w-2xl w-full">
+      <DialogHeader>
+        <DialogTitle>Create New Cashback Milestone</DialogTitle>
+        <DialogDescription>
+          Set up a new cashback milestone with spending threshold and reward amount.
+        </DialogDescription>
+      </DialogHeader>
+
+      <div className="grid gap-4 py-4">
+        {[
+          { id: 'milestone', label: 'Milestone Name', placeholder: 'e.g., Premium Spender', value: newMilestone.milestone },
+          { id: 'threshold', label: 'Threshold', placeholder: 'e.g., $1000/month', value: newMilestone.threshold },
+          { id: 'reward', label: 'Reward Amount', placeholder: 'e.g., $75', value: newMilestone.reward },
+          { id: 'percentage', label: 'Cashback %', placeholder: 'e.g., 8%', value: newMilestone.percentage },
+          { id: 'description', label: 'Description', placeholder: 'Brief description of the milestone', value: newMilestone.description },
+        ].map((field) => (
+          <div key={field.id} className="grid grid-cols-1 sm:grid-cols-4 items-center gap-4">
+            <Label htmlFor={field.id} className="sm:text-right">
+              {field.label}
+            </Label>
+            <Input
+              id={field.id}
+              value={field.value}
+              onChange={(e) =>
+                setNewMilestone((prev) => ({
+                  ...prev,
+                  [field.id]: e.target.value,
+                }))
+              }
+              className="sm:col-span-3"
+              placeholder={field.placeholder}
+            />
           </div>
-          <Dialog
-            open={isCreateDialogOpen}
-            onOpenChange={setIsCreateDialogOpen}
-          >
-            <DialogTrigger asChild>
-              <Button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800">
-                <Plus className="mr-2 h-4 w-4" />
-                Create Cashback Milestone
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Create New Cashback Milestone</DialogTitle>
-                <DialogDescription>
-                  Set up a new cashback milestone with spending threshold and
-                  reward amount.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="milestone" className="text-right">
-                    Milestone Name
-                  </Label>
-                  <Input
-                    id="milestone"
-                    value={newMilestone.milestone}
-                    onChange={(e) =>
-                      setNewMilestone((prev) => ({
-                        ...prev,
-                        milestone: e.target.value,
-                      }))
-                    }
-                    className="col-span-3"
-                    placeholder="e.g., Premium Spender"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="threshold" className="text-right">
-                    Threshold
-                  </Label>
-                  <Input
-                    id="threshold"
-                    value={newMilestone.threshold}
-                    onChange={(e) =>
-                      setNewMilestone((prev) => ({
-                        ...prev,
-                        threshold: e.target.value,
-                      }))
-                    }
-                    className="col-span-3"
-                    placeholder="e.g., $1000/month"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="reward" className="text-right">
-                    Reward Amount
-                  </Label>
-                  <Input
-                    id="reward"
-                    value={newMilestone.reward}
-                    onChange={(e) =>
-                      setNewMilestone((prev) => ({
-                        ...prev,
-                        reward: e.target.value,
-                      }))
-                    }
-                    className="col-span-3"
-                    placeholder="e.g., $75"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="percentage" className="text-right">
-                    Cashback %
-                  </Label>
-                  <Input
-                    id="percentage"
-                    value={newMilestone.percentage}
-                    onChange={(e) =>
-                      setNewMilestone((prev) => ({
-                        ...prev,
-                        percentage: e.target.value,
-                      }))
-                    }
-                    className="col-span-3"
-                    placeholder="e.g., 8%"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="description" className="text-right">
-                    Description
-                  </Label>
-                  <Input
-                    id="description"
-                    value={newMilestone.description}
-                    onChange={(e) =>
-                      setNewMilestone((prev) => ({
-                        ...prev,
-                        description: e.target.value,
-                      }))
-                    }
-                    className="col-span-3"
-                    placeholder="Brief description of the milestone"
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button onClick={handleCreateMilestone}>
-                  Create Milestone
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
+        ))}
+      </div>
+
+      <DialogFooter>
+        <Button onClick={handleCreateMilestone} className="w-full sm:w-auto">
+          Create Milestone
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
+</div>
+
 
         {/* Summary Cards */}
         <div className="grid gap-6 md:grid-cols-4">
