@@ -33,8 +33,8 @@ export default function ManageWalletPage() {
     <div className="flex-1 space-y-6 p-6">
       <div className="flex items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-purple-900">Manage Wallet</h1>
-          <p className="text-purple-600">
+          <h1 className="text-3xl font-bold text-gray-900">Manage Wallet</h1>
+          <p className="text-gray-600">
             View balances and manage your wallet funds
           </p>
         </div>
@@ -44,7 +44,7 @@ export default function ManageWalletPage() {
       <div className="grid gap-4 md:grid-cols-2">
         <Card className="border-purple-200">
           <CardHeader>
-            <CardTitle className="flex items-center justify-between text-purple-900">
+            <CardTitle className="flex items-center justify-between text-gray-900">
               <span>Withdrawal Balance</span>
               <Button
                 variant="ghost"
@@ -52,13 +52,13 @@ export default function ManageWalletPage() {
                 onClick={() => setShowWithdrawalBalance(!showWithdrawalBalance)}
               >
                 {showWithdrawalBalance ? (
-                  <EyeOff className="h-4 w-4" />
+                  <EyeOff className="h-4 w-4 " />
                 ) : (
-                  <Eye className="h-4 w-4" />
+                  <Eye className="h-4 w-4 text-purple-600" />
                 )}
               </Button>
             </CardTitle>
-            <CardDescription className="text-purple-600">
+            <CardDescription className="text-gray-600">
               Available for withdrawal to your bank account
             </CardDescription>
           </CardHeader>
@@ -91,8 +91,9 @@ export default function ManageWalletPage() {
                       placeholder="Enter amount"
                       value={withdrawAmount}
                       onChange={(e) => setWithdrawAmount(e.target.value)}
+                      className ="mt-3"
                     />
-                    <p className="text-sm text-purple-600 mt-1">
+                    <p className="text-sm text-gray-600 mt-2">
                       Available: ₹{withdrawalBalance.toLocaleString()}
                     </p>
                   </div>
@@ -100,7 +101,7 @@ export default function ManageWalletPage() {
                     <Label htmlFor="bank">Bank Account</Label>
                     <Input id="bank" value="HDFC Bank - ****1234" disabled />
                   </div>
-                  <Button className="w-full bg-purple-600 hover:bg-purple-700">
+                  <Button className="w-full bg-purple-500 hover:bg-purple-600">
                     Confirm Withdrawal
                   </Button>
                 </div>
@@ -111,7 +112,7 @@ export default function ManageWalletPage() {
 
         <Card className="border-purple-200">
           <CardHeader>
-            <CardTitle className="flex items-center justify-between text-purple-900">
+            <CardTitle className="flex items-center justify-between text-gray-900">
               <span>Discount Balance</span>
               <Button
                 variant="ghost"
@@ -121,23 +122,23 @@ export default function ManageWalletPage() {
                 {showDiscountBalance ? (
                   <EyeOff className="h-4 w-4" />
                 ) : (
-                  <Eye className="h-4 w-4" />
+                  <Eye className="h-4 w-4 text-purple-600" />
                 )}
               </Button>
             </CardTitle>
-            <CardDescription className="text-purple-600">
+            <CardDescription className="text-gray-600">
               Can be used for discounts on orders
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="text-3xl font-bold text-purple-900">
+            <div className="text-3xl font-bold text-gray-900">
               {showDiscountBalance
                 ? `₹${discountBalance.toLocaleString()}`
                 : "₹••••••"}
             </div>
             <Button
               variant="outline"
-              className="w-full border-purple-200 text-purple-700 hover:bg-purple-50"
+              className="w-full border-purple-200 text-gray-700 hover:bg-purple-50"
             >
               <CreditCard className="mr-2 h-4 w-4" />
               Use for Next Order
@@ -149,15 +150,15 @@ export default function ManageWalletPage() {
       {/* Wallet Address */}
       <Card className="border-purple-200">
         <CardHeader>
-          <CardTitle className="text-purple-900">Wallet Address</CardTitle>
-          <CardDescription className="text-purple-600">
+          <CardTitle className="text-gray-900">Wallet Address</CardTitle>
+          <CardDescription className="text-gray-600">
             Your unique wallet identifier for transactions
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-4">
             <div className="flex-1 p-3 bg-purple-50 rounded-lg border border-purple-200">
-              <code className="text-sm font-mono text-purple-900 break-all">
+              <code className="text-sm font-mono text-gray-900 break-all">
                 {walletAddress}
               </code>
             </div>
@@ -175,8 +176,8 @@ export default function ManageWalletPage() {
       {/* Quick Actions */}
       <Card className="border-purple-200">
         <CardHeader>
-          <CardTitle className="text-purple-900">Quick Actions</CardTitle>
-          <CardDescription className="text-purple-600">
+          <CardTitle className="text-gray-900">Quick Actions</CardTitle>
+          <CardDescription className="text-gray-600">
             Common wallet operations
           </CardDescription>
         </CardHeader>
@@ -184,21 +185,21 @@ export default function ManageWalletPage() {
           <div className="grid gap-4 md:grid-cols-3">
             <Button
               variant="outline"
-              className="h-20 flex-col border-purple-200 text-purple-700 hover:bg-purple-50"
+              className="h-20 flex-col border-purple-200 text-gray-700 hover:bg-purple-50"
             >
               <Wallet className="h-6 w-6 mb-2" />
               Add Funds
             </Button>
             <Button
               variant="outline"
-              className="h-20 flex-col border-purple-200 text-purple-700 hover:bg-purple-50"
+              className="h-20 flex-col border-purple-200 text-gray-700 hover:bg-purple-50"
             >
               <Download className="h-6 w-6 mb-2" />
               Withdraw All
             </Button>
             <Button
               variant="outline"
-              className="h-20 flex-col border-purple-200 text-purple-700 hover:bg-purple-50"
+              className="h-20 flex-col border-purple-200 text-gray-700 hover:bg-purple-50"
             >
               <CreditCard className="h-6 w-6 mb-2" />
               Transfer Funds
@@ -210,7 +211,7 @@ export default function ManageWalletPage() {
       {/* Recent Transactions Summary */}
       <Card className="border-purple-200">
         <CardHeader>
-          <CardTitle className="text-purple-900">Recent Activity</CardTitle>
+          <CardTitle className="text-gray-900">Recent Activity</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
@@ -224,10 +225,10 @@ export default function ManageWalletPage() {
                 className="flex items-center justify-between p-3 bg-purple-50 rounded-lg"
               >
                 <div>
-                  <p className="font-medium text-purple-900">
+                  <p className="font-medium text-gray-900">
                     {transaction.type}
                   </p>
-                  <p className="text-sm text-purple-600">{transaction.date}</p>
+                  <p className="text-sm text-gray-600">{transaction.date}</p>
                 </div>
                 <span
                   className={`font-medium ${

@@ -46,10 +46,10 @@ export default function UserProfile() {
     <div className="flex-1 space-y-6 p-6">
       <div className="flex items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-purple-900">
+          <h1 className="text-3xl font-bold text-grey-700">
             Profile Settings
           </h1>
-          <p className="text-purple-600">
+          <p className="text-grey-600">
             Manage your account information and preferences
           </p>
         </div>
@@ -66,8 +66,8 @@ export default function UserProfile() {
           {/* Profile Picture */}
           <Card className="border-purple-200">
             <CardHeader>
-              <CardTitle className="text-purple-900">Profile Picture</CardTitle>
-              <CardDescription className="text-purple-600">
+              <CardTitle className="text-grey-900">Profile Picture</CardTitle>
+              <CardDescription className="text-grey-600">
                 Update your profile photo
               </CardDescription>
             </CardHeader>
@@ -75,17 +75,17 @@ export default function UserProfile() {
               <div className="flex items-center gap-6">
                 <Avatar className="h-24 w-24">
                   <AvatarImage src="/placeholder-user.jpg" />
-                  <AvatarFallback className="bg-purple-100 text-purple-700 text-xl">
+                  <AvatarFallback className="bg-purple-100 text-grey-700 text-xl">
                     {profileData.firstName[0]}
                     {profileData.lastName[0]}
                   </AvatarFallback>
                 </Avatar>
                 <div className="space-y-2">
-                  <Button className="bg-purple-600 hover:bg-purple-700">
+                  <Button className="bg-purple-700 hover:bg-purple-500">
                     <Camera className="mr-2 h-4 w-4" />
                     Change Photo
                   </Button>
-                  <p className="text-sm text-purple-600">
+                  <p className="text-sm text-grey-600">
                     JPG, PNG or GIF. Max size 2MB.
                   </p>
                 </div>
@@ -98,10 +98,10 @@ export default function UserProfile() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-purple-900">
+                  <CardTitle className="text-grey-900">
                     Personal Information
                   </CardTitle>
-                  <CardDescription className="text-purple-600">
+                  <CardDescription className="text-grey-600 mt-3">
                     Update your personal details
                   </CardDescription>
                 </div>
@@ -224,10 +224,10 @@ export default function UserProfile() {
           {/* Address Information */}
           <Card className="border-purple-200">
             <CardHeader>
-              <CardTitle className="text-purple-900">
+              <CardTitle className="text-gray-900">
                 Address Information
               </CardTitle>
-              <CardDescription className="text-purple-600">
+              <CardDescription className="text-gray-500">
                 Update your address details
               </CardDescription>
             </CardHeader>
@@ -290,8 +290,8 @@ export default function UserProfile() {
           {/* Change Password */}
           <Card className="border-purple-200">
             <CardHeader>
-              <CardTitle className="text-purple-900">Change Password</CardTitle>
-              <CardDescription className="text-purple-600">
+              <CardTitle className="text-gray-900">Change Password</CardTitle>
+              <CardDescription className="text-gray-600">
                 Update your account password
               </CardDescription>
             </CardHeader>
@@ -318,26 +318,26 @@ export default function UserProfile() {
           {/* Two-Factor Authentication */}
           <Card className="border-purple-200">
             <CardHeader>
-              <CardTitle className="text-purple-900">
+              <CardTitle className="text-gray-900">
                 Two-Factor Authentication
               </CardTitle>
-              <CardDescription className="text-purple-600">
+              <CardDescription className="text-gray-600">
                 Add an extra layer of security to your account
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="font-medium text-purple-900">
+                  <h4 className="font-medium text-gray-900">
                     SMS Authentication
                   </h4>
-                  <p className="text-sm text-purple-600">
+                  <p className="text-sm text-gray-600">
                     Receive codes via SMS
                   </p>
                 </div>
                 <Button
                   variant="outline"
-                  className="border-purple-200 text-purple-700 hover:bg-purple-50"
+                  className="border-purple-200 text-purple-700 hover:bg-purple-300"
                 >
                   Enable
                 </Button>
@@ -350,10 +350,10 @@ export default function UserProfile() {
           {/* Notification Preferences */}
           <Card className="border-purple-200">
             <CardHeader>
-              <CardTitle className="text-purple-900">
+              <CardTitle className="text-gray-900">
                 Notification Preferences
               </CardTitle>
-              <CardDescription className="text-purple-600">
+              <CardDescription className="text-gray-600">
                 Choose how you want to receive notifications
               </CardDescription>
             </CardHeader>
@@ -378,10 +378,10 @@ export default function UserProfile() {
               ].map((pref, index) => (
                 <div key={index} className="flex items-center justify-between">
                   <div>
-                    <h4 className="font-medium text-purple-900">
+                    <h4 className="font-medium text-gray-900">
                       {pref.label}
                     </h4>
-                    <p className="text-sm text-purple-600">
+                    <p className="text-sm text-gray-600">
                       {pref.description}
                     </p>
                   </div>
