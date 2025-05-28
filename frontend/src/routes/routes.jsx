@@ -25,6 +25,8 @@ import ProductsPage from "../pages/Dashboard/Products";
 import ProfilePage from "../pages/Dashboard/Profile";
 import Create from "../pages/Dashboard/Products/Create";
 import EditProduct from "../pages/Dashboard/Products/EditProduct";
+import VendorsPage from "../pages/Dashboard/SalesRep/VendorsPage";
+import FranchisePage from "../pages/Dashboard/SalesRep/FranchisePage";
 
 const routes = [
   {
@@ -75,25 +77,41 @@ const routes = [
   },
   {
     path: "/dashboard/products/create",
-    element:(
+    element: (
       <DashboardLayout>
         <Create />
       </DashboardLayout>
-    )
+    ),
   },
   {
     path: "/dashboard/products/edit/:id",
-    element:(
+    element: (
       <DashboardLayout>
         <EditProduct />
       </DashboardLayout>
-    )
+    ),
   },
   {
     path: "/dashboard/profile",
     element: (
       <DashboardLayout>
         <ProfilePage />
+      </DashboardLayout>
+    ),
+  },
+  {
+    path: "/dashboard/sales-rep/vendors",
+    element: (
+      <DashboardLayout>
+        <VendorsPage />
+      </DashboardLayout>
+    ),
+  },
+  {
+    path: "/dashboard/sales-rep/franchises",
+    element: (
+      <DashboardLayout>
+        <FranchisePage />
       </DashboardLayout>
     ),
   },
