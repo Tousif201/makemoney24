@@ -9,5 +9,7 @@ const franchiseSchema = new Schema({
   ownerId: { type: Schema.Types.ObjectId, ref: "User" }, // Franchise admin
   vendors: [{ type: Schema.Types.ObjectId, ref: "Vendor" }],
   users: [{ type: Schema.Types.ObjectId, ref: "User" }],
+    salesRep: { type: Schema.Types.ObjectId, ref: "User", default: null }, // NEW: Reference to the sales representative who created/is associated with this franchise
+
 });
 export const Franchise = model("Franchise", franchiseSchema);
