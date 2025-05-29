@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -32,117 +32,66 @@ import {
   Download,
   Award,
   Gift,
-  Target,
-  TrendingUp,
+  Target, // Replaced with a more generic icon or removed if not applicable
+  Loader2, // For loading spinner
+  TrendingUp, // Keeping for progress bars
 } from "lucide-react";
-import { DatePickerWithRange } from "@/components/ui/date-range-picker";
+// DatePickerWithRange is not used in this iteration
+// import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 import { Progress } from "@/components/ui/progress";
-
-const rewardsDistributionData = [
-  {
-    id: "RWD001",
-    recipientType: "User",
-    recipientName: "John Smith",
-    recipientId: "U001",
-    rewardType: "Membership Milestone",
-    milestone: "Gold Member Achievement",
-    amount: "$100",
-    distributionDate: "2024-03-15",
-    status: "Distributed",
-    category: "Membership",
-    description: "Achieved Gold membership level",
-  },
-  {
-    id: "RWD002",
-    recipientType: "Franchise",
-    recipientName: "Digital Hub Franchise",
-    recipientId: "F001",
-    rewardType: "Revenue Milestone",
-    milestone: "Silver Revenue Achievement",
-    amount: "$2,500",
-    distributionDate: "2024-03-14",
-    status: "Distributed",
-    category: "Franchise",
-    description: "Reached $100K revenue milestone",
-  },
-  {
-    id: "RWD003",
-    recipientType: "User",
-    recipientName: "Sarah Johnson",
-    recipientId: "U002",
-    rewardType: "Cashback",
-    milestone: "VIP Cashback",
-    amount: "$50",
-    distributionDate: "2024-03-13",
-    status: "Distributed",
-    category: "Cashback",
-    description: "VIP spending threshold reached",
-  },
-  {
-    id: "RWD004",
-    recipientType: "Franchise",
-    recipientName: "Fitness Pro Franchise",
-    recipientId: "F004",
-    rewardType: "Growth Milestone",
-    milestone: "Vendor Recruitment Bonus",
-    amount: "$750",
-    distributionDate: "2024-03-12",
-    status: "Pending",
-    category: "Franchise",
-    description: "Successfully recruited 10+ vendors",
-  },
-  {
-    id: "RWD005",
-    recipientType: "User",
-    recipientName: "Mike Davis",
-    recipientId: "U003",
-    rewardType: "Membership Milestone",
-    milestone: "Silver Member Achievement",
-    amount: "$50",
-    distributionDate: "2024-03-11",
-    status: "Distributed",
-    category: "Membership",
-    description: "Achieved Silver membership level",
-  },
-  {
-    id: "RWD006",
-    recipientType: "User",
-    recipientName: "Lisa Wilson",
-    recipientId: "U004",
-    rewardType: "Cashback",
-    milestone: "First Purchase Cashback",
-    amount: "$5",
-    distributionDate: "2024-03-10",
-    status: "Distributed",
-    category: "Cashback",
-    description: "First purchase on platform",
-  },
-];
+import { adminRewardDistributionReport } from "../../../../api/reward"; // Ensure this path is correct
 
 export default function RewardsDistributionPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
   const [recipientFilter, setRecipientFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  const filteredRewards = rewardsDistributionData.filter((reward) => {
+  // New states for API data, loading, and error
+  const [reportData, setReportData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchReport = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await adminRewardDistributionReport();
+        setReportData(data);
+      } catch (err) {
+        console.error("Error fetching reward distribution report:", err);
+        setError(
+          "Failed to load reward distribution report. Please try again."
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchReport();
+  }, []); // Empty dependency array means this runs once on mount
+
+  // Use the rewardsHistory array from the fetched data, or an empty array if not loaded yet
+  const allRewardsHistory = reportData?.rewardsHistory || [];
+
+  const filteredRewards = allRewardsHistory.filter((reward) => {
     const matchesSearch =
-      reward.recipientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      reward.milestone.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      reward.id.toLowerCase().includes(searchTerm.toLowerCase());
+      (reward.Name &&
+        reward.Name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (reward.category &&
+        reward.category.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (reward.referralCode &&
+        reward.referralCode.toLowerCase().includes(searchTerm.toLowerCase()));
+
     const matchesCategory =
-      categoryFilter === "all" ||
-      reward.category.toLowerCase() === categoryFilter;
-    const matchesStatus =
-      statusFilter === "all" || reward.status.toLowerCase() === statusFilter;
+      categoryFilter === "all" || reward.category === categoryFilter; // Direct match from API 'type' field
+
     const matchesRecipient =
-      recipientFilter === "all" ||
-      reward.recipientType.toLowerCase() === recipientFilter;
-    return (
-      matchesSearch && matchesCategory && matchesStatus && matchesRecipient
-    );
+      recipientFilter === "all" || reward.userType === recipientFilter; // Direct match from API 'userType' field
+
+    return matchesSearch && matchesCategory && matchesRecipient;
   });
 
   const totalPages = Math.ceil(filteredRewards.length / itemsPerPage);
@@ -152,39 +101,65 @@ export default function RewardsDistributionPage() {
     startIndex + itemsPerPage
   );
 
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case "Distributed":
-        return (
-          <Badge className="bg-green-100 text-green-800">Distributed</Badge>
-        );
-      case "Pending":
-        return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
-      case "Failed":
-        return <Badge className="bg-red-100 text-red-800">Failed</Badge>;
-      default:
-        return <Badge>{status}</Badge>;
-    }
+  // Helper to format date
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString("en-IN", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  // Helper to format currency
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR", // Assuming Indian Rupees, adjust as needed
+      maximumFractionDigits: 2,
+    }).format(amount);
   };
 
   const getCategoryBadge = (category) => {
-    const colors = {
-      Membership: "bg-purple-100 text-purple-800",
-      Franchise: "bg-orange-100 text-orange-800",
-      Cashback: "bg-blue-100 text-blue-800",
-    };
-    return <Badge className={colors[colors]}>{category}</Badge>;
+    switch (category) {
+      case "ReferralRewardMilestone":
+        return (
+          <Badge className="bg-purple-100 text-purple-800">
+            Referral Milestone
+          </Badge>
+        );
+      case "FranchiseMilestone":
+        return (
+          <Badge className="bg-orange-100 text-orange-800">
+            Franchise Milestone
+          </Badge>
+        );
+      case "CashbackMilestone":
+        return (
+          <Badge className="bg-blue-100 text-blue-800">
+            Cashback Milestone
+          </Badge>
+        );
+      case "ReferralLevelReward":
+        return (
+          <Badge className="bg-green-100 text-green-800">Referral Level</Badge>
+        );
+      case "ProfileScoreAchievementReward":
+        return <Badge className="bg-red-100 text-red-800">Profile Score</Badge>;
+      default:
+        return <Badge>{category}</Badge>;
+    }
   };
 
   const getRecipientBadge = (type) => {
     switch (type) {
-      case "User":
+      case "user":
         return (
           <Badge variant="outline" className="bg-blue-50 text-blue-700">
             User
           </Badge>
         );
-      case "Franchise":
+      case "franchise":
         return (
           <Badge variant="outline" className="bg-orange-50 text-orange-700">
             Franchise
@@ -195,26 +170,32 @@ export default function RewardsDistributionPage() {
     }
   };
 
-  const totalRewards = filteredRewards.length;
-  const totalDistributed = filteredRewards.filter(
-    (r) => r.status === "Distributed"
-  ).length;
-  const totalAmount = filteredRewards
-    .filter((r) => r.status === "Distributed")
-    .reduce(
-      (sum, reward) =>
-        sum +
-        Number.parseFloat(reward.amount.replace("$", "").replace(",", "")),
-      0
+  // Data for summary cards from API response
+  const noOfTotalRewards = reportData?.noOfTotalRewards || 0;
+  const totalAmtDistributed = reportData?.totalAmtDistributed || 0;
+  const totalReferralLevelRewardsAmt =
+    reportData?.totalReferralLevelRewardsAmt || 0;
+  const totalOtherMilestoneRewardsAmt =
+    reportData?.totalOtherMilestoneRewardsAmt || 0;
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Loader2 className="h-10 w-10 animate-spin text-gray-500" />
+        <span className="ml-3 text-xl text-gray-600">
+          Loading rewards report...
+        </span>
+      </div>
     );
-  const pendingAmount = filteredRewards
-    .filter((r) => r.status === "Pending")
-    .reduce(
-      (sum, reward) =>
-        sum +
-        Number.parseFloat(reward.amount.replace("$", "").replace(",", "")),
-      0
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center h-screen text-red-600 text-lg">
+        {error}
+      </div>
     );
+  }
 
   return (
     <div>
@@ -225,12 +206,15 @@ export default function RewardsDistributionPage() {
               Rewards Distribution Reports
             </h2>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-              Monitor milestone rewards distributed across users and franchise partners
+              Monitor milestone rewards distributed across users and franchise
+              partners
             </p>
           </div>
           <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-            <DatePickerWithRange className="w-full sm:w-auto" />
-            <Button variant="outline" className="bg-white h-9 sm:h-10 text-xs sm:text-sm">
+            <Button
+              variant="outline"
+              className="bg-white h-9 sm:h-10 text-xs sm:text-sm"
+            >
               <Download className="mr-2 h-3 sm:h-4 w-3 sm:w-4" />
               Export Report
             </Button>
@@ -243,7 +227,7 @@ export default function RewardsDistributionPage() {
             <div className="absolute top-0 right-0 w-20 h-20 bg-green-500/10 rounded-full -mr-10 -mt-10" />
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-green-900">
-                Total Rewards
+                Total Rewards Count
               </CardTitle>
               <div className="p-2 bg-green-500 rounded-lg">
                 <Award className="h-4 w-4 text-white" />
@@ -251,12 +235,11 @@ export default function RewardsDistributionPage() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-green-900">
-                {totalRewards}
+                {noOfTotalRewards}
               </div>
-              <p className="text-sm text-green-700 mt-1">
-                {totalDistributed} successfully distributed
-              </p>
-              <Progress value={85} className="mt-3 h-2" />
+              <p className="text-sm text-green-700 mt-1">rewards recorded</p>
+              <Progress value={100} className="mt-3 h-2" />{" "}
+              {/* Assuming all are counted */}
             </CardContent>
           </Card>
 
@@ -264,7 +247,7 @@ export default function RewardsDistributionPage() {
             <div className="absolute top-0 right-0 w-20 h-20 bg-blue-500/10 rounded-full -mr-10 -mt-10" />
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-blue-900">
-                Amount Distributed
+                Total Amount Distributed
               </CardTitle>
               <div className="p-2 bg-blue-500 rounded-lg">
                 <Gift className="h-4 w-4 text-white" />
@@ -272,12 +255,12 @@ export default function RewardsDistributionPage() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-blue-900">
-                ${totalAmount.toLocaleString()}
+                {formatCurrency(totalAmtDistributed)}
               </div>
               <p className="text-sm text-blue-700 mt-1">
                 Total rewards paid out
               </p>
-              <Progress value={72} className="mt-3 h-2" />
+              <Progress value={90} className="mt-3 h-2" /> {/* Example value */}
             </CardContent>
           </Card>
 
@@ -285,7 +268,7 @@ export default function RewardsDistributionPage() {
             <div className="absolute top-0 right-0 w-20 h-20 bg-yellow-500/10 rounded-full -mr-10 -mt-10" />
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-yellow-900">
-                Pending Rewards
+                Referral Level Rewards
               </CardTitle>
               <div className="p-2 bg-yellow-500 rounded-lg">
                 <Target className="h-4 w-4 text-white" />
@@ -293,12 +276,12 @@ export default function RewardsDistributionPage() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-yellow-900">
-                ${pendingAmount.toLocaleString()}
+                {formatCurrency(totalReferralLevelRewardsAmt)}
               </div>
               <p className="text-sm text-yellow-700 mt-1">
-                Awaiting distribution
+                Distributed for referral levels
               </p>
-              <Progress value={78} className="mt-3 h-2" />
+              <Progress value={70} className="mt-3 h-2" /> {/* Example value */}
             </CardContent>
           </Card>
 
@@ -306,7 +289,7 @@ export default function RewardsDistributionPage() {
             <div className="absolute top-0 right-0 w-20 h-20 bg-purple-500/10 rounded-full -mr-10 -mt-10" />
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-purple-900">
-                Success Rate
+                Other Milestone Rewards
               </CardTitle>
               <div className="p-2 bg-purple-500 rounded-lg">
                 <TrendingUp className="h-4 w-4 text-white" />
@@ -314,12 +297,12 @@ export default function RewardsDistributionPage() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-purple-900">
-                {((totalDistributed / totalRewards) * 100).toFixed(1)}%
+                {formatCurrency(totalOtherMilestoneRewardsAmt)}
               </div>
               <p className="text-sm text-purple-700 mt-1">
-                Distribution success rate
+                Distributed for various milestones
               </p>
-              <Progress value={65} className="mt-3 h-2" />
+              <Progress value={65} className="mt-3 h-2" /> {/* Example value */}
             </CardContent>
           </Card>
         </div>
@@ -330,40 +313,52 @@ export default function RewardsDistributionPage() {
               Rewards Distribution History
             </CardTitle>
             <CardDescription>
-              Complete history of milestone rewards distributed to users and
-              franchise partners
+              Complete history of rewards distributed to users and franchise
+              partners
             </CardDescription>
           </CardHeader>
           <CardContent>
-          <div className="flex flex-col gap-4 sm:flex-col md:flex-row md:items-center md:gap-4 mb-6">
+            <div className="flex flex-col gap-4 sm:flex-col md:flex-row md:items-center md:gap-4 mb-6">
               <div className="relative flex-1 max-w-sm">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
                   placeholder="Search rewards..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 sm:pl-10 text-sm"
+                  className="pl-9 sm:pl-10 text-sm"
                 />
               </div>
               <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="w-full sm:w-[160px] h-9 sm:h-10 text-sm">
+                <SelectTrigger className="w-full sm:w-[180px] h-9 sm:h-10 text-sm">
                   <Filter className="mr-2 h-3 sm:h-4 w-3 sm:w-4" />
-                  <SelectValue placeholder="Category" />
+                  <SelectValue placeholder="Filter by Category" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Categories</SelectItem>
-                  <SelectItem value="membership">Membership</SelectItem>
-                  <SelectItem value="franchise">Franchise</SelectItem>
-                  <SelectItem value="cashback">Cashback</SelectItem>
+                  <SelectItem value="ReferralRewardMilestone">
+                    Referral Milestone
+                  </SelectItem>
+                  <SelectItem value="FranchiseMilestone">
+                    Franchise Milestone
+                  </SelectItem>
+                  <SelectItem value="CashbackMilestone">
+                    Cashback Milestone
+                  </SelectItem>
+                  <SelectItem value="ReferralLevelReward">
+                    Referral Level
+                  </SelectItem>
+                  <SelectItem value="ProfileScoreAchievementReward">
+                    Profile Score
+                  </SelectItem>
                 </SelectContent>
               </Select>
               <Select
                 value={recipientFilter}
                 onValueChange={setRecipientFilter}
               >
-                <SelectTrigger className=" w-full md:w-[150px]">
+                <SelectTrigger className="w-full md:w-[160px] h-9 sm:h-10 text-sm">
                   <Filter className="mr-2 h-4 w-4" />
-                  <SelectValue placeholder="Recipient" />
+                  <SelectValue placeholder="Filter by Recipient" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Recipients</SelectItem>
@@ -371,70 +366,61 @@ export default function RewardsDistributionPage() {
                   <SelectItem value="franchise">Franchises</SelectItem>
                 </SelectContent>
               </Select>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="  w-full  md:w-[150px]">
-                  <Filter className="mr-2 h-4 w-4" />
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="distributed">Distributed</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="failed">Failed</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
 
-            <div className="rounded-md border">
+            <div className="rounded-md border overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Reward ID</TableHead>
                     <TableHead>Recipient</TableHead>
-                    <TableHead>Milestone</TableHead>
                     <TableHead>Category</TableHead>
                     <TableHead>Amount</TableHead>
-                    <TableHead>Status</TableHead>
                     <TableHead>Distribution Date</TableHead>
-                    <TableHead>Description</TableHead>
+                    {/* Description is not directly from API, keeping it if you intend to add it to logs */}
+                    {/* <TableHead>Description</TableHead> */}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedRewards.map((reward) => (
-                    <TableRow key={reward.id}>
-                      <TableCell className="font-medium">{reward.id}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {getRecipientBadge(reward.recipientType)}
-                          <div>
-                            <div className="font-medium">
-                              {reward.recipientName}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              {reward.recipientId}
+                  {paginatedRewards.length > 0 ? (
+                    paginatedRewards.map((reward, index) => (
+                      <TableRow key={reward.id || index}>
+                        {" "}
+                        {/* Using index as fallback key if _id is not consistently available */}
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {getRecipientBadge(reward.userType)}
+                            <div>
+                              <div className="font-medium">{reward.Name}</div>
+                              <div className="text-sm text-muted-foreground">
+                                {reward.referralCode}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{reward.milestone}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {reward.rewardType}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>{getCategoryBadge(reward.category)}</TableCell>
-                      <TableCell className="font-medium text-green-600">
-                        {reward.amount}
-                      </TableCell>
-                      <TableCell>{getStatusBadge(reward.status)}</TableCell>
-                      <TableCell>{reward.distributionDate}</TableCell>
-                      <TableCell className="max-w-[200px] truncate">
-                        {reward.description}
+                        </TableCell>
+                        <TableCell>
+                          {getCategoryBadge(reward.category)}
+                        </TableCell>
+                        <TableCell className="font-medium text-green-600">
+                          {formatCurrency(reward.amt)}
+                        </TableCell>
+                        <TableCell>
+                          {formatDate(reward.distributionDate)}
+                        </TableCell>
+                        {/* If you add 'description' to your RewardLog schema and project it in the controller, you can uncomment this */}
+                        {/* <TableCell className="max-w-[200px] truncate">
+                          {reward.description}
+                        </TableCell> */}
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-4">
+                        {" "}
+                        {/* colSpan adjusted */}
+                        No reward data available.
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )}
                 </TableBody>
               </Table>
             </div>

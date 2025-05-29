@@ -14,6 +14,8 @@ import franchiseRoutes from "./Franchise.routes.js";
 import analyticsRouter from "./analytics.routes.js";
 import transactionRouter from "./transaction.routes.js";
 import userRouter from "./user.routes.js";
+import memberRouter from "./member.routes.js";
+import rewardRouter from "./reward.route.js";
 const router = express.Router();
 
 // Mount the routers
@@ -32,5 +34,7 @@ router.use("/franchises", franchiseRoutes);
 router.use("/analytics", analyticsRouter);
 router.use("/transactions", transactionRouter);
 router.use("/users", userRouter);
+router.use("/membership", memberRouter);
+router.use("/reward", rewardRouter);
 
 export default router;

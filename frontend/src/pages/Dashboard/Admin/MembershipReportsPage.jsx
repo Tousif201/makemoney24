@@ -1,4 +1,6 @@
-import { useState } from "react";
+"use client";
+
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -18,110 +20,57 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Search,
-  Filter,
   Download,
   Users,
   UserPlus,
   Crown,
-  TrendingUp,
+  DollarSign,
+  Loader2,
 } from "lucide-react";
-import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 import { Progress } from "@/components/ui/progress";
-
-const membershipReportsData = [
-  {
-    userId: "U001",
-    userName: "John Smith",
-    email: "john.smith@email.com",
-    membershipLevel: "Gold",
-    purchaseDate: "2024-01-15",
-    amount: "$299",
-    referralsCount: 12,
-    referralEarnings: "$1,240",
-    status: "Active",
-    upgradeHistory: ["Bronze → Silver → Gold"],
-    totalSpent: "$2,450",
-  },
-  {
-    userId: "U002",
-    userName: "Sarah Johnson",
-    email: "sarah.j@email.com",
-    membershipLevel: "Platinum",
-    purchaseDate: "2023-11-20",
-    amount: "$599",
-    referralsCount: 25,
-    referralEarnings: "$3,750",
-    status: "Active",
-    upgradeHistory: ["Bronze → Silver → Gold → Platinum"],
-    totalSpent: "$5,680",
-  },
-  {
-    userId: "U003",
-    userName: "Mike Davis",
-    email: "mike.davis@email.com",
-    membershipLevel: "Silver",
-    purchaseDate: "2024-02-10",
-    amount: "$149",
-    referralsCount: 8,
-    referralEarnings: "$720",
-    status: "Active",
-    upgradeHistory: ["Bronze → Silver"],
-    totalSpent: "$1,890",
-  },
-  {
-    userId: "U004",
-    userName: "Lisa Wilson",
-    email: "lisa.wilson@email.com",
-    membershipLevel: "Bronze",
-    purchaseDate: "2024-03-01",
-    amount: "$49",
-    referralsCount: 3,
-    referralEarnings: "$180",
-    status: "Active",
-    upgradeHistory: ["Bronze"],
-    totalSpent: "$890",
-  },
-  {
-    userId: "U005",
-    userName: "Emma Brown",
-    email: "emma.brown@email.com",
-    membershipLevel: "Gold",
-    purchaseDate: "2023-12-05",
-    amount: "$299",
-    referralsCount: 15,
-    referralEarnings: "$1,875",
-    status: "Expired",
-    upgradeHistory: ["Bronze → Silver → Gold"],
-    totalSpent: "$3,240",
-  },
-];
+import { adminMembershipReport } from "../../../../api/membership"; // Adjust path as needed
 
 export default function MembershipReportsPage() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [membershipFilter, setMembershipFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  const filteredReports = membershipReportsData.filter((report) => {
+  const [reportData, setReportData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchReport = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await adminMembershipReport();
+        setReportData(data);
+      } catch (err) {
+        console.error("Error fetching membership report:", err);
+        setError("Failed to load membership report. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchReport();
+  }, []);
+
+  const allMemberships = reportData?.allMembership || [];
+
+  const filteredReports = allMemberships.filter((report) => {
+    // Search by member name or email (if email is part of userDetails)
     const matchesSearch =
-      report.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      report.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      report.userId.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesMembership =
-      membershipFilter === "all" ||
-      report.membershipLevel.toLowerCase() === membershipFilter;
-    const matchesStatus =
-      statusFilter === "all" || report.status.toLowerCase() === statusFilter;
-    return matchesSearch && matchesMembership && matchesStatus;
+      (report.name &&
+        report.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (report.userDetails?.email &&
+        report.userDetails.email
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()));
+
+    return matchesSearch;
   });
 
   const totalPages = Math.ceil(filteredReports.length / itemsPerPage);
@@ -131,78 +80,87 @@ export default function MembershipReportsPage() {
     startIndex + itemsPerPage
   );
 
-  const getMembershipBadge = (level) => {
-    switch (level) {
-      case "Platinum":
-        return (
-          <Badge className="bg-purple-100 text-purple-800">Platinum</Badge>
-        );
-      case "Gold":
-        return <Badge className="bg-yellow-100 text-yellow-800">Gold</Badge>;
-      case "Silver":
-        return <Badge className="bg-gray-100 text-gray-800">Silver</Badge>;
-      case "Bronze":
-        return <Badge className="bg-orange-100 text-orange-800">Bronze</Badge>;
-      default:
-        return <Badge>{level}</Badge>;
-    }
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString("en-IN", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
   };
 
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case "Active":
-        return <Badge className="bg-green-100 text-green-800">Active</Badge>;
-      case "Expired":
-        return <Badge className="bg-red-100 text-red-800">Expired</Badge>;
-      case "Suspended":
-        return (
-          <Badge className="bg-yellow-100 text-yellow-800">Suspended</Badge>
-        );
-      default:
-        return <Badge>{status}</Badge>;
-    }
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      maximumFractionDigits: 2,
+    }).format(amount);
   };
 
-  const totalMemberships = filteredReports.length;
-  const totalReferrals = filteredReports.reduce(
-    (sum, report) => sum + report.referralsCount,
-    0
-  );
-  const totalRevenue = filteredReports.reduce(
-    (sum, report) =>
-      sum + Number.parseFloat(report.amount.replace("$", "").replace(",", "")),
-    0
-  );
-  const totalReferralEarnings = filteredReports.reduce(
-    (sum, report) =>
-      sum +
-      Number.parseFloat(
-        report.referralEarnings.replace("$", "").replace(",", "")
-      ),
-    0
-  );
+  // Dummy logic for membership level based on profileScore
+  const getMembershipBadge = (profileScore) => {
+    if (profileScore >= 200) {
+      return <Badge className="bg-purple-100 text-purple-800">Platinum</Badge>;
+    } else if (profileScore >= 100) {
+      return <Badge className="bg-yellow-100 text-yellow-800">Gold</Badge>;
+    } else if (profileScore >= 50) {
+      return <Badge className="bg-gray-100 text-gray-800">Silver</Badge>;
+    } else if (profileScore > 0) {
+      return <Badge className="bg-orange-100 text-orange-800">Bronze</Badge>;
+    }
+    return <Badge variant="secondary">N/A</Badge>;
+  };
+
+  const totalMembershipsAmount = reportData?.totalMembership?.amount || 0;
+  const totalMembershipsRate = reportData?.totalMembership?.rate || "0.00%";
+  const totalReferralAmount = reportData?.totalReferral?.amount || 0;
+  const totalReferralRate = reportData?.totalReferral?.rate || "0.00%";
+  const membershipRevenueAmount = reportData?.membershipRevenue?.amount || 0;
+  const membershipRevenueRate = reportData?.membershipRevenue?.rate || "0.00%";
+  const referralEarningAmount = reportData?.referralEarning?.amount || 0;
+  const referralEarningRate = reportData?.referralEarning?.rate || "0.00%";
+
+  // The activeMembershipsCount logic relied on getStatusBadge, so it's simplified.
+  // You might need a different way to determine "active" if this is important for your summary cards.
+  const activeMembershipsCount = totalMembershipsAmount; // Assuming all fetched memberships are considered 'active' for this summary if no status available.
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Loader2 className="h-10 w-10 animate-spin text-gray-500" />
+        <span className="ml-3 text-xl text-gray-600">
+          Loading membership report...
+        </span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center h-screen text-red-600 text-lg">
+        {error}
+      </div>
+    );
+  }
 
   return (
     <div>
-      <div className=" p-4 bg-gradient-to-br ">
+      <div className="p-4 bg-gradient-to-br">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center md:flex-row sm:justify-between">
           <div>
-            <h2 className="text-2xl font-bold">
-              Membership Reports
-            </h2>
+            <h2 className="text-2xl font-bold">Membership Reports</h2>
             <p className="text-sm">
-              Comprehensive analysis of membership purchases and referral activities
+              Comprehensive analysis of membership purchases and referral
+              activities
             </p>
           </div>
           <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-            <DatePickerWithRange />
             <Button variant="outline" className="bg-white w-40">
               <Download className="mr-2 h-4 w-4" />
               Export Report
             </Button>
           </div>
         </div>
-
 
         {/* Summary Cards */}
         <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 p-4 sm:p-6">
@@ -218,12 +176,16 @@ export default function MembershipReportsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl sm:text-3xl font-bold text-purple-900">
-                {totalMemberships}
+                {totalMembershipsAmount}
               </div>
               <p className="text-xs sm:text-sm text-purple-700 mt-1">
-                {filteredReports.filter((r) => r.status === "Active").length} active memberships
+                {activeMembershipsCount} current memberships
               </p>
               <Progress value={85} className="mt-2 sm:mt-3 h-1.5 sm:h-2" />
+              <p className="text-xs text-muted-foreground mt-1">
+                <DollarSign className="inline h-3 w-3 text-green-500" />
+                {totalMembershipsRate} from last month
+              </p>
             </CardContent>
           </Card>
 
@@ -239,12 +201,20 @@ export default function MembershipReportsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl sm:text-3xl font-bold text-green-900">
-                {totalReferrals}
+                {totalReferralAmount}
               </div>
               <p className="text-xs sm:text-sm text-green-700 mt-1">
-                {(totalReferrals / totalMemberships).toFixed(1)} avg per member
+                {(totalMembershipsAmount > 0
+                  ? totalReferralAmount / totalMembershipsAmount
+                  : 0
+                ).toFixed(1)}{" "}
+                avg per member
               </p>
               <Progress value={72} className="mt-2 sm:mt-3 h-1.5 sm:h-2" />
+              <p className="text-xs text-muted-foreground mt-1">
+                <DollarSign className="inline h-3 w-3 text-green-500" />
+                {totalReferralRate} from last month
+              </p>
             </CardContent>
           </Card>
 
@@ -260,12 +230,16 @@ export default function MembershipReportsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl sm:text-3xl font-bold text-blue-900">
-                ${totalRevenue.toLocaleString()}
+                {formatCurrency(membershipRevenueAmount)}
               </div>
               <p className="text-xs sm:text-sm text-blue-700 mt-1">
                 From membership sales
               </p>
               <Progress value={78} className="mt-2 sm:mt-3 h-1.5 sm:h-2" />
+              <p className="text-xs text-muted-foreground mt-1">
+                <DollarSign className="inline h-3 w-3 text-green-500" />
+                {membershipRevenueRate} from last month
+              </p>
             </CardContent>
           </Card>
 
@@ -276,17 +250,21 @@ export default function MembershipReportsPage() {
                 Referral Earnings
               </CardTitle>
               <div className="p-1.5 sm:p-2 bg-orange-500 rounded-lg">
-                <TrendingUp className="h-3 sm:h-4 w-3 sm:w-4 text-white" />
+                <DollarSign className="h-3 sm:h-4 w-3 sm:w-4 text-white" />
               </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl sm:text-3xl font-bold text-orange-900">
-                ${totalReferralEarnings.toLocaleString()}
+                {formatCurrency(referralEarningAmount)}
               </div>
               <p className="text-xs sm:text-sm text-orange-700 mt-1">
                 Total referral commissions
               </p>
               <Progress value={65} className="mt-2 sm:mt-3 h-1.5 sm:h-2" />
+              <p className="text-xs text-muted-foreground mt-1">
+                <DollarSign className="inline h-3 w-3 text-green-500" />
+                {referralEarningRate} from last month
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -296,7 +274,8 @@ export default function MembershipReportsPage() {
               Membership Purchase Reports
             </CardTitle>
             <CardDescription className="text-xs sm:text-sm">
-              Detailed breakdown of membership purchases with referral performance and user activity
+              Detailed breakdown of membership purchases with referral
+              performance and user activity
             </CardDescription>
           </CardHeader>
           <CardContent className="p-4 sm:p-6">
@@ -311,88 +290,75 @@ export default function MembershipReportsPage() {
                   className="pl-9 sm:pl-10 text-sm"
                 />
               </div>
-              <div className="flex flex-wrap gap-3 sm:gap-4">
-                <Select value={membershipFilter} onValueChange={setMembershipFilter}>
-                  <SelectTrigger className="w-full sm:w-[160px] h-9 sm:h-10 text-sm">
-                    <Filter className="mr-2 h-3 sm:h-4 w-3 sm:w-4" />
-                    <SelectValue placeholder="Membership Level" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Levels</SelectItem>
-                    <SelectItem value="bronze">Bronze</SelectItem>
-                    <SelectItem value="silver">Silver</SelectItem>
-                    <SelectItem value="gold">Gold</SelectItem>
-                    <SelectItem value="platinum">Platinum</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-full sm:w-[140px] h-9 sm:h-10 text-sm">
-                    <Filter className="mr-2 h-3 sm:h-4 w-3 sm:w-4" />
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="expired">Expired</SelectItem>
-                    <SelectItem value="suspended">Suspended</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
-
 
             <div className="overflow-x-auto rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead className="text-xs sm:text-sm">Member</TableHead>
-                    <TableHead className="text-xs sm:text-sm  sm:table-cell">Membership</TableHead>
-                    <TableHead className="text-xs sm:text-sm md:table-cell">Purchase Date</TableHead>
-                    <TableHead className="text-xs sm:text-sm sm:table-cell">Amount</TableHead>
-                    <TableHead className="text-xs sm:text-sm md:table-cell">Status</TableHead>
-                    <TableHead className="text-xs sm:text-sm lg:table-cell">Referrals</TableHead>
-                    <TableHead className="text-xs sm:text-sm lg:table-cell">Referral Earnings</TableHead>
-                    <TableHead className="text-xs sm:text-sm xl:table-cell">Total Spent</TableHead>
-                    <TableHead className="text-xs sm:text-sm xl:table-cell">Upgrade Path</TableHead>
+                    <TableHead className="text-xs sm:text-sm sm:table-cell">
+                      Membership Level
+                    </TableHead>
+                    <TableHead className="text-xs sm:text-sm md:table-cell">
+                      Purchase Date
+                    </TableHead>
+                    <TableHead className="text-xs sm:text-sm sm:table-cell">
+                      Amount Paid
+                    </TableHead>
+                    <TableHead className="text-xs sm:text-sm lg:table-cell">
+                      Referrals
+                    </TableHead>
+                    <TableHead className="text-xs sm:text-sm lg:table-cell">
+                      Referral Earnings
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedReports.map((report) => (
-                    <TableRow key={report.userId}>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium text-sm sm:text-base">{report.userName}</div>
-                          <div className="text-xs text-muted-foreground ">
-                            {getMembershipBadge(report.membershipLevel)} • {report.amount}
+                  {paginatedReports.length > 0 ? (
+                    paginatedReports.map((report) => (
+                      <TableRow key={report._id}>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium text-sm sm:text-base">
+                              {report.name}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {report.userDetails?.email || "N/A"}
+                            </div>
                           </div>
-                          <div className="text-xs text-muted-foreground">{report.email}</div>
-
-                          <div className="text-xs text-muted-foreground">{report.userId}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="table-cell">
-                        {getMembershipBadge(report.membershipLevel)}
-                      </TableCell>
-                      <TableCell className="text-xs sm:text-sm  table-cell">{report.purchaseDate}</TableCell>
-                      <TableCell className="font-medium text-xs sm:text-sm  stable-cell">{report.amount}</TableCell>
-                      <TableCell className=" md:table-cell">{getStatusBadge(report.status)}</TableCell>
-                      <TableCell className=" lg:table-cell">
-                        <div className="flex items-center gap-1">
-                          <UserPlus className="h-3 sm:h-4 w-3 sm:w-4 text-muted-foreground" />
-                          <span className="font-medium text-xs sm:text-sm">{report.referralsCount}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-medium text-green-600 text-xs sm:text-sm lg:table-cell">
-                        {report.referralEarnings}
-                      </TableCell>
-                      <TableCell className="font-medium text-xs sm:text-sm  xl:table-cell">{report.totalSpent}</TableCell>
-                      <TableCell className="xl:table-cell">
-                        <div className="text-xs sm:text-sm text-muted-foreground max-w-[120px] sm:max-w-[150px]">
-                          {report.upgradeHistory.join(", ")}
-                        </div>
+                        </TableCell>
+                        <TableCell className="table-cell">
+                          {getMembershipBadge(report.profileScore)}
+                        </TableCell>
+                        <TableCell className="text-xs sm:text-sm table-cell">
+                          {formatDate(report.purchasedAt)}
+                        </TableCell>
+                        <TableCell className="font-medium text-xs sm:text-sm stable-cell">
+                          {formatCurrency(report.amountPaid)}
+                        </TableCell>
+                        <TableCell className="lg:table-cell">
+                          <div className="flex items-center gap-1">
+                            <UserPlus className="h-3 sm:h-4 w-3 sm:w-4 text-muted-foreground" />
+                            <span className="font-medium text-xs sm:text-sm">
+                              {report.noOfReferrals}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="font-medium text-green-600 text-xs sm:text-sm lg:table-cell">
+                          {formatCurrency(report.referralEarnings)}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-4">
+                        {" "}
+                        {/* colSpan adjusted */}
+                        No membership data available.
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )}
                 </TableBody>
               </Table>
             </div>
@@ -400,13 +366,17 @@ export default function MembershipReportsPage() {
             {/* Pagination */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-4 gap-3 sm:gap-0">
               <div className="text-xs sm:text-sm text-muted-foreground">
-                Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, filteredReports.length)} of {filteredReports.length} members
+                Showing {startIndex + 1} to{" "}
+                {Math.min(startIndex + itemsPerPage, filteredReports.length)} of{" "}
+                {filteredReports.length} members
               </div>
               <div className="flex items-center justify-center sm:justify-end gap-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.max(prev - 1, 1))
+                  }
                   disabled={currentPage === 1}
                   className="h-8 sm:h-9 text-xs sm:text-sm"
                 >
@@ -432,7 +402,9 @@ export default function MembershipReportsPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                  }
                   disabled={currentPage === totalPages}
                   className="h-8 sm:h-9 text-xs sm:text-sm"
                 >

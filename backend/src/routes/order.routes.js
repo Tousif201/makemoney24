@@ -8,12 +8,14 @@ import {
   getOrderById,
   updateOrder,
   deleteOrder,
+  getAdminSalesReport,
 } from "../controllers/order.controller.js";
 
 const router = express.Router();
 
 // Order CRUD routes
 router.post("/", createOrder); // Create a new order
+router.get("/getAdminSalesReport", getAdminSalesReport);
 router.get("/", getOrders); // Get all orders (with optional filters)
 router.get("/:id", getOrderById); // Get a single order by ID
 router.put("/:id", updateOrder); // Update an existing order
