@@ -30,6 +30,8 @@ const orderSchema = new Schema({
 
   placedAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
+},{
+  timestamps: true // <--- ADD THIS LINE
 });
 
 // Add indexes for efficient querying

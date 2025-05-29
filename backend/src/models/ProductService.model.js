@@ -34,6 +34,8 @@ const productServiceSchema = new Schema({
   // ✅ Allows vendors to toggle product/service availability
   isInStock: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now }
+},{
+  timestamps: true // <--- ADD THIS LINE
 });
 
 // Add indexes for efficient querying

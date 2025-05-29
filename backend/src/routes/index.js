@@ -11,6 +11,7 @@ import bannerRoutes from "./banner.routes.js";
 import bookingRouter from "./booking.routes.js";
 import ordersRouter from "./order.routes.js";
 import franchiseRoutes from "./Franchise.routes.js";
+import analyticsRouter from "./analytics.routes.js";
 const router = express.Router();
 
 // Mount the routers
@@ -26,6 +27,7 @@ router.use("banners", bannerRoutes);
 router.use("bookings", bookingRouter);
 router.use("/orders", ordersRouter);
 router.use("/franchises", franchiseRoutes);
+router.use("/analytics", analyticsRouter);
 // router.use("/users", userRouter);
 
 export default router;

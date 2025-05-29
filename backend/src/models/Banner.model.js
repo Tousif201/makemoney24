@@ -10,5 +10,7 @@ const bannerSchema = new Schema({
   },
   redirectTo: { type: String }, // Can link to a product/service/category/etc
   createdAt: { type: Date, default: Date.now }
+},{
+  timestamps: true // <--- ADD THIS LINE
 });
 export const Banner = model('Banner', bannerSchema);

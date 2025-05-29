@@ -16,6 +16,8 @@ const vendorAvailabilitySchema = new Schema({
 
   // Optional buffer between bookings (in minutes)
   bufferBetweenSlots: { type: Number, default: 0 }
+},{
+  timestamps: true // <--- ADD THIS LINE
 });
 
 export const VendorAvailability = model('VendorAvailability', vendorAvailabilitySchema);

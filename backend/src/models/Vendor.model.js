@@ -10,5 +10,8 @@ const vendorSchema = new Schema({
   userId: { type: Schema.Types.ObjectId, ref: "User" },
   pincode: String,
   commissionRate: { type: Number, default: 10 }, // % commission charged from vendor
+  
+},{
+  timestamps: true // <--- ADD THIS LINE
 });
 export const Vendor = model("Vendor", vendorSchema);

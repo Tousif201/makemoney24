@@ -15,6 +15,8 @@ const bookingSchema = new Schema({
     default: 'pending'
   },
   createdAt: { type: Date, default: Date.now }
+},{
+  timestamps: true // <--- ADD THIS LINE
 });
 
 // Add indexes for efficient querying

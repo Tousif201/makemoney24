@@ -9,6 +9,8 @@ const categorySchema = new Schema({
   description: String,
   type: { type: String, enum: ['product', 'service'], required: true },
   createdAt: { type: Date, default: Date.now }
+},{
+  timestamps: true // <--- ADD THIS LINE
 });
 categorySchema.index({ type: 1 });
 

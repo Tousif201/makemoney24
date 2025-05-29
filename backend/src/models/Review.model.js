@@ -16,6 +16,8 @@ const reviewSchema = new Schema({
   }],
 
   createdAt: { type: Date, default: Date.now }
+},{
+  timestamps: true // <--- ADD THIS LINE
 });
 reviewSchema.index({ itemId: 1, itemType: 1 });
 

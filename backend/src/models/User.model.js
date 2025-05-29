@@ -48,6 +48,8 @@ const userSchema = new Schema({
     verified: { type: Boolean, default: false }, // Whether OTP is verified
     lastSentAt: { type: Date }, // When OTP was last sent
   },
+},{
+  timestamps: true // <--- ADD THIS LINE
 });
 userSchema.index({ parent: 1 });
 export const User = model("User", userSchema);

@@ -9,5 +9,7 @@ const membershipSchema = new Schema({
   transactionId: { type: Schema.Types.ObjectId, ref: "Transaction" },
 
   purchasedAt: { type: Date, default: Date.now },
+},{
+  timestamps: true // <--- ADD THIS LINE
 });
 export const Membership = model("Membership", membershipSchema);
