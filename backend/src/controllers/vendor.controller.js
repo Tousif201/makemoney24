@@ -6,6 +6,7 @@ import { Vendor } from "../models/Vendor.model.js";
 import { User } from "../models/User.model.js"; // Import User model to update roles
 import { getHashPassword } from "../utils/getPassword.js";
 import { generateUniqueReferralCode } from "../utils/referralGenerator.js";
+import mongoose from "mongoose";
 
 /**
  * @desc Create a new user (with 'vendor' role) and a corresponding vendor profile
