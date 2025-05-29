@@ -25,8 +25,10 @@ apiClient.interceptors.request.use((config) => {
 export const loginUser = async (payload) => {
   try {
     const response = await apiClient.post("/login", payload);
+    console.log(response);
     return response.data;
   } catch (error) {
+    console.error(error)
     throw error.response?.data || { message: "Login failed" };
   }
 };
@@ -37,6 +39,7 @@ export const registerUser = async (payload) => {
     const response = await apiClient.post("/register", payload);
     return response.data;
   } catch (error) {
+    console.error(error)
     throw error.response?.data || { message: "Registration failed" };
   }
 };
@@ -82,3 +85,4 @@ export const getUserProfile = async (userId) => {
     throw error.response?.data || { message: "Failed to fetch profile" };
   }
 };
+

@@ -1,5 +1,10 @@
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect, useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -11,126 +16,20 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight, Edit, Trash2, Eye } from "lucide-react";
-
-const vendorsData = [
-  {
-    id: 1,
-    name: "TechCorp Solutions",
-    email: "contact@techcorp.com",
-    phone: "+1 234-567-8901",
-    status: "Active",
-    revenue: "$12,500",
-    location: "New York",
-  },
-  {
-    id: 2,
-    name: "Global Supplies",
-    email: "info@globalsupplies.com",
-    phone: "+1 234-567-8902",
-    status: "Active",
-    revenue: "$8,750",
-    location: "California",
-  },
-  {
-    id: 3,
-    name: "Metro Industries",
-    email: "sales@metro.com",
-    phone: "+1 234-567-8903",
-    status: "Pending",
-    revenue: "$15,200",
-    location: "Texas",
-  },
-  {
-    id: 4,
-    name: "Prime Logistics",
-    email: "hello@primelogistics.com",
-    phone: "+1 234-567-8904",
-    status: "Active",
-    revenue: "$9,800",
-    location: "Florida",
-  },
-  {
-    id: 5,
-    name: "Alpha Systems",
-    email: "contact@alphasystems.com",
-    phone: "+1 234-567-8905",
-    status: "Inactive",
-    revenue: "$5,400",
-    location: "Illinois",
-  },
-  {
-    id: 6,
-    name: "Beta Corporation",
-    email: "info@betacorp.com",
-    phone: "+1 234-567-8906",
-    status: "Active",
-    revenue: "$11,300",
-    location: "Washington",
-  },
-  {
-    id: 7,
-    name: "Gamma Enterprises",
-    email: "sales@gamma.com",
-    phone: "+1 234-567-8907",
-    status: "Active",
-    revenue: "$7,650",
-    location: "Oregon",
-  },
-  {
-    id: 8,
-    name: "Delta Solutions",
-    email: "contact@delta.com",
-    phone: "+1 234-567-8908",
-    status: "Pending",
-    revenue: "$13,900",
-    location: "Nevada",
-  },
-  {
-    id: 9,
-    name: "Epsilon Tech",
-    email: "info@epsilon.com",
-    phone: "+1 234-567-8909",
-    status: "Active",
-    revenue: "$10,200",
-    location: "Arizona",
-  },
-  {
-    id: 10,
-    name: "Zeta Industries",
-    email: "hello@zeta.com",
-    phone: "+1 234-567-8910",
-    status: "Active",
-    revenue: "$6,800",
-    location: "Colorado",
-  },
-  {
-    id: 11,
-    name: "Eta Corporation",
-    email: "contact@eta.com",
-    phone: "+1 234-567-8911",
-    status: "Inactive",
-    revenue: "$4,500",
-    location: "Utah",
-  },
-  {
-    id: 12,
-    name: "Theta Systems",
-    email: "info@theta.com",
-    phone: "+1 234-567-8912",
-    status: "Active",
-    revenue: "$14,700",
-    location: "Idaho",
-  },
-];
+import { getVendor } from "../../../../api/Vendors"; 
+import { useSession } from "../../../context/SessionContext"; 
 
 export function VendorsTable() {
+  const { user } = useSession(); 
+  const [vendors, setVendors] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
+
   const itemsPerPage = 10;
-  const totalPages = Math.ceil(vendorsData.length / itemsPerPage);
+  const totalPages = Math.ceil(vendors.length / itemsPerPage);
 
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentVendors = vendorsData.slice(startIndex, endIndex);
+  const currentVendors = vendors.slice(startIndex, endIndex);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -145,10 +44,19 @@ export function VendorsTable() {
     }
   };
 
+  useEffect(() => {
+    if (user?._id) {
+      console.log(user._id);
+      getVendor(user._id)
+        .then((data) => setVendors(data))
+        .catch((err) => console.error("Vendor fetch error:", err.message));
+    }
+  }, [user]);
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Vendor Accounts ({vendorsData.length})</CardTitle>
+        <CardTitle>Vendor Accounts ({vendors.length})</CardTitle>
       </CardHeader>
       <CardContent>
         <Table>
@@ -156,35 +64,39 @@ export function VendorsTable() {
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Contact</TableHead>
-              <TableHead>Location</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Revenue</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>Pincode</TableHead>
+              <TableHead>CreatesAt</TableHead>
+              <TableHead>Commissionrate</TableHead>
+              {/* <TableHead className="text-right">Actions</TableHead> */}
             </TableRow>
           </TableHeader>
           <TableBody>
             {currentVendors.map((vendor) => (
-              <TableRow key={vendor.id}>
-                <TableCell className="font-medium">{vendor.name}</TableCell>
+              <TableRow key={vendor._id}>
+                <TableCell className="font-medium">
+                  {vendor.userId?.name}
+                </TableCell>
                 <TableCell>
                   <div className="space-y-1">
-                    <div className="text-sm">{vendor.email}</div>
+                    <div className="text-sm">{vendor.userId?.email}</div>
                     <div className="text-xs text-muted-foreground">
-                      {vendor.phone}
+                      {vendor.userId?.phone}
                     </div>
                   </div>
                 </TableCell>
-                <TableCell>{vendor.location}</TableCell>
-                <TableCell>
-                  <Badge
-                    className={getStatusColor(vendor.status)}
-                    variant="secondary"
-                  >
-                    {vendor.status}
-                  </Badge>
+                <TableCell>{vendor.pincode || "-"}</TableCell>
+                
+                   
+                <TableCell className="font-medium">
+                  {vendor.createdAt|| "-"}
                 </TableCell>
-                <TableCell className="font-medium">{vendor.revenue}</TableCell>
-                <TableCell className="text-right">
+                   
+                  
+              
+                <TableCell className="font-medium">
+                  {vendor.commissionRate || "-"}
+                </TableCell>
+                {/* <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
                     <Button variant="ghost" size="sm">
                       <Eye className="h-4 w-4" />
@@ -196,7 +108,7 @@ export function VendorsTable() {
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
-                </TableCell>
+                </TableCell> */}
               </TableRow>
             ))}
           </TableBody>
@@ -204,8 +116,8 @@ export function VendorsTable() {
 
         <div className="flex items-center justify-between space-x-2 py-4">
           <div className="text-sm text-muted-foreground">
-            Showing {startIndex + 1} to {Math.min(endIndex, vendorsData.length)}{" "}
-            of {vendorsData.length} entries
+            Showing {startIndex + 1} to {Math.min(endIndex, vendors.length)} of{" "}
+            {vendors.length} entries
           </div>
           <div className="flex items-center space-x-2">
             <Button
