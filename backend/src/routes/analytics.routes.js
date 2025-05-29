@@ -1,9 +1,10 @@
 import express from "express";
-import { getSalesRepDashHomeAnalytics } from "../controllers/analytics.controller.js";
+import { getSalesRepDashHomeAnalytics, getVendorDashHomeAnalytics } from "../controllers/analytics.controller.js";
 
 const router = express.Router();
 
 // GET /api/hello - Example route with middleware
 router.get("/get-sales-home", getSalesRepDashHomeAnalytics);
+router.get("/vendor-home", getVendorDashHomeAnalytics); // New route for vendor dashboard
 
 export default router;
