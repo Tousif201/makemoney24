@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Card,
   CardContent,
@@ -18,16 +18,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import {
-  Search,
-  Plus,
-  Edit,
-  Trash2,
-  Eye,
-  ImageIcon,
-  ExternalLink,
-} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -35,564 +25,377 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-
-const bannersData = [
-  {
-    id: "B001",
-    title: "Summer Sale 2024",
-    description: "Get up to 50% off on all summer collection items",
-    imageUrl: "/placeholder.svg?height=200&width=400",
-    redirectUrl: "/products/summer-sale",
-    position: "Hero",
-    status: "Active",
-    startDate: "2024-06-01",
-    endDate: "2024-08-31",
-    clicks: 1250,
-    impressions: 15600,
-    ctr: "8.01%",
-  },
-  {
-    id: "B002",
-    title: "New Arrivals",
-    description: "Check out our latest product arrivals",
-    imageUrl: "/placeholder.svg?height=200&width=400",
-    redirectUrl: "/products/new-arrivals",
-    position: "Sidebar",
-    status: "Active",
-    startDate: "2024-03-01",
-    endDate: "2024-12-31",
-    clicks: 890,
-    impressions: 12400,
-    ctr: "7.18%",
-  },
-  {
-    id: "B003",
-    title: "Membership Benefits",
-    description: "Join our membership program for exclusive benefits",
-    imageUrl: "/placeholder.svg?height=200&width=400",
-    redirectUrl: "/membership",
-    position: "Footer",
-    status: "Inactive",
-    startDate: "2024-01-01",
-    endDate: "2024-12-31",
-    clicks: 456,
-    impressions: 8900,
-    ctr: "5.12%",
-  },
-  {
-    id: "B004",
-    title: "Franchise Opportunities",
-    description: "Start your own franchise with us",
-    imageUrl: "/placeholder.svg?height=200&width=400",
-    redirectUrl: "/franchise",
-    position: "Header",
-    status: "Active",
-    startDate: "2024-02-15",
-    endDate: "2024-12-31",
-    clicks: 234,
-    impressions: 5600,
-    ctr: "4.18%",
-  },
-];
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
+import { Label } from "@/components/ui/label";
+import { ImageIcon, Edit, Trash2, Loader2 } from "lucide-react"; // Added Loader2 for loading state
+import CreateBannerDialog from "../../../components/Dialogs/CreateBannerDialog";
+import {
+  deleteBanner,
+  getAllBanners,
+  updateBanner,
+} from "../../../../api/banner";
+import { deleteFiles, uploadFiles } from "../../../../api/upload";
+import { toast } from "sonner"; // Assuming sonner for toasts
 
 export default function BannersPage() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [banners, setBanners] = useState([]);
   const [editingBanner, setEditingBanner] = useState(null);
-  const [newBanner, setNewBanner] = useState({
-    title: "",
-    description: "",
-    redirectUrl: "",
-    position: "",
-    startDate: "",
-    endDate: "",
-  });
+  const [editingFile, setEditingFile] = useState(null); // State for new file during edit
+  const [deletingBannerId, setDeletingBannerId] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false); // New state for update button loading
 
-  const filteredBanners = bannersData.filter(
-    (banner) =>
-      banner.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      banner.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      banner.position.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // --- Fetch Banners on Load ---
+  useEffect(() => {
+    const fetchBanners = async () => {
+      setIsLoading(true);
+      try {
+        const data = await getAllBanners();
+        setBanners(data);
+      } catch (error) {
+        console.error("Failed to fetch banners:", error);
+        toast.error("Failed to load banners. Please try again.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case "Active":
-        return <Badge className="bg-green-100 text-green-800">Active</Badge>;
-      case "Inactive":
-        return <Badge className="bg-red-100 text-red-800">Inactive</Badge>;
-      case "Scheduled":
-        return <Badge className="bg-blue-100 text-blue-800">Scheduled</Badge>;
-      default:
-        return <Badge>{status}</Badge>;
+    fetchBanners();
+  }, []);
+
+  // --- Handlers ---
+  const handleEditBanner = (banner) => {
+    setEditingBanner({ ...banner }); // Create a copy to avoid direct state mutation
+    setEditingFile(null); // Reset file selection on opening edit dialog
+  };
+
+  const handleEditingFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setEditingFile(file);
     }
   };
 
-  const getPositionBadge = (position) => {
-    const colors = {
-      Hero: "bg-purple-100 text-purple-800",
-      Header: "bg-blue-100 text-blue-800",
-      Sidebar: "bg-orange-100 text-orange-800",
-      Footer: "bg-gray-100 text-gray-800",
-    };
-    return <Badge className={colors[position]}>{position}</Badge>;
+  const handleUpdateBanner = async () => {
+    if (!editingBanner || !editingBanner.redirectTo) {
+      toast.error("Redirect URL cannot be empty.");
+      return;
+    }
+
+    setIsUpdating(true);
+    try {
+      let imageUrl = editingBanner.image?.url;
+      let imageKey = editingBanner.image?.key;
+
+      // If a new file is selected, upload it
+      if (editingFile) {
+        const uploaded = await uploadFiles([editingFile]);
+        if (!uploaded || uploaded.length === 0) {
+          throw new Error("New image upload failed");
+        }
+        imageUrl = uploaded[0].url;
+        imageKey = uploaded[0].key;
+
+        // If there was an old image, delete it from storage
+        if (editingBanner.image?.key) {
+          console.log([editingBanner.image.key]);
+          await deleteFiles([editingBanner.image.key]);
+        }
+      }
+
+      const updatedPayload = {
+        image: imageUrl ? { url: imageUrl, key: imageKey } : null,
+        redirectTo: editingBanner.redirectTo,
+      };
+
+      const res = await updateBanner(editingBanner._id, updatedPayload);
+      console.log("Banner updated:", res);
+
+      toast.success("Banner updated successfully!");
+
+      // Refresh banners list and close dialog
+      const data = await getAllBanners();
+      setBanners(data);
+      setEditingBanner(null);
+      setEditingFile(null); // Clear editing file after successful update
+    } catch (error) {
+      console.error("Failed to update banner:", error);
+      toast.error("Failed to update banner. Please try again.");
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
-  const handleCreateBanner = () => {
-    console.log("Creating banner:", newBanner);
-    setIsCreateDialogOpen(false);
-    setNewBanner({
-      title: "",
-      description: "",
-      redirectUrl: "",
-      position: "",
-      startDate: "",
-      endDate: "",
-    });
-  };
+  const handleDeleteBanner = async () => {
+    if (!deletingBannerId) return;
 
-  const handleEditBanner = (banner) => {
-    setEditingBanner(banner);
-  };
+    try {
+      // Find the banner to get its image key for deletion from storage
+      const bannerToDelete = banners.find((b) => b._id === deletingBannerId);
 
-  const handleUpdateBanner = () => {
-    console.log("Updating banner:", editingBanner);
-    setEditingBanner(null);
-  };
+      await deleteBanner(deletingBannerId);
 
-  const handleDeleteBanner = (bannerId) => {
-    console.log("Deleting banner:", bannerId);
-  };
+      // If the banner had an image, delete it from storage
+      if (bannerToDelete && bannerToDelete.image?.key) {
+        await deleteFiles([bannerToDelete.image.key]);
+      }
 
-  const toggleBannerStatus = (bannerId) => {
-    console.log("Toggling banner status:", bannerId);
+      toast.success("Banner deleted successfully!");
+      // Refresh banners list
+      setBanners(banners.filter((b) => b._id !== deletingBannerId));
+    } catch (error) {
+      console.error("Failed to delete banner:", error);
+      toast.error("Failed to delete banner. Please try again.");
+    } finally {
+      setDeletingBannerId(null);
+    }
   };
-
-  const totalClicks = filteredBanners.reduce(
-    (sum, banner) => sum + banner.clicks,
-    0
-  );
-  const totalImpressions = filteredBanners.reduce(
-    (sum, banner) => sum + banner.impressions,
-    0
-  );
-  const averageCTR =
-    totalImpressions > 0
-      ? ((totalClicks / totalImpressions) * 100).toFixed(2)
-      : "0.00";
 
   return (
-    <div>
-      <div className="flex-1 space-y-6 p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 p-4 sm:p-6">
-          <div>
-            <h2 className="text-xl sm:text-2xl font-bold tracking-tight">
-              Banners
-            </h2>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-              Create and manage promotional banners for your ecommerce store
-            </p>
-          </div>
-          <Dialog
-            open={isCreateDialogOpen}
-            onOpenChange={setIsCreateDialogOpen}
-          >
-            <DialogTrigger asChild>
-              <Button className="h-9 sm:h-10 text-xs sm:text-sm">
-                <Plus className="mr-2 h-3 sm:h-4 w-3 sm:w-4" />
-                Create Banner
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-[95vw] sm:max-w-2xl p-4 sm:p-6">
-              <DialogHeader>
-                <DialogTitle className="text-lg sm:text-xl">
-                  Create New Banner
-                </DialogTitle>
-                <DialogDescription className="text-xs sm:text-sm">
-                  Design a new promotional banner for your store with custom redirect URL.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-3 sm:gap-4 py-4">
-                <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-3 sm:gap-4">
-                  <Label htmlFor="title" className="text-right sm:mb-0 mb-1">
-                    Title
-                  </Label>
-                  <Input
-                    id="title"
-                    value={newBanner.title}
-                    onChange={(e) =>
-                      setNewBanner((prev) => ({
-                        ...prev,
-                        title: e.target.value,
-                      }))
-                    }
-                    className="col-span-3 sm:col-span-3 h-9 sm:h-10 text-xs sm:text-sm"
-                    placeholder="Banner title"
-                  />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-3 sm:gap-4">
-                  <Label htmlFor="description" className="text-right sm:mb-0 mb-1">
-                    Description
-                  </Label>
-                  <Textarea
-                    id="description"
-                    value={newBanner.description}
-                    onChange={(e) =>
-                      setNewBanner((prev) => ({
-                        ...prev,
-                        description: e.target.value,
-                      }))
-                    }
-                    className="col-span-3 sm:col-span-3 h-20 sm:h-24 text-xs sm:text-sm"
-                    placeholder="Banner description"
-                  />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-3 sm:gap-4">
-                  <Label htmlFor="redirectUrl" className="text-right sm:mb-0 mb-1">
-                    Redirect URL
-                  </Label>
-                  <Input
-                    id="redirectUrl"
-                    value={newBanner.redirectUrl}
-                    onChange={(e) =>
-                      setNewBanner((prev) => ({
-                        ...prev,
-                        redirectUrl: e.target.value,
-                      }))
-                    }
-                    className="col-span-3 sm:col-span-3 h-9 sm:h-10 text-xs sm:text-sm"
-                    placeholder="/products/category"
-                  />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-3 sm:gap-4">
-                  <Label htmlFor="position" className="text-right sm:mb-0 mb-1">
-                    Position
-                  </Label>
-                  <Select
-                    value={newBanner.position}
-                    onValueChange={(value) =>
-                      setNewBanner((prev) => ({ ...prev, position: value }))
-                    }
-                  >
-                    <SelectTrigger className="col-span-3 sm:col-span-3 h-9 sm:h-10 text-xs sm:text-sm">
-                      <SelectValue placeholder="Select position" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Hero">Hero</SelectItem>
-                      <SelectItem value="Header">Header</SelectItem>
-                      <SelectItem value="Sidebar">Sidebar</SelectItem>
-                      <SelectItem value="Footer">Footer</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-3 sm:gap-4">
-                  <Label htmlFor="startDate" className="text-right sm:mb-0 mb-1">
-                    Start Date
-                  </Label>
-                  <Input
-                    id="startDate"
-                    type="date"
-                    value={newBanner.startDate}
-                    onChange={(e) =>
-                      setNewBanner((prev) => ({
-                        ...prev,
-                        startDate: e.target.value,
-                      }))
-                    }
-                    className="col-span-3 sm:col-span-3 h-9 sm:h-10 text-xs sm:text-sm"
-                  />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-3 sm:gap-4">
-                  <Label htmlFor="endDate" className="text-right sm:mb-0 mb-1">
-                    End Date
-                  </Label>
-                  <Input
-                    id="endDate"
-                    type="date"
-                    value={newBanner.endDate}
-                    onChange={(e) =>
-                      setNewBanner((prev) => ({
-                        ...prev,
-                        endDate: e.target.value,
-                      }))
-                    }
-                    className="col-span-3 sm:col-span-3 h-9 sm:h-10 text-xs sm:text-sm"
-                  />
-                </div>
-              </div>
-              <DialogFooter className="flex justify-end gap-2 sm:gap-3">
-                <Button onClick={handleCreateBanner} className="h-9 sm:h-10 text-xs sm:text-sm">
-                  Create Banner
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+    <div className="p-6 space-y-6">
+      {" "}
+      {/* Added space-y for consistent spacing */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-2xl font-bold">Banners</h2>
+          <p className="text-sm text-muted-foreground">
+            Create and manage promotional banners for your storefront.
+          </p>
         </div>
-
-        {/* Summary Cards */}
-        <div className="grid gap-4 md:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Total Banners
-              </CardTitle>
-              <ImageIcon className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{filteredBanners.length}</div>
-              <p className="text-xs text-muted-foreground">
-                {filteredBanners.filter((b) => b.status === "Active").length}{" "}
-                active
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Total Clicks
-              </CardTitle>
-              <ExternalLink className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {totalClicks.toLocaleString()}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Banner clicks this period
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Impressions</CardTitle>
-              <Eye className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {totalImpressions.toLocaleString()}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Total banner views
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Average CTR</CardTitle>
-              <ExternalLink className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{averageCTR}%</div>
-              <p className="text-xs text-muted-foreground">
-                Click-through rate
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>All Banners</CardTitle>
-            <CardDescription>
-              Manage your promotional banners, track performance, and update
-              content
-            </CardDescription>
+        <CreateBannerDialog />
+      </div>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
+        <Card className="shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Banners</CardTitle>
+            <ImageIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="flex items-center gap-4 mb-6">
-              <div className="relative flex-1 max-w-sm">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input
-                  placeholder="Search banners..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
+            <div className="text-2xl font-bold">{banners.length}</div>
+          </CardContent>
+        </Card>
+        {/* You can add more Stat Cards here if needed, e.g., for clicks, impressions etc. */}
+      </div>
+      <Card className="shadow-sm">
+        <CardHeader>
+          <CardTitle>All Banners</CardTitle>
+          <CardDescription>
+            View and manage all your existing banners.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[100px]">Image</TableHead>{" "}
+                  {/* Added width for image column */}
+                  <TableHead>Redirect URL</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
                   <TableRow>
-                    <TableHead>Banner</TableHead>
-                    <TableHead>Position</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Duration</TableHead>
-                    <TableHead>Performance</TableHead>
-                    <TableHead>CTR</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableCell colSpan={3} className="h-24 text-center">
+                      <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Loading banners...
+                      </p>
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredBanners.map((banner) => (
-                    <TableRow key={banner.id}>
+                ) : banners.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={3}
+                      className="h-24 text-center text-muted-foreground"
+                    >
+                      No banners found. Create one to get started!
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  banners.map((banner) => (
+                    <TableRow key={banner._id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <img
-                            src={banner.imageUrl || "/placeholder.svg"}
-                            alt={banner.title}
-                            width={60}
-                            height={40}
-                            className="rounded object-cover"
-                          />
-                          <div>
-                            <div className="font-medium">{banner.title}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {banner.description}
-                            </div>
-                            <div className="text-xs text-blue-600">
-                              {banner.redirectUrl}
-                            </div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>{getPositionBadge(banner.position)}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {getStatusBadge(banner.status)}
-                          <Switch
-                            checked={banner.status === "Active"}
-                            onCheckedChange={() =>
-                              toggleBannerStatus(banner.id)
-                            }
-                            size="sm"
+                            src={banner.image?.url || "/placeholder-image.png"} // Fallback image
+                            alt={banner.redirectTo || "Banner image"}
+                            width={80} // Increased size for better preview
+                            height={50}
+                            className="rounded object-cover border"
                           />
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div>
-                          <div className="text-sm">{banner.startDate}</div>
-                          <div className="text-sm text-muted-foreground">
-                            to {banner.endDate}
-                          </div>
+                        <div className="font-medium text-blue-600 hover:underline">
+                          <a
+                            href={banner.redirectTo}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {banner.redirectTo}
+                          </a>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="text-sm font-medium">
-                            {banner.clicks.toLocaleString()} clicks
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            {banner.impressions.toLocaleString()} views
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{banner.ctr}</Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
+                        <div className="flex justify-end gap-2">
                           <Button
-                            variant="ghost"
+                            variant="outline" // Changed to outline for better visual cue
                             size="sm"
                             onClick={() => handleEditBanner(banner)}
+                            className="text-gray-600 hover:bg-gray-100"
                           >
-                            <Edit className="h-4 w-4" />
+                            <Edit className="h-4 w-4 mr-2" /> Edit
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteBanner(banner.id)}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="destructive" // Changed to destructive variant
+                                size="sm"
+                                onClick={() => setDeletingBannerId(banner._id)}
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" /> Delete
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                  Are you absolutely sure?
+                                </AlertDialogTitle>
+                                <div>
+                                  This action cannot be undone. This will
+                                  permanently delete the banner and remove its
+                                  data from our servers.
+                                </div>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel
+                                  onClick={() => setDeletingBannerId(null)}
+                                >
+                                  Cancel
+                                </AlertDialogCancel>
+                                <AlertDialogAction
+                                  className="bg-red-600 hover:bg-red-700"
+                                  onClick={handleDeleteBanner}
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Edit Dialog */}
-        <Dialog
-          open={!!editingBanner}
-          onOpenChange={() => setEditingBanner(null)}
-        >
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Edit Banner</DialogTitle>
-              <DialogDescription>
-                Update banner details and settings.
-              </DialogDescription>
-            </DialogHeader>
-            {editingBanner && (
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="edit-title" className="text-right">
-                    Title
-                  </Label>
-                  <Input
-                    id="edit-title"
-                    value={editingBanner.title}
-                    onChange={(e) =>
-                      setEditingBanner((prev) => ({
-                        ...prev,
-                        title: e.target.value,
-                      }))
-                    }
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="edit-description" className="text-right">
-                    Description
-                  </Label>
-                  <Textarea
-                    id="edit-description"
-                    value={editingBanner.description}
-                    onChange={(e) =>
-                      setEditingBanner((prev) => ({
-                        ...prev,
-                        description: e.target.value,
-                      }))
-                    }
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="edit-redirectUrl" className="text-right">
-                    Redirect URL
-                  </Label>
-                  <Input
-                    id="edit-redirectUrl"
-                    value={editingBanner.redirectUrl}
-                    onChange={(e) =>
-                      setEditingBanner((prev) => ({
-                        ...prev,
-                        redirectUrl: e.target.value,
-                      }))
-                    }
-                    className="col-span-3"
-                  />
-                </div>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+      {/* Edit Banner Dialog */}
+      <Dialog
+        open={!!editingBanner}
+        onOpenChange={() => {
+          setEditingBanner(null);
+          setEditingFile(null); // Clear file state when closing dialog
+        }}
+      >
+        <DialogContent className="max-w-[95vw] sm:max-w-2xl p-4 sm:p-6">
+          <DialogHeader>
+            <DialogTitle className="text-lg sm:text-xl">
+              Edit Banner
+            </DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm">
+              Update the banner's redirect URL or change its image.
+            </DialogDescription>
+          </DialogHeader>
+          {editingBanner && (
+            <div className="grid gap-3 sm:gap-4 py-4">
+              {/* Redirect URL Input */}
+              <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-3 sm:gap-4">
+                <Label
+                  htmlFor="editRedirectUrl"
+                  className="text-right sm:mb-0 mb-1"
+                >
+                  Redirect URL
+                </Label>
+                <Input
+                  id="editRedirectUrl"
+                  value={editingBanner.redirectTo}
+                  onChange={(e) =>
+                    setEditingBanner((prev) => ({
+                      ...prev,
+                      redirectTo: e.target.value,
+                    }))
+                  }
+                  className="col-span-3 sm:col-span-3 h-9 sm:h-10 text-xs sm:text-sm"
+                  placeholder="/products/category"
+                />
               </div>
-            )}
-            <DialogFooter>
-              <Button onClick={handleUpdateBanner}>Update Banner</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
+
+              {/* Image Input */}
+              <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-3 sm:gap-4">
+                <Label
+                  htmlFor="editBannerImage"
+                  className="text-right sm:mb-0 mb-1"
+                >
+                  New Image
+                </Label>
+                <Input
+                  id="editBannerImage"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleEditingFileChange}
+                  className="col-span-3 sm:col-span-3 text-xs sm:text-sm"
+                />
+              </div>
+
+              {/* Image Preview */}
+              {(editingFile || editingBanner.image?.url) && (
+                <div className="col-span-full flex justify-center mt-2">
+                  <img
+                    src={
+                      editingFile
+                        ? URL.createObjectURL(editingFile)
+                        : editingBanner.image?.url || "/placeholder-image.png"
+                    }
+                    alt="Banner Preview"
+                    className="max-h-40 rounded shadow border"
+                  />
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter className="flex justify-end gap-2 sm:gap-3">
+            <Button
+              onClick={handleUpdateBanner}
+              disabled={isUpdating}
+              className="h-9 sm:h-10 text-xs sm:text-sm"
+            >
+              {isUpdating ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Updating...
+                </>
+              ) : (
+                "Save Changes"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

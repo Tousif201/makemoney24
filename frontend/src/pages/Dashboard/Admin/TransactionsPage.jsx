@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Card,
   CardContent,
@@ -35,107 +35,74 @@ import {
   ShoppingCart,
   RotateCcw,
 } from "lucide-react";
-
-const transactionsData = [
-  {
-    id: "TXN001",
-    userId: "U001",
-    userName: "John Smith",
-    type: "purchase",
-    amount: "$245.50",
-    status: "Completed",
-    date: "2024-03-15",
-    time: "14:30",
-    description: "Product purchase - TechMart Solutions",
-    reference: "ORD-2024-001",
-  },
-  {
-    id: "TXN002",
-    userId: "U002",
-    userName: "Sarah Johnson",
-    type: "withdrawal",
-    amount: "$150.00",
-    status: "Pending",
-    date: "2024-03-15",
-    time: "13:45",
-    description: "Withdrawal to bank account",
-    reference: "WTH-2024-002",
-  },
-  {
-    id: "TXN003",
-    userId: "U003",
-    userName: "Mike Davis",
-    type: "cashback",
-    amount: "$12.25",
-    status: "Completed",
-    date: "2024-03-14",
-    time: "16:20",
-    description: "Cashback reward - Bronze milestone",
-    reference: "CBK-2024-003",
-  },
-  {
-    id: "TXN004",
-    userId: "U004",
-    userName: "Lisa Wilson",
-    type: "deposit",
-    amount: "$500.00",
-    status: "Completed",
-    date: "2024-03-14",
-    time: "11:15",
-    description: "Wallet deposit via credit card",
-    reference: "DEP-2024-004",
-  },
-  {
-    id: "TXN005",
-    userId: "U005",
-    userName: "Emma Brown",
-    type: "payout",
-    amount: "$75.00",
-    status: "Failed",
-    date: "2024-03-13",
-    time: "09:30",
-    description: "Referral commission payout",
-    reference: "PAY-2024-005",
-  },
-  {
-    id: "TXN006",
-    userId: "U001",
-    userName: "John Smith",
-    type: "return",
-    amount: "$89.99",
-    status: "Processing",
-    date: "2024-03-13",
-    time: "15:45",
-    description: "Product return refund",
-    reference: "RET-2024-006",
-  },
-];
+import { getAllTransactions } from "../../../../api/transaction";
 
 export default function TransactionsPage() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [typeFilter, setTypeFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [itemsPerPage, setItemsPerPage] = useState(10); // You can make this configurable if needed
+  const [totalTransactions, setTotalTransactions] = useState(0); // From API response
+  const [totalPages, setTotalPages] = useState(1); // From API response
+  const [isExporting, setIsExporting] = useState(false); // New state for export loading
 
-  const filteredTransactions = transactionsData.filter((transaction) => {
-    const matchesSearch =
-      transaction.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      transaction.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      transaction.reference.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = typeFilter === "all" || transaction.type === typeFilter;
-    const matchesStatus =
-      statusFilter === "all" ||
-      transaction.status.toLowerCase() === statusFilter.toLowerCase();
-    return matchesSearch && matchesType && matchesStatus;
+  // State for filters and sorting
+  const [filters, setFilters] = useState({
+    searchTerm: "", // For general search across relevant fields
+    transactionType: "all",
+    status: "all",
+    userId: "", // Added for explicit user search if desired
+    startDate: "",
+    endDate: "",
+    minAmount: "",
+    maxAmount: "",
   });
+  const [sortBy, setSortBy] = useState("createdAt"); // Default sort by createdAt
+  const [sortOrder, setSortOrder] = useState("desc"); // Default sort order
 
-  const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedTransactions = filteredTransactions.slice(
-    startIndex,
-    startIndex + itemsPerPage
-  );
+  // Fetch transactions from API
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const apiParams = {
+          page: currentPage,
+          limit: itemsPerPage,
+          sortBy,
+          sortOrder,
+          // Conditionally add filters to API params
+          // Note: If your backend's `getAllTransactions` doesn't support a 'search' parameter
+          // for global search across fields, you might need to implement this client-side
+          // or add backend support. For now, assuming `searchTerm` directly maps to `search`
+          // if your API controller implements it, otherwise it will be ignored by API.
+          ...(filters.searchTerm && { search: filters.searchTerm }),
+          ...(filters.transactionType !== "all" && {
+            transactionType: filters.transactionType,
+          }),
+          ...(filters.status !== "all" && { status: filters.status }),
+          ...(filters.userId && { userId: filters.userId }),
+          ...(filters.startDate && { startDate: filters.startDate }),
+          ...(filters.endDate && { endDate: filters.endDate }),
+          ...(filters.minAmount && { minAmount: filters.minAmount }),
+          ...(filters.maxAmount && { maxAmount: filters.maxAmount }),
+        };
+
+        const response = await getAllTransactions(apiParams);
+        setTransactions(response.data);
+        setTotalTransactions(response.total);
+        setTotalPages(response.pages);
+      } catch (err) {
+        console.error("Failed to fetch transactions:", err);
+        setError("Failed to load transactions. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTransactions();
+  }, [currentPage, itemsPerPage, filters, sortBy, sortOrder]); // Dependencies for re-fetching
 
   const getTypeIcon = (type) => {
     switch (type) {
@@ -165,8 +132,9 @@ export default function TransactionsPage() {
       purchase: "bg-orange-100 text-orange-800",
       return: "bg-gray-100 text-gray-800",
     };
+    const colorClass = colors[type] || "bg-gray-100 text-gray-800";
     return (
-      <Badge className={colors[colors]}>
+      <Badge className={colorClass}>
         {type.charAt(0).toUpperCase() + type.slice(1)}
       </Badge>
     );
@@ -174,30 +142,115 @@ export default function TransactionsPage() {
 
   const getStatusBadge = (status) => {
     switch (status) {
-      case "Completed":
-        return <Badge className="bg-green-100 text-green-800">Completed</Badge>;
-      case "Pending":
+      case "success":
+        return <Badge className="bg-green-100 text-green-800">Success</Badge>;
+      case "pending":
         return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
-      case "Processing":
-        return <Badge className="bg-blue-100 text-blue-800">Processing</Badge>;
-      case "Failed":
+      case "failed":
         return <Badge className="bg-red-100 text-red-800">Failed</Badge>;
       default:
         return <Badge>{status}</Badge>;
     }
   };
 
-  const totalTransactions = filteredTransactions.length;
-  const completedTransactions = filteredTransactions.filter(
-    (t) => t.status === "Completed"
+  // Helper for summary cards (based on currently loaded data)
+  const completedTransactionsCount = transactions.filter(
+    (t) => t.status === "success"
   ).length;
-  const totalAmount = filteredTransactions
-    .filter((t) => t.status === "Completed")
-    .reduce(
-      (sum, t) =>
-        sum + Number.parseFloat(t.amount.replace("$", "").replace(",", "")),
-      0
-    );
+  const totalAmountCompleted = transactions
+    .filter((t) => t.status === "success")
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  // =====================================================================================
+  // NEW: Export to CSV Functionality
+  // =====================================================================================
+  const exportToCsv = async () => {
+    setIsExporting(true);
+    try {
+      // Fetch ALL transactions matching current filters (disable pagination for export)
+      const exportParams = {
+        page: 1, // Start from page 1
+        limit: totalTransactions, // Request all items found by totalTransactions count
+        sortBy,
+        sortOrder,
+        ...(filters.searchTerm && { search: filters.searchTerm }),
+        ...(filters.transactionType !== "all" && {
+          transactionType: filters.transactionType,
+        }),
+        ...(filters.status !== "all" && { status: filters.status }),
+        ...(filters.userId && { userId: filters.userId }),
+        ...(filters.startDate && { startDate: filters.startDate }),
+        ...(filters.endDate && { endDate: filters.endDate }),
+        ...(filters.minAmount && { minAmount: filters.minAmount }),
+        ...(filters.maxAmount && { maxAmount: filters.maxAmount }),
+      };
+
+      const response = await getAllTransactions(exportParams);
+      const dataToExport = response.data;
+
+      if (!dataToExport || dataToExport.length === 0) {
+        alert("No data to export based on current filters.");
+        setIsExporting(false);
+        return;
+      }
+
+      // Define CSV headers
+      const headers = [
+        "Transaction ID",
+        "User Name",
+        "User Email",
+        "Type",
+        "Amount",
+        "Status",
+        "Date",
+        "Time",
+        "Description",
+        "Reference ID (Order/Booking)",
+      ];
+
+      // Map data to CSV rows
+      const csvRows = dataToExport.map((txn) => {
+        const transactionDate = new Date(txn.createdAt);
+        return [
+          `"${txn.txnId}"`, // Wrap in quotes to handle potential commas in ID
+          `"${txn.userId ? txn.userId.name : "N/A"}"`,
+          `"${txn.userId ? txn.userId.email : "N/A"}"`,
+          `"${
+            txn.transactionType.charAt(0).toUpperCase() +
+            txn.transactionType.slice(1)
+          }"`,
+          `${txn.amount.toFixed(2)}`,
+          `"${txn.status.charAt(0).toUpperCase() + txn.status.slice(1)}"`,
+          `"${transactionDate.toLocaleDateString()}"`,
+          `"${transactionDate.toLocaleTimeString()}"`,
+          `"${txn.description ? txn.description.replace(/"/g, '""') : "N/A"}"`, // Handle quotes in description
+          `"${txn.orderId || txn.bookingId || "N/A"}"`,
+        ].join(","); // Join fields with comma
+      });
+
+      // Combine headers and rows
+      const csvContent = [headers.join(","), ...csvRows].join("\n");
+
+      // Create a Blob and download it
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute(
+        "download",
+        `transactions_export_${new Date().toISOString().slice(0, 10)}.csv`
+      );
+      link.click();
+
+      URL.revokeObjectURL(url); // Clean up the URL object
+    } catch (err) {
+      console.error("Error exporting transactions:", err);
+      alert("Failed to export transactions. Please try again.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+  // =====================================================================================
 
   return (
     <div>
@@ -209,9 +262,41 @@ export default function TransactionsPage() {
               Monitor all financial transactions across the platform
             </p>
           </div>
-          <Button variant="outline">
-            <Download className="mr-2 h-4 w-4" />
-            Export
+          <Button
+            onClick={exportToCsv}
+            disabled={isExporting || loading}
+            variant="outline"
+          >
+            {isExporting ? (
+              <>
+                <svg
+                  className="animate-spin -ml-1 mr-2 h-4 w-4 text-primary"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+                Exporting...
+              </>
+            ) : (
+              <>
+                <Download className="mr-2 h-4 w-4" />
+                Export
+              </>
+            )}
           </Button>
         </div>
 
@@ -220,14 +305,14 @@ export default function TransactionsPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                Total Transactions
+                Total Transactions (All)
               </CardTitle>
               <CreditCard className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{totalTransactions}</div>
               <p className="text-xs text-muted-foreground">
-                {completedTransactions} completed
+                Total matching filters
               </p>
             </CardContent>
           </Card>
@@ -235,16 +320,16 @@ export default function TransactionsPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                Transaction Volume
+                Transaction Volume (Loaded)
               </CardTitle>
               <Banknote className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                ${totalAmount.toLocaleString()}
+                ${totalAmountCompleted.toLocaleString()}
               </div>
               <p className="text-xs text-muted-foreground">
-                Completed transactions only
+                Completed transactions (on current page)
               </p>
             </CardContent>
           </Card>
@@ -252,17 +337,22 @@ export default function TransactionsPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                Success Rate
+                Success Rate (Loaded)
               </CardTitle>
               <CreditCard className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {((completedTransactions / totalTransactions) * 100).toFixed(1)}
+                {totalTransactions > 0
+                  ? (
+                      (completedTransactionsCount / transactions.length) * // Use transactions.length for current page
+                      100
+                    ).toFixed(1)
+                  : "0.0"}
                 %
               </div>
               <p className="text-xs text-muted-foreground">
-                Transaction success rate
+                Transaction success rate (on current page)
               </p>
             </CardContent>
           </Card>
@@ -282,13 +372,20 @@ export default function TransactionsPage() {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
                   placeholder="Search transactions..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  value={filters.searchTerm}
+                  onChange={(e) =>
+                    setFilters({ ...filters, searchTerm: e.target.value })
+                  }
                   className="pl-10"
                 />
               </div>
-              <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger className="s w-full md:max-w-sm">
+              <Select
+                value={filters.transactionType}
+                onValueChange={(value) =>
+                  setFilters({ ...filters, transactionType: value })
+                }
+              >
+                <SelectTrigger className="w-full md:max-w-sm">
                   <Filter className="mr-2 h-4 w-4" />
                   <SelectValue placeholder="Transaction Type" />
                 </SelectTrigger>
@@ -302,91 +399,138 @@ export default function TransactionsPage() {
                   <SelectItem value="return">Return</SelectItem>
                 </SelectContent>
               </Select>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <Select
+                value={filters.status}
+                onValueChange={(value) =>
+                  setFilters({ ...filters, status: value })
+                }
+              >
                 <SelectTrigger className="w-[150px]">
                   <Filter className="mr-2 h-4 w-4" />
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="success">Success</SelectItem>
                   <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="processing">Processing</SelectItem>
                   <SelectItem value="failed">Failed</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Sorting Controls */}
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="Sort By" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="createdAt">Date</SelectItem>
+                  <SelectItem value="amount">Amount</SelectItem>
+                  <SelectItem value="transactionType">Type</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={sortOrder} onValueChange={setSortOrder}>
+                <SelectTrigger className="w-[120px]">
+                  <SelectValue placeholder="Order" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="desc">Descending</SelectItem>
+                  <SelectItem value="asc">Ascending</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Transaction ID</TableHead>
-                    <TableHead>User</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Date & Time</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Reference</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginatedTransactions.map((transaction) => (
-                    <TableRow key={transaction.id}>
-                      <TableCell className="font-medium">
-                        {transaction.id}
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">
-                            {transaction.userName}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            {transaction.userId}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {getTypeIcon(transaction.type)}
-                          {getTypeBadge(transaction.type)}
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        {transaction.amount}
-                      </TableCell>
-                      <TableCell>
-                        {getStatusBadge(transaction.status)}
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="text-sm">{transaction.date}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {transaction.time}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="max-w-[200px] truncate">
-                        {transaction.description}
-                      </TableCell>
-                      <TableCell className="font-mono text-sm">
-                        {transaction.reference}
-                      </TableCell>
+            {loading ? (
+              <div className="text-center py-8">Loading transactions...</div>
+            ) : error ? (
+              <div className="text-center py-8 text-red-500">{error}</div>
+            ) : transactions.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                No transactions found.
+              </div>
+            ) : (
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Transaction ID</TableHead>
+                      <TableHead>User</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Date & Time</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead>Reference</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {transactions.map((transaction) => (
+                      <TableRow key={transaction._id}>
+                        <TableCell className="font-medium">
+                          {transaction.txnId}
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">
+                              {transaction.userId
+                                ? transaction.userId.name
+                                : "N/A"}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {transaction.userId
+                                ? transaction.userId.email
+                                : "N/A"}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {getTypeIcon(transaction.transactionType)}
+                            {getTypeBadge(transaction.transactionType)}
+                          </div>
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          ${transaction.amount.toFixed(2)}
+                        </TableCell>
+                        <TableCell>
+                          {getStatusBadge(transaction.status)}
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <div className="text-sm">
+                              {new Date(
+                                transaction.createdAt
+                              ).toLocaleDateString()}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {new Date(
+                                transaction.createdAt
+                              ).toLocaleTimeString()}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="max-w-[200px] truncate">
+                          {transaction.description || "N/A"}
+                        </TableCell>
+                        <TableCell className="font-mono text-sm">
+                          {transaction.orderId ||
+                            transaction.bookingId ||
+                            "N/A"}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
 
             <div className="flex items-center justify-between mt-4">
               <div className="text-sm text-muted-foreground">
-                Showing {startIndex + 1} to{" "}
-                {Math.min(
-                  startIndex + itemsPerPage,
-                  filteredTransactions.length
-                )}{" "}
-                of {filteredTransactions.length} transactions
+                Showing{" "}
+                {transactions.length > 0
+                  ? (currentPage - 1) * itemsPerPage + 1
+                  : 0}{" "}
+                to {Math.min(currentPage * itemsPerPage, totalTransactions)} of{" "}
+                {totalTransactions} transactions
               </div>
               <div className="flex items-center gap-2">
                 <Button
@@ -400,6 +544,7 @@ export default function TransactionsPage() {
                   Previous
                 </Button>
                 <div className="flex items-center gap-1">
+                  {/* Render page buttons dynamically */}
                   {Array.from({ length: totalPages }, (_, i) => i + 1).map(
                     (page) => (
                       <Button

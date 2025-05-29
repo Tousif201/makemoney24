@@ -12,6 +12,8 @@ import bookingRouter from "./booking.routes.js";
 import ordersRouter from "./order.routes.js";
 import franchiseRoutes from "./Franchise.routes.js";
 import analyticsRouter from "./analytics.routes.js";
+import transactionRouter from "./transaction.routes.js";
+import userRouter from "./user.routes.js";
 const router = express.Router();
 
 // Mount the routers
@@ -23,11 +25,12 @@ router.use("/reviews", reviewRoutes);
 router.use("/uploadFiles", uploadRoutes);
 router.use("/categories", categoriesRoutes);
 router.use("/product-services", productServicesRoutes);
-router.use("banners", bannerRoutes);
-router.use("bookings", bookingRouter);
+router.use("/banners", bannerRoutes);
+router.use("/bookings", bookingRouter);
 router.use("/orders", ordersRouter);
 router.use("/franchises", franchiseRoutes);
 router.use("/analytics", analyticsRouter);
-// router.use("/users", userRouter);
+router.use("/transactions", transactionRouter);
+router.use("/users", userRouter);
 
 export default router;

@@ -73,14 +73,15 @@ export const uploadFiles = async (files) => {
  * @throws {Error} Throws an error if the deletion fails.
  */
 export const deleteFiles = async (fileKeys) => {
+  console.log(fileKeys);
   if (!fileKeys || fileKeys.length === 0) {
     throw new Error("No file keys provided for deletion.");
   }
 
   try {
     // Axios DELETE requests with a body use the 'data' property
-    const response = await apiClient.delete("/uploadFiles/delete", {
-      data: { fileKeys }, // Send fileKeys in the request body
+    const response = await apiClient.post("/uploadFiles/delete", {
+      fileKeys, // Send fileKeys in the request body
     });
     return response.data; // Confirmation object from the backend
   } catch (error) {
@@ -91,85 +92,3 @@ export const deleteFiles = async (fileKeys) => {
     throw error;
   }
 };
-
-// --- Example Usage in a React Component or similar context ---
-/*
-import React, { useState } from 'react';
-// import { uploadFiles, deleteFiles } from './your-api-file'; // Adjust path
-
-function FileManagementComponent() {
-  const [selectedFiles, setSelectedFiles] = useState([]);
-  const [uploadedMedia, setUploadedMedia] = useState([]);
-  const [uploading, setUploading] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
-
-  const handleFileChange = (event) => {
-    setSelectedFiles(Array.from(event.target.files));
-  };
-
-  const handleUpload = async () => {
-    if (selectedFiles.length === 0) {
-      setError("Please select files to upload.");
-      return;
-    }
-    setUploading(true);
-    setMessage("");
-    setError("");
-    try {
-      const response = await uploadFiles(selectedFiles);
-      setUploadedMedia((prev) => [...prev, ...response]);
-      setMessage("Files uploaded successfully!");
-      setSelectedFiles([]); // Clear selected files after upload
-    } catch (err) {
-      setError(`Upload failed: ${err.response?.data?.message || err.message}`);
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const handleDelete = async (keyToDelete) => {
-    setDeleting(true);
-    setMessage("");
-    setError("");
-    try {
-      const response = await deleteFiles([keyToDelete]);
-      setUploadedMedia((prev) => prev.filter((media) => media.key !== keyToDelete));
-      setMessage(response.message);
-    } catch (err) {
-      setError(`Deletion failed: ${err.response?.data?.message || err.message}`);
-    } finally {
-      setDeleting(false);
-    }
-  };
-
-  return (
-    <div>
-      <h2>Upload Files</h2>
-      <input type="file" multiple onChange={handleFileChange} />
-      <button onClick={handleUpload} disabled={uploading || selectedFiles.length === 0}>
-        {uploading ? "Uploading..." : "Upload"}
-      </button>
-      {message && <p style={{ color: 'green' }}>{message}</p>}
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-
-      <h3>Uploaded Media</h3>
-      {uploadedMedia.length === 0 ? (
-        <p>No media uploaded yet.</p>
-      ) : (
-        <ul>
-          {uploadedMedia.map((media) => (
-            <li key={media.key}>
-              <a href={media.url} target="_blank" rel="noopener noreferrer">{media.url} ({media.type})</a>
-              <button onClick={() => handleDelete(media.key)} disabled={deleting}>
-                {deleting ? "Deleting..." : "Delete"}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}
-*/

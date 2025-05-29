@@ -1,9 +1,6 @@
 export const backendConfig = {
-//   base: "https://makemoney24.onrender.com/api",
-//   origin: "https://makemoney24.onrender.com",
-  base: "https://4sr8mplp-3000.inc1.devtunnels.ms/api",
-  origin: "https://4sr8mplp-3000.inc1.devtunnels.ms/",
-
+  base: " http://localhost:5000/api",
+  origin: "https://makemoney24.onrender.com",
 };
 
 export const sessionKey = "test";

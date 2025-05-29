@@ -137,7 +137,7 @@ export const sidebarConfig = {
       icon: Milestone,
       href: "/dashboard/income/rewards",
     },
-        {
+    {
       label: "Wallet",
       icon: Wallet,
       items: [
@@ -154,7 +154,7 @@ export const sidebarConfig = {
       ],
     },
   ],
- admin: [
+  admin: [
     {
       label: "Distribution",
       icon: Package,
@@ -230,6 +230,4 @@ export const sidebarConfig = {
       href: "/dashboard/admin/banners",
     },
   ],
-
- 
 };

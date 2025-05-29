@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState, useCallback } from "react"; // Import useCallback
 import {
   Card,
   CardContent,
@@ -17,170 +17,94 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Search,
-  Filter,
-  MoreHorizontal,
-  Eye,
-  Edit,
-  Ban,
-  Users,
-  UserPlus,
-  DollarSign,
-} from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Search, Users, UserPlus, DollarSign } from "lucide-react"; // Removed Filter, Ban
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
-const usersData = [
-  {
-    id: "U001",
-    name: "John Smith",
-    email: "john.smith@email.com",
-    phone: "+1 234-567-8901",
-    membershipLevel: "Gold",
-    joinDate: "2024-01-15",
-    totalReferrals: 12,
-    referralEarnings: "$1,240",
-    status: "Active",
-    lastActive: "2024-03-15",
-    totalSpent: "$2,450",
-  },
-  {
-    id: "U002",
-    name: "Sarah Johnson",
-    email: "sarah.j@email.com",
-    phone: "+1 234-567-8902",
-    membershipLevel: "Platinum",
-    joinDate: "2023-11-20",
-    totalReferrals: 25,
-    referralEarnings: "$3,750",
-    status: "Active",
-    lastActive: "2024-03-14",
-    totalSpent: "$5,680",
-  },
-  {
-    id: "U003",
-    name: "Mike Davis",
-    email: "mike.davis@email.com",
-    phone: "+1 234-567-8903",
-    membershipLevel: "Silver",
-    joinDate: "2024-02-10",
-    totalReferrals: 8,
-    referralEarnings: "$720",
-    status: "Active",
-    lastActive: "2024-03-13",
-    totalSpent: "$1,890",
-  },
-  {
-    id: "U004",
-    name: "Lisa Wilson",
-    email: "lisa.wilson@email.com",
-    phone: "+1 234-567-8904",
-    membershipLevel: "Bronze",
-    joinDate: "2024-03-01",
-    totalReferrals: 3,
-    referralEarnings: "$180",
-    status: "Active",
-    lastActive: "2024-03-15",
-    totalSpent: "$890",
-  },
-  {
-    id: "U005",
-    name: "Emma Brown",
-    email: "emma.brown@email.com",
-    phone: "+1 234-567-8905",
-    membershipLevel: "Gold",
-    joinDate: "2023-12-05",
-    totalReferrals: 15,
-    referralEarnings: "$1,875",
-    status: "Suspended",
-    lastActive: "2024-02-28",
-    totalSpent: "$3,240",
-  },
-];
+import { getAdminDashboard } from "../../../../api/user"; // Adjust this path if necessary
 
 export default function UsersPage() {
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   const [searchTerm, setSearchTerm] = useState("");
-  const [membershipFilter, setMembershipFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [itemsPerPage, setItemsPerPage] = useState(10); // Managed by API limit, but good to have a local state for consistency or UI controls
 
-  const filteredUsers = usersData.filter((user) => {
-    const matchesSearch =
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.id.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesMembership =
-      membershipFilter === "all" ||
-      user.membershipLevel.toLowerCase() === membershipFilter;
-    const matchesStatus =
-      statusFilter === "all" || user.status.toLowerCase() === statusFilter;
-    return matchesSearch && matchesMembership && matchesStatus;
-  });
+  // Debounce search term to avoid excessive API calls
+  const debouncedSearchTerm = useDebounce(searchTerm, 500); // 500ms debounce
 
-  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedUsers = filteredUsers.slice(
-    startIndex,
-    startIndex + itemsPerPage
-  );
-
-  const getMembershipBadge = (level) => {
-    switch (level) {
-      case "Platinum":
-        return (
-          <Badge className="bg-purple-100 text-purple-800">Platinum</Badge>
-        );
-      case "Gold":
-        return <Badge className="bg-yellow-100 text-yellow-800">Gold</Badge>;
-      case "Silver":
-        return <Badge className="bg-gray-100 text-gray-800">Silver</Badge>;
-      case "Bronze":
-        return <Badge className="bg-orange-100 text-orange-800">Bronze</Badge>;
-      default:
-        return <Badge>{level}</Badge>;
+  const fetchDashboardData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await getAdminDashboard(
+        currentPage,
+        itemsPerPage,
+        debouncedSearchTerm
+      );
+      setDashboardData(data);
+    } catch (err) {
+      console.error("Failed to fetch admin dashboard data:", err);
+      setError("Failed to load dashboard data. Please try again.");
+    } finally {
+      setLoading(false);
     }
+  }, [currentPage, itemsPerPage, debouncedSearchTerm]);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]); // Re-fetch when fetchDashboardData changes (due to dependencies like page, limit, search)
+
+  // Helper for debouncing (you'll need to define this somewhere, e.g., a custom hook or directly in this file)
+  function useDebounce(value, delay) {
+    const [debouncedValue, setDebouncedValue] = useState(value);
+
+    useEffect(() => {
+      const handler = setTimeout(() => {
+        setDebouncedValue(value);
+      }, delay);
+
+      return () => {
+        clearTimeout(handler);
+      };
+    }, [value, delay]);
+
+    return debouncedValue;
+  }
+
+  const getStatusBadge = (isMember) => {
+    return isMember ? (
+      <Badge className="bg-green-100 text-green-800">Member</Badge>
+    ) : (
+      <Badge className="bg-gray-100 text-gray-800">Non-Member</Badge>
+    );
   };
 
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case "Active":
-        return <Badge className="bg-green-100 text-green-800">Active</Badge>;
-      case "Suspended":
-        return <Badge className="bg-red-100 text-red-800">Suspended</Badge>;
-      case "Inactive":
-        return <Badge className="bg-gray-100 text-gray-800">Inactive</Badge>;
-      default:
-        return <Badge>{status}</Badge>;
-    }
-  };
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <p>Loading dashboard data...</p>
+      </div>
+    );
+  }
 
-  const totalUsers = filteredUsers.length;
-  const totalReferrals = filteredUsers.reduce(
-    (sum, user) => sum + user.totalReferrals,
-    0
-  );
-  const totalEarnings = filteredUsers.reduce(
-    (sum, user) =>
-      sum +
-      Number.parseFloat(
-        user.referralEarnings.replace("$", "").replace(",", "")
-      ),
-    0
-  );
+  if (error) {
+    return (
+      <div className="flex justify-center items-center h-screen text-red-500">
+        <p>{error}</p>
+      </div>
+    );
+  }
+
+  // Destructure data safely after checking for loading/error
+  const { globalMetrics, pagination, users } = dashboardData;
+
+  const totalUsers = globalMetrics.totalUsers;
+  const totalReferrals = globalMetrics.totalReferrals;
+  const totalReferralEarnings = globalMetrics.totalReferralEarnings;
+
+  const totalFilteredUsers = pagination.totalResults;
+  const totalPages = pagination.totalPages;
 
   return (
     <div>
@@ -204,8 +128,9 @@ export default function UsersPage() {
             <CardContent>
               <div className="text-2xl font-bold">{totalUsers}</div>
               <p className="text-xs text-muted-foreground">
-                {filteredUsers.filter((u) => u.status === "Active").length}{" "}
-                active users
+                {/* Active user count is not directly available from global metrics without further API call or client-side filtering */}
+                {/* You might want to get this from backend if needed */}
+                Overall users registered
               </p>
             </CardContent>
           </Card>
@@ -220,7 +145,8 @@ export default function UsersPage() {
             <CardContent>
               <div className="text-2xl font-bold">{totalReferrals}</div>
               <p className="text-xs text-muted-foreground">
-                {(totalReferrals / totalUsers).toFixed(1)} avg per user
+                {/* Avg per user calculation might not be accurate for totalReferrals */}
+                Overall referred users
               </p>
             </CardContent>
           </Card>
@@ -234,10 +160,10 @@ export default function UsersPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                ${totalEarnings.toLocaleString()}
+                ${totalReferralEarnings.toLocaleString()}
               </div>
               <p className="text-xs text-muted-foreground">
-                ${(totalEarnings / totalUsers).toFixed(0)} avg per user
+                Total earnings disbursed via referrals
               </p>
             </CardContent>
           </Card>
@@ -251,47 +177,19 @@ export default function UsersPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-          <div className="flex flex-col gap-4 sm:flex-col md:flex-row md:items-center md:gap-4 mb-6">
-  {/* Search Input */}
-  <div className="relative w-full md:max-w-sm">
-    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-    <Input
-      placeholder="Search users..."
-      value={searchTerm}
-      onChange={(e) => setSearchTerm(e.target.value)}
-      className="pl-10 w-full"
-    />
-  </div>
-
-  {/* Membership Filter */}
-  <Select value={membershipFilter} onValueChange={setMembershipFilter}>
-    <SelectTrigger className="w-full md:w-[180px]">
-      <Filter className="mr-2 h-4 w-4" />
-      <SelectValue placeholder="Membership" />
-    </SelectTrigger>
-    <SelectContent>
-      <SelectItem value="all">All Memberships</SelectItem>
-      <SelectItem value="bronze">Bronze</SelectItem>
-      <SelectItem value="silver">Silver</SelectItem>
-      <SelectItem value="gold">Gold</SelectItem>
-      <SelectItem value="platinum">Platinum</SelectItem>
-    </SelectContent>
-  </Select>
-
-  {/* Status Filter */}
-  <Select value={statusFilter} onValueChange={setStatusFilter}>
-    <SelectTrigger className="w-full md:w-[150px]">
-      <Filter className="mr-2 h-4 w-4" />
-      <SelectValue placeholder="Status" />
-    </SelectTrigger>
-    <SelectContent>
-      <SelectItem value="all">All Status</SelectItem>
-      <SelectItem value="active">Active</SelectItem>
-      <SelectItem value="suspended">Suspended</SelectItem>
-      <SelectItem value="inactive">Inactive</SelectItem>
-    </SelectContent>
-  </Select>
-</div>
+            <div className="flex flex-col gap-4 sm:flex-col md:flex-row md:items-center md:gap-4 mb-6">
+              {/* Search Input */}
+              <div className="relative w-full md:max-w-sm">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  placeholder="Search users by name, email, phone, or referral code..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 w-full"
+                />
+              </div>
+              {/* Removed Membership and Status filters as they are not supported by the current API for server-side filtering */}
+            </div>
 
             <div className="rounded-md border">
               <Table>
@@ -299,121 +197,119 @@ export default function UsersPage() {
                   <TableRow>
                     <TableHead>User</TableHead>
                     <TableHead>Contact</TableHead>
-                    <TableHead>Membership</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>Membership Status</TableHead>
                     <TableHead>Referrals</TableHead>
                     <TableHead>Referral Earnings</TableHead>
                     <TableHead>Total Spent</TableHead>
                     <TableHead>Join Date</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedUsers.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage src="/placeholder.svg" />
-                            <AvatarFallback>
-                              {user.name
-                                .split(" ")
-                                .map((n) => n[0])
-                                .join("")}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="font-medium">{user.name}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {user.id}
-                            </div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="text-sm">{user.email}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {user.phone}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {getMembershipBadge(user.membershipLevel)}
-                      </TableCell>
-                      <TableCell>{getStatusBadge(user.status)}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <UserPlus className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">
-                            {user.totalReferrals}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-medium text-green-600">
-                        {user.referralEarnings}
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        {user.totalSpent}
-                      </TableCell>
-                      <TableCell>{user.joinDate}</TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem>
-                              <Eye className="mr-2 h-4 w-4" />
-                              View Profile
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Edit className="mr-2 h-4 w-4" />
-                              Edit User
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="text-red-600">
-                              <Ban className="mr-2 h-4 w-4" />
-                              Suspend User
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                  {users.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-4">
+                        No users found matching your criteria.
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    users.map((user) => (
+                      <TableRow key={user.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src="/placeholder.svg" />{" "}
+                              {/* Consider using actual user profile images if available */}
+                              <AvatarFallback>
+                                {user.name
+                                  .split(" ")
+                                  .map((n) => n[0])
+                                  .join("")
+                                  .toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <div className="font-medium">{user.name}</div>
+                              <div className="text-sm text-muted-foreground">
+                                {user.referralCode}
+                              </div>{" "}
+                              {/* Display referralCode here */}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <div className="text-sm">{user.email}</div>
+                            <div className="text-sm text-muted-foreground">
+                              {user.phone}
+                            </div>
+                          </div>
+                        </TableCell>
+
+                        <TableCell>
+                          {getStatusBadge(user.membershipStatus === "Member")}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <UserPlus className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium">
+                              {user.totalReferrals}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="font-medium text-green-600">
+                          ${user.totalReferralEarnings.toLocaleString()}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          ${user.totalSpent.toLocaleString()}
+                        </TableCell>
+                        <TableCell>
+                          {new Date(user.joiningDate).toLocaleDateString()}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </div>
 
             <div className="flex items-center justify-between mt-4">
               <div className="text-sm text-muted-foreground">
-                Showing {startIndex + 1} to{" "}
-                {Math.min(startIndex + itemsPerPage, filteredUsers.length)} of{" "}
-                {filteredUsers.length} users
+                Showing{" "}
+                {totalFilteredUsers > 0
+                  ? pagination.currentPage * pagination.limit -
+                    pagination.limit +
+                    1
+                  : 0}{" "}
+                to{" "}
+                {Math.min(
+                  pagination.currentPage * pagination.limit,
+                  totalFilteredUsers
+                )}{" "}
+                of {totalFilteredUsers} users
               </div>
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() =>
-                    setCurrentPage((prev) => Math.max(prev - 1, 1))
-                  }
+                  onClick={() => setCurrentPage((prev) => prev - 1)}
                   disabled={currentPage === 1}
                 >
                   Previous
                 </Button>
                 <div className="flex items-center gap-1">
+                  {/* Render page buttons dynamically based on totalPages */}
                   {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                    (page) => (
+                    (pageNumber) => (
                       <Button
-                        key={page}
-                        variant={currentPage === page ? "default" : "outline"}
+                        key={pageNumber}
+                        variant={
+                          currentPage === pageNumber ? "default" : "outline"
+                        }
                         size="sm"
-                        onClick={() => setCurrentPage(page)}
+                        onClick={() => setCurrentPage(pageNumber)}
                         className="w-8 h-8 p-0"
                       >
-                        {page}
+                        {pageNumber}
                       </Button>
                     )
                   )}
@@ -421,9 +317,7 @@ export default function UsersPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() =>
-                    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                  }
+                  onClick={() => setCurrentPage((prev) => prev + 1)}
                   disabled={currentPage === totalPages}
                 >
                   Next
