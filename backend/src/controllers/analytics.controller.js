@@ -4,6 +4,7 @@ import { Franchise } from "../models/Franchise.model.js"; // Adjust path as need
 import { Order } from '../models/Order.model.js';
 import mongoose from "mongoose";
 
+
 /**
  * @desc Get dashboard analytics data for a sales representative's home page
  * @route GET /api/salesrep/dashboard/analytics
@@ -40,6 +41,11 @@ export const getSalesRepDashHomeAnalytics = async (req, res) => {
     );
     const endOfPreviousMonth = new Date(now.getFullYear(), now.getMonth(), 0);
 
+    // Start of the week (Sunday for consistency)
+    const startOfWeek = new Date(now); // Clone current date
+    startOfWeek.setDate(now.getDate() - now.getDay()); // Get Sunday of current week
+    startOfWeek.setHours(0, 0, 0, 0); // Set to start of day
+
     // --- 4. Fetch Data ---
 
     // Total Vendors under this sales rep
@@ -75,18 +81,15 @@ export const getSalesRepDashHomeAnalytics = async (req, res) => {
     });
 
     // Total accounts (User documents) created by this sales rep in the current month
-    // This assumes the sales rep is 'parent' or 'referredBy' the new user, or maybe you have a direct 'createdBy' field on the User model
-    // For simplicity, let's assume 'ownerId' for Franchise and 'userId' for Vendor are considered 'accounts created'
-    // This could also be refined if the User model directly tracks who created it.
     const newFranchiseOwnerUsersThisMonth = await Franchise.find({
       salesRep: salesRepId,
       createdAt: { $gte: startOfMonth, $lte: endOfMonth },
-    }).distinct("ownerId"); // Get unique owner IDs
+    }).distinct("ownerId");
 
     const newVendorUsersThisMonth = await Vendor.find({
       salesRep: salesRepId,
       createdAt: { $gte: startOfMonth, $lte: endOfMonth },
-    }).distinct("userId"); // Get unique user IDs for vendors
+    }).distinct("userId");
 
     const accountsCreatedThisMonth = new Set([
       ...newFranchiseOwnerUsersThisMonth,
@@ -109,26 +112,69 @@ export const getSalesRepDashHomeAnalytics = async (req, res) => {
       growthRate = 100; // If previous was 0 but current is > 0, it's 100% growth
     }
 
-    // --- 6. Fetch Recent Activity (last 5-10 activities for example) ---
-    // Combine recent vendor and franchise creations, sort by date.
-    // This assumes `createdAt` field exists on both models.
+    // --- 6. New Accounts Trend for the Last Week (for chart) ---
+    const dayNamesForChart = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const newAccountsTrend = dayNamesForChart.map(day => ({ day, accounts: 0 }));
 
+    const weeklyNewAccounts = await Promise.all([
+      Vendor.aggregate([
+        {
+          $match: {
+            salesRep: new mongoose.Types.ObjectId(salesRepId),
+            createdAt: { $gte: startOfWeek, $lte: new Date() }
+          }
+        },
+        {
+          $group: {
+            _id: { $dayOfWeek: "$createdAt" }, // 1 for Sunday, 2 for Monday, etc.
+            count: { $sum: 1 }
+          }
+        }
+      ]),
+      Franchise.aggregate([
+        {
+          $match: {
+            salesRep: new mongoose.Types.ObjectId(salesRepId),
+            createdAt: { $gte: startOfWeek, $lte: new Date() }
+          }
+        },
+        {
+          $group: {
+            _id: { $dayOfWeek: "$createdAt" }, // 1 for Sunday, 2 for Monday, etc.
+            count: { $sum: 1 }
+          }
+        }
+      ])
+    ]);
+
+    const [weeklyNewVendors, weeklyNewFranchises] = weeklyNewAccounts;
+
+    const combinedWeeklyCounts = new Map();
+    weeklyNewVendors.forEach(day => combinedWeeklyCounts.set(day._id, (combinedWeeklyCounts.get(day._id) || 0) + day.count));
+    weeklyNewFranchises.forEach(day => combinedWeeklyCounts.set(day._id, (combinedWeeklyCounts.get(day._id) || 0) + day.count));
+
+    combinedWeeklyCounts.forEach((count, dayOfWeek) => {
+      newAccountsTrend[dayOfWeek - 1].accounts = count; // Map 1-based dayOfWeek to 0-based array index
+    });
+
+
+    // --- 7. Fetch Recent Activity (last 5-10 activities for example) ---
     const recentVendors = await Vendor.find({ salesRep: salesRepId })
       .sort({ createdAt: -1 })
-      .limit(5) // Get latest 5
-      .populate("userId", "name email"); // Populate user details for context
+      .limit(5)
+      .populate("userId", "name email");
 
     const recentFranchises = await Franchise.find({ salesRep: salesRepId })
       .sort({ createdAt: -1 })
-      .limit(5) // Get latest 5
-      .populate("ownerId", "name email"); // Populate owner details for context
+      .limit(5)
+      .populate("ownerId", "name email");
 
     let recentActivity = [];
 
     recentVendors.forEach((vendor) => {
       recentActivity.push({
         activityType: "Vendor Created",
-        activityDate: vendor.createdAt?.toISOString().split("T")[0], // Format to YYYY-MM-DD
+        activityDate: vendor.createdAt?.toISOString().split("T")[0],
         details: `Vendor "${vendor.name}" (${vendor.userId?.email || "N/A"}) was created.`,
         _id: vendor._id,
       });
@@ -137,25 +183,24 @@ export const getSalesRepDashHomeAnalytics = async (req, res) => {
     recentFranchises.forEach((franchise) => {
       recentActivity.push({
         activityType: "Franchise Enrolled",
-        activityDate: franchise.createdAt?.toISOString().split("T")[0], // Format to YYYY-MM-DD
+        activityDate: franchise.createdAt?.toISOString().split("T")[0],
         details: `Franchise "${franchise.franchiseName}" (Owner: ${franchise.ownerId?.email || "N/A"}) was enrolled.`,
         _id: franchise._id,
       });
     });
 
-    // Sort all activities by date descending
     recentActivity.sort(
       (a, b) => new Date(b.activityDate) - new Date(a.activityDate)
     );
-    // Limit to a reasonable number for dashboard display
-    recentActivity = recentActivity.slice(0, 10); // Display top 10 recent activities
+    recentActivity = recentActivity.slice(0, 10);
 
-    // --- 7. Send Response ---
+    // --- 8. Send Response ---
     res.status(200).json({
       totalVendors,
       totalFranchises,
-      growthRate: parseFloat(growthRate.toFixed(2)), // Format to 2 decimal places
+      growthRate: parseFloat(growthRate.toFixed(2)),
       accountsCreatedThisMonth,
+      newAccountsTrend, // Updated chart data format
       recentActivity,
       salesRepInfo: {
         name: salesRepUser.name,
@@ -183,13 +228,6 @@ export const getVendorDashHomeAnalytics = async (req, res) => {
     return res.status(400).json({ message: "Vendor ID is required." });
   }
 
-  // Optional: Validate if the vendorId actually exists in your Vendor model
-  // import Vendor from '../models/Vendor.js';
-  // const vendor = await Vendor.findById(vendorId);
-  // if (!vendor) {
-  //   return res.status(404).json({ message: "Vendor not found." });
-  // }
-
   try {
     const now = new Date();
     // Start of current month
@@ -203,7 +241,8 @@ export const getVendorDashHomeAnalytics = async (req, res) => {
     const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
 
     // Start of the week (Sunday for consistency)
-    const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay())); // Get Sunday of current week
+    const startOfWeek = new Date(now); // Clone current date
+    startOfWeek.setDate(now.getDate() - now.getDay()); // Get Sunday of current week
     startOfWeek.setHours(0, 0, 0, 0); // Set to start of day
 
 
@@ -267,9 +306,9 @@ export const getVendorDashHomeAnalytics = async (req, res) => {
     const productsSoldIncrement = calculateIncrement(currentMonthData.totalProductsSold, lastMonthData.totalProductsSold);
 
 
-    // --- 3. Orders Trend for the Last Week ---
-    const ordersTrend = { mon: 0, tue: 0, wed: 0, thus: 0, fri: 0, sat: 0, sun: 0 };
-    const dayNames = ['sun', 'mon', 'tue', 'wed', 'thus', 'fri', 'sat'];
+    // --- 3. Orders Trend for the Last Week (for chart) ---
+    const dayNamesForChart = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const ordersTrend = dayNamesForChart.map(day => ({ day, orders: 0 }));
 
     const weeklyOrders = await Order.aggregate([
       {
@@ -288,7 +327,8 @@ export const getVendorDashHomeAnalytics = async (req, res) => {
     ]);
 
     weeklyOrders.forEach(day => {
-      ordersTrend[dayNames[day._id - 1]] = day.count; // Map 1-based dayOfWeek to 0-based array index
+      // Map 1-based dayOfWeek to 0-based array index
+      ordersTrend[day._id - 1].orders = day.count;
     });
 
 
@@ -305,6 +345,8 @@ export const getVendorDashHomeAnalytics = async (req, res) => {
       orderAmount: order.totalAmount,
       orderStatus: order.orderStatus,
       userName: order.userId ? order.userId.name : 'N/A', // Display user's name
+      // Ensure 'items' is included if you plan to display product names from it
+      items: order.items || [], // Return items array as is
     }));
 
 
@@ -322,7 +364,7 @@ export const getVendorDashHomeAnalytics = async (req, res) => {
         noOfProducts: allTimeData.totalProductsSold,
         incrementFromLastMonth: productsSoldIncrement
       },
-      ordersTrend: ordersTrend,
+      ordersTrend: ordersTrend, // Updated chart data format
       recentOrders: formattedRecentOrders,
     });
 

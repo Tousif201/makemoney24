@@ -102,11 +102,11 @@ export const sidebarConfig = {
       href: "/dashboard/orders",
     },
 
-    {
-      label: "Profile Settings",
-      icon: Settings,
-      href: "/dashboard/profile",
-    },
+    // {
+    //   label: "Profile Settings",
+    //   icon: Settings,
+    //   href: "/dashboard/profile",
+    // },
   ],
 
   "sales-rep": [
@@ -122,11 +122,11 @@ export const sidebarConfig = {
     },
   ],
   "franchise-admin": [
-    {
-      label: "Vendors",
-      icon: Package,
-      href: "/dashboard/vendors",
-    },
+    // {
+    //   label: "Vendors",
+    //   icon: Package,
+    //   href: "/dashboard/vendors",
+    // },
     {
       label: "Users",
       icon: Users,
