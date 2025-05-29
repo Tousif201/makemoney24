@@ -82,6 +82,8 @@ export const getAllTransactions = async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching transactions:", error);
-    res.status(500).json({ success: false, message: "Server Error", error: error.message });
+    res
+      .status(500)
+      .json({ success: false, message: "Server Error", error: error.message });
   }
 };

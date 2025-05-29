@@ -50,58 +50,6 @@ const salesData = [
     deliveryRate: "93.3%",
     period: "Last 30 days",
   },
-  {
-    vendorId: "V002",
-    vendorName: "Fashion Forward",
-    franchise: "Style Central Franchise",
-    ordersPlaced: 38,
-    ordersDelivered: 35,
-    ordersPending: 3,
-    ordersCancelled: 0,
-    totalRevenue: "$32,150",
-    commission: "$3,215",
-    deliveryRate: "92.1%",
-    period: "Last 30 days",
-  },
-  {
-    vendorId: "V003",
-    vendorName: "Home Essentials",
-    franchise: "Lifestyle Franchise",
-    ordersPlaced: 28,
-    ordersDelivered: 25,
-    ordersPending: 2,
-    ordersCancelled: 1,
-    totalRevenue: "$18,900",
-    commission: "$1,890",
-    deliveryRate: "89.3%",
-    period: "Last 30 days",
-  },
-  {
-    vendorId: "V004",
-    vendorName: "Sports Galaxy",
-    franchise: "Fitness Pro Franchise",
-    ordersPlaced: 62,
-    ordersDelivered: 58,
-    ordersPending: 4,
-    ordersCancelled: 0,
-    totalRevenue: "$67,800",
-    commission: "$6,780",
-    deliveryRate: "93.5%",
-    period: "Last 30 days",
-  },
-  {
-    vendorId: "V005",
-    vendorName: "Beauty Bliss",
-    franchise: "Glamour Franchise",
-    ordersPlaced: 22,
-    ordersDelivered: 18,
-    ordersPending: 2,
-    ordersCancelled: 2,
-    totalRevenue: "$12,450",
-    commission: "$1,245",
-    deliveryRate: "81.8%",
-    period: "Last 30 days",
-  },
 ];
 
 export default function SalesReportsPage() {
@@ -161,21 +109,20 @@ export default function SalesReportsPage() {
     <div>
       <div className="flex-1 space-y-6 p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-  <div>
-    <h2 className="text-2xl font-bold tracking-tight">Sales Reports</h2>
-    <p className="text-muted-foreground">
-      Vendor-wise sales performance and order analytics
-    </p>
-  </div>
-  <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-    <DatePickerWithRange />
-    <Button variant="outline" className="w-full sm:w-auto">
-      <Download className="mr-2 h-4 w-4" />
-      Export
-    </Button>
-  </div>
-</div>
-
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">Sales Reports</h2>
+            <p className="text-muted-foreground">
+              Vendor-wise sales performance and order analytics
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            {/* <DatePickerWithRange /> */}
+            <Button variant="outline" className="w-full sm:w-auto">
+              <Download className="mr-2 h-4 w-4" />
+              Export
+            </Button>
+          </div>
+        </div>
 
         {/* Summary Cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -267,29 +214,6 @@ export default function SalesReportsPage() {
                   className="pl-10"
                 />
               </div>
-              <Select
-                value={franchiseFilter}
-                onValueChange={setFranchiseFilter}
-              >
-                <SelectTrigger className="w-[200px]">
-                  <Filter className="mr-2 h-4 w-4" />
-                  <SelectValue placeholder="Filter by franchise" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Franchises</SelectItem>
-                  <SelectItem value="Digital Hub">
-                    Digital Hub Franchise
-                  </SelectItem>
-                  <SelectItem value="Style Central">
-                    Style Central Franchise
-                  </SelectItem>
-                  <SelectItem value="Lifestyle">Lifestyle Franchise</SelectItem>
-                  <SelectItem value="Fitness Pro">
-                    Fitness Pro Franchise
-                  </SelectItem>
-                  <SelectItem value="Glamour">Glamour Franchise</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
 
             <div className="rounded-md border">
