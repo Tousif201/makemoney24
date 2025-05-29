@@ -13,6 +13,7 @@ const DashboardLayout = ({ children }) => {
     // window.location.href = "/login";
     return null; // Prevent rendering
   }
+  console.log(session)
 
   return (
     <SidebarProvider defaultOpen={true}>
