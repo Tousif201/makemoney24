@@ -10,7 +10,7 @@ const DashboardLayout = ({ children }) => {
   // Redirect if not authenticated and loading is done
   if (!session && loading === false) {
     console.log(session, loading);
-    window.location.href = "/login";
+    // window.location.href = "/login";
     return null; // Prevent rendering
   }
 

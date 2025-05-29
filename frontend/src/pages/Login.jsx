@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import imglog from "../assets/login/login.jpg";
 import { loginUser } from "../../api/auth";
-
+import { Eye, EyeOff } from "lucide-react";
 export default function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -12,6 +12,9 @@ export default function Login() {
 
   const [loading, setLoading] = useState(false);
   const session = localStorage.getItem("authToken")
+ 
+  const [showPassword, setShowPassword] = useState(false);
+
   useEffect(() => {
     if (session) {
       navigate("/dashboard")
@@ -68,14 +71,23 @@ export default function Login() {
               onChange={(e) => setEmail(e.target.value)}
               className="w-full p-3 rounded bg-gray-100 text-black focus:outline-none focus:ring-2 focus:ring-[#9b35db] focus:shadow-[0_0_10px_#9b35db] transition-all duration-300"
             />
-            <input
-              type="password"
-              required
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full p-3 rounded bg-gray-100 text-black focus:outline-none focus:ring-2 focus:ring-[#9b35db] focus:shadow-[0_0_10px_#9b35db] transition-all duration-300"
-            />
+            <div className="relative w-full">
+      <input
+        type={showPassword ? "text" : "password"}
+        required
+        placeholder="Password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        className="w-full p-3 rounded bg-gray-100 text-black focus:outline-none focus:ring-2 focus:ring-[#9b35db] focus:shadow-[0_0_10px_#9b35db] transition-all duration-300 pr-10"
+      />
+      <button
+        type="button"
+        onClick={() => setShowPassword(!showPassword)}
+        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-600 focus:outline-none"
+      >
+        {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+      </button>
+    </div>
             <motion.button
               type="submit"
               whileHover={{ scale: 1.05 }}

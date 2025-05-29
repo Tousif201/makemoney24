@@ -219,23 +219,23 @@ export default function RewardsDistributionPage() {
   return (
     <div>
       <div className="flex-1 space-y-8 p-6 bg-gradient-to-br from-background to-muted/20">
-       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 p-4 sm:p-6">
-  <div>
-    <h2 className="text-xl sm:text-2xl font-bold tracking-tight">
-      Rewards Distribution Reports
-    </h2>
-    <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-      Monitor milestone rewards distributed across users and franchise partners
-    </p>
-  </div>
-  <div className="flex items-center gap-2 ">
-    <DatePickerWithRange className="w-full sm:w-auto" />
-    <Button variant="outline" className="bg-white h-9 sm:h-10 text-xs sm:text-sm">
-      <Download className="mr-2 h-3 sm:h-4 w-3 sm:w-4" />
-      Export Report
-    </Button>
-  </div>
-</div>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 p-4 sm:p-6">
+          <div>
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight">
+              Rewards Distribution Reports
+            </h2>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+              Monitor milestone rewards distributed across users and franchise partners
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            <DatePickerWithRange className="w-full sm:w-auto" />
+            <Button variant="outline" className="bg-white h-9 sm:h-10 text-xs sm:text-sm">
+              <Download className="mr-2 h-3 sm:h-4 w-3 sm:w-4" />
+              Export Report
+            </Button>
+          </div>
+        </div>
 
         {/* Summary Cards */}
         <div className="grid gap-6 md:grid-cols-4">
@@ -335,19 +335,19 @@ export default function RewardsDistributionPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center gap-4 mb-6">
+          <div className="flex flex-col gap-4 sm:flex-col md:flex-row md:items-center md:gap-4 mb-6">
               <div className="relative flex-1 max-w-sm">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
                   placeholder="Search rewards..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                className="pl-9 sm:pl-10 text-sm"
                 />
               </div>
               <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="w-[150px]">
-                  <Filter className="mr-2 h-4 w-4" />
+                <SelectTrigger className="w-full sm:w-[160px] h-9 sm:h-10 text-sm">
+                  <Filter className="mr-2 h-3 sm:h-4 w-3 sm:w-4" />
                   <SelectValue placeholder="Category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -361,7 +361,7 @@ export default function RewardsDistributionPage() {
                 value={recipientFilter}
                 onValueChange={setRecipientFilter}
               >
-                <SelectTrigger className="w-[150px]">
+                <SelectTrigger className=" w-full md:w-[150px]">
                   <Filter className="mr-2 h-4 w-4" />
                   <SelectValue placeholder="Recipient" />
                 </SelectTrigger>
@@ -372,7 +372,7 @@ export default function RewardsDistributionPage() {
                 </SelectContent>
               </Select>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[150px]">
+                <SelectTrigger className="  w-full  md:w-[150px]">
                   <Filter className="mr-2 h-4 w-4" />
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
