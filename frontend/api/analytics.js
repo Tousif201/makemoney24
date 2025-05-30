@@ -44,4 +44,18 @@ export const getVendorDashboardAnalytics = async (vendorId) => {
   }
 };
 
+/**
+ * @desc Fetches dashboard analytics data for the admin home page.
+ * @returns {Promise<object>} A promise that resolves to the analytics data.
+ */
+export const getAdminDashboardAnalytics = async () => {
+  try {
+    // No specific ID is needed for admin analytics as it's global
+    const response = await apiClient.get(`/analytics/admin-home`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching admin dashboard analytics:", error);
+    throw error; // Re-throw the error for handling in the calling component
+  }
+};
 export default apiClient;
