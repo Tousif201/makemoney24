@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+} from "react"; // Added useCallback
 import { jwtDecode } from "jwt-decode";
 import { getUserProfile } from "../../api/auth"; // Adjust path if needed
 
@@ -9,47 +15,48 @@ export const SessionProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const initializeSession = async () => {
-      try {
-        const token = localStorage.getItem("authToken");
+  // useCallback to memoize the refreshSession function, preventing unnecessary re-renders
+  // and ensuring it's stable across renders.
+  const refreshSession = useCallback(async () => {
+    setLoading(true); // Set loading to true while refreshing
+    try {
+      const token = localStorage.getItem("authToken");
 
-        if (!token) {
-          setSession(null);
-          setUser(null);
-          setLoading(false);
-          return;
-        }
-
-        const decoded = jwtDecode(token);
-
-        if (decoded.exp && Date.now() >= decoded.exp * 1000) {
-          console.warn("Token expired");
-          localStorage.removeItem("authToken");
-          setSession(null);
-          setUser(null);
-          setLoading(false);
-          return;
-        }
-
-        setSession(decoded);
-
-        const userProfile = await getUserProfile(decoded.id);
-        setUser(userProfile);
-      } catch (err) {
-        console.error("Session error:", err);
+      if (!token) {
         setSession(null);
         setUser(null);
-      } finally {
-        setLoading(false);
+        return;
       }
-    };
 
-    initializeSession();
-  }, []);
+      const decoded = jwtDecode(token);
+
+      if (decoded.exp && Date.now() >= decoded.exp * 1000) {
+        console.warn("Token expired during refresh");
+        localStorage.removeItem("authToken");
+        setSession(null);
+        setUser(null);
+        return;
+      }
+
+      setSession(decoded); // Ensure session is up-to-date if token hasn't changed
+      const userProfile = await getUserProfile(decoded.id);
+      setUser(userProfile);
+    } catch (err) {
+      console.error("Error refreshing session:", err);
+      setSession(null);
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  }, []); // Empty dependency array means this function is created once
+
+  useEffect(() => {
+    // Initial session load
+    refreshSession();
+  }, [refreshSession]); // Dependency on refreshSession to ensure it runs on mount
 
   return (
-    <SessionContext.Provider value={{ session, user, loading }}>
+    <SessionContext.Provider value={{ session, user, loading, refreshSession }}>
       {children}
     </SessionContext.Provider>
   );

@@ -209,3 +209,34 @@ export const getFranchisesBySalesRep = async (req, res) => {
       .json({ message: "Server error during fetching franchises." });
   }
 };
+
+/**
+ * @desc Get all franchises
+ * @route GET /api/franchises/getAll
+ * @access Private/Admin
+ */
+export const getAllFranchises = async (req, res) => {
+  try {
+    const franchises = await Franchise.find({})
+      .populate({
+        path: "ownerId",
+        select: "name email phone roles referralCode", // Select specific fields, exclude sensitive data
+      })
+      .populate({
+        path: "salesRep",
+        select: "name email phone", // Select specific fields for sales rep
+      })
+      .select("-vendors -users"); // Exclude large arrays like vendors and users unless explicitly needed
+
+    if (!franchises || franchises.length === 0) {
+      return res.status(404).json({ message: "No franchises found." });
+    }
+
+    res.status(200).json(franchises);
+  } catch (error) {
+    console.error("Error fetching all franchises:", error);
+    res
+      .status(500)
+      .json({ message: "Server error during fetching franchises." });
+  }
+};

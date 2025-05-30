@@ -44,4 +44,43 @@ export const getVendorDashboardAnalytics = async (vendorId) => {
   }
 };
 
+/**
+ * @desc Fetches dashboard analytics data for the admin home page.
+ * @returns {Promise<object>} A promise that resolves to the analytics data.
+ */
+export const getAdminDashboardAnalytics = async () => {
+  try {
+    // No specific ID is needed for admin analytics as it's global
+    const response = await apiClient.get(`/analytics/admin-home`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching admin dashboard analytics:", error);
+    throw error; // Re-throw the error for handling in the calling component
+  }
+};
+
+/**
+ * @desc Fetches home analytics data for a regular user.
+ * @param {string} userId - The MongoDB _id of the user.
+ * @returns {Promise<object>} A promise that resolves to the user's home analytics data.
+ * @throws {Error} Throws an error if userId is missing or if the API call fails.
+ */
+export const getUserHomeAnalytics = async (userId) => {
+  if (!userId) {
+    throw new Error("User ID is required to fetch user home analytics.");
+  }
+  try {
+    // The controller expects userId as a URL parameter (e.g., /user/home-analytics/123).
+    // Assuming your user home analytics route is /user/home-analytics/:userId
+    const response = await apiClient.get(`/analytics/user-home/${userId}`);
+    return response.data;
+  } catch (error) {
+    console.error(
+      `Error fetching user home analytics for user ${userId}:`,
+      error
+    );
+    throw error; // Re-throw the error for handling in the calling component
+  }
+};
+
 export default apiClient;
