@@ -63,6 +63,26 @@ export const CreateFranchiseMilestone = async (franchiseMileStoneData) => {
       throw error.response?.data || { message: "Failed to fetch profile" };
     }
   };
+  export const getFranchiseMilestoneStats = async () => {
+    try {
+      const token = localStorage.getItem("authToken");
+      if (!token) throw new Error("Token not found");
+  
+      const response = await apiClient.get("/franchise-milestone-home",
+        
+        
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // Optional if you're not using protect middleware
+          },
+        }
+      );
+        // console.log("consoling api response",response);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: "Failed to fetch profile" };
+    }
+  };
 
  // api/franchisemilestone.js
 export const deleteFranchiseMilestone = async (milestoneId) => {

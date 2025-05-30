@@ -46,14 +46,19 @@ import {
   deleteFranchiseMilestone,
   getFranchiseMilestone,
   updateFranchiseMilestone,
+   getFranchiseMilestoneStats 
 } from "../../../../api/franchisemilestone";
 import { toast } from "react-hot-toast"; // Optional: For notifications
+
+
 
 export default function FranchiseMilestonesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [franchiseMilestones, setFranchiseMilestones] = useState([]);
   const [editingMilestone, setEditingMilestone] = useState(null);
+  const [milestoneStats, setMilestoneStats] = useState(null);
+
   
   const [formData, setFormData] = useState({
     name: "",
@@ -83,7 +88,7 @@ export default function FranchiseMilestonesPage() {
     try {
       const payload = { ...formData };
       const result = await CreateFranchiseMilestone(payload);
-      console.log("consoling frontend response", result);
+      // console.log("consoling frontend response", result);
       toast.success("Franchise Milestone created successfully");
 
       // Clear form and close dialog
@@ -113,7 +118,7 @@ export default function FranchiseMilestonesPage() {
       .then((data) => {
         const arr = data.data || [];
         setFranchiseMilestones(arr);
-        console.log("frontend data", arr);
+        // console.log("frontend data", arr);
       })
       .catch((err) =>
         console.error("franchise milestone fetch error:", err.message)
@@ -151,16 +156,20 @@ export default function FranchiseMilestonesPage() {
   //   setEditingMilestone(milestone);
   // };
   const handleEditMilestone = (milestone) => {
-    console.log("handleEditMilestone called with:", milestone);
+    // console.log("handleEditMilestone called with:", milestone);
     setEditingMilestone(milestone);
   };
   
+// after fetching milestone list
+
+  
+
    
     // … other hooks …
 
     const handleUpdateMilestone = async () => {
       // console.log("hello")
-      console.log(editingMilestone)
+      // console.log(editingMilestone)
       if (!editingMilestone) return;
 
       // Destructure fields you want to submit
@@ -210,7 +219,7 @@ export default function FranchiseMilestonesPage() {
 
     const handleDeleteMilestone = async (milestoneId) => {
       try {
-        console.log("Deleting franchise milestone:", milestoneId);
+        // console.log("Deleting franchise milestone:", milestoneId);
         const result = await deleteFranchiseMilestone(milestoneId);
 
         if (result.success) {
@@ -227,7 +236,14 @@ export default function FranchiseMilestonesPage() {
         toast.error(err?.message || "Failed to delete milestone");
       }
     };
-
+getFranchiseMilestoneStats()
+  .then((res) => {
+    setMilestoneStats(res.data);
+    console.log(res)
+  })
+  .catch((err) => {
+    console.error("Failed to fetch milestone stats:", err.message);
+  });
     return (
       <div>
         <div className="flex-1 space-y-8 p-6 bg-gradient-to-br from-background to-muted/20">
@@ -402,47 +418,52 @@ export default function FranchiseMilestonesPage() {
             </Card>
 
             <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-blue-50 to-blue-100/50">
-              <div className="absolute top-0 right-0 w-20 h-20 bg-blue-500/10 rounded-full -mr-10 -mt-10" />
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-blue-900">
-                  Rewards Paid
-                </CardTitle>
-                <div className="p-2 bg-blue-500 rounded-lg">
-                  <DollarSign className="h-4 w-4 text-white" />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-blue-900">
-                  ${totalRewardsDistributed.toLocaleString()}
-                </div>
-                <p className="text-sm text-blue-700 mt-1">
-                  Total rewards distributed
-                </p>
-                <Progress value={78} className="mt-3 h-2" />
-              </CardContent>
-            </Card>
+  <div className="absolute top-0 right-0 w-20 h-20 bg-blue-500/10 rounded-full -mr-10 -mt-10" />
+  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+    <CardTitle className="text-sm font-medium text-blue-900">
+      Rewards Paid
+    </CardTitle>
+    <div className="p-2 bg-blue-500 rounded-lg">
+      <DollarSign className="h-4 w-4 text-white" />
+    </div>
+  </CardHeader>
+  <CardContent>
+    <div className="text-3xl font-bold text-blue-900">
+      ₹
+      {milestoneStats?.totalRewardPaid
+        ? milestoneStats.totalRewardPaid.toLocaleString(undefined, {
+            maximumFractionDigits: 0,
+          })
+        : 0}
+    </div>
+    <p className="text-sm text-blue-700 mt-1">Total rewards distributed</p>
+    <Progress value={78} className="mt-3 h-2" />
+  </CardContent>
+</Card>
 
-            <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-purple-50 to-purple-100/50">
-              <div className="absolute top-0 right-0 w-20 h-20 bg-purple-500/10 rounded-full -mr-10 -mt-10" />
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-purple-900">
-                  Avg. Reward
-                </CardTitle>
-                <div className="p-2 bg-purple-500 rounded-lg">
-                  <TrendingUp className="h-4 w-4 text-white" />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-purple-900">
-                  $
-                  {totalClaims > 0
-                    ? (totalRewardsDistributed / totalClaims).toFixed(0)
-                    : "0"}
-                </div>
-                <p className="text-sm text-purple-700 mt-1">Per achievement</p>
-                <Progress value={65} className="mt-3 h-2" />
-              </CardContent>
-            </Card>
+
+ <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-purple-50 to-purple-100/50">
+  <div className="absolute top-0 right-0 w-20 h-20 bg-purple-500/10 rounded-full -mr-10 -mt-10" />
+  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+    <CardTitle className="text-sm font-medium text-purple-900">
+      Avg. Reward
+    </CardTitle>
+    <div className="p-2 bg-purple-500 rounded-lg">
+      <TrendingUp className="h-4 w-4 text-white" />
+    </div>
+  </CardHeader>
+  <CardContent>
+    <div className="text-3xl font-bold text-purple-900">
+      ₹
+      {milestoneStats?.averageRewardPaidPerEntry
+        ? milestoneStats.averageRewardPaidPerEntry.toFixed(0)
+        : 0}
+    </div>
+    <p className="text-sm text-purple-700 mt-1">Per achievement</p>
+    <Progress value={65} className="mt-3 h-2" />
+  </CardContent>
+</Card>
+
           </div>
 
           {/* Table */}
