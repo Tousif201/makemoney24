@@ -4,11 +4,15 @@
 import { User } from "../models/User.model.js";
 import { RewardLog } from "../models/RewardLog.model.js";
 import { Order } from "../models/Order.model.js";
+import { Membership } from "../models/Membership.model.js"; // Import Membership model
+import { Transaction } from "../models/Transaction.model.js"; // Import Transaction model
+
 import mongoose from "mongoose"; // Import mongoose for ObjectId conversion
 
 /**
  * @desc Get comprehensive admin dashboard data with user details, pagination, and search,
- * filtered to only include users with the "user" role.
+ * filtered to only include users with the "user" role.import mongoose from "mongoose"; // Import mongoose for ObjectId conversion
+
  * @route GET /api/users/admin
  * @access Private (assuming authentication middleware is applied for admin role)
  */
@@ -157,6 +161,119 @@ export const getAdminDashboardData = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "An error occurred while fetching dashboard data.",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * @desc Upgrade a user's status to member and record the membership and transaction.
+ * @route POST /api/users/upgrade/:userId
+ * @access Private (e.g., Admin or system process after payment confirmation)
+ */
+export const upgradeUser = async (req, res) => {
+  const { userId } = req.params;
+  // Destructure Razorpay fields directly from req.body
+  const {
+    membershipAmount,
+    razorpayPaymentId,
+    razorpayOrderId,
+    razorpaySignature,
+  } = req.body;
+
+  if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Invalid user ID provided." });
+  }
+
+  if (typeof membershipAmount !== "number" || membershipAmount <= 0) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Invalid membership amount." });
+  }
+
+  // Validate Razorpay fields - they should be present if this is a payment-driven upgrade
+  if (!razorpayPaymentId || !razorpayOrderId || !razorpaySignature) {
+    return res.status(400).json({
+      success: false,
+      message:
+        "Missing Razorpay payment details. Payment ID, Order ID, and Signature are required.",
+    });
+  }
+
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    // 1. Find the user
+    const user = await User.findById(userId).session(session);
+
+    if (!user) {
+      await session.abortTransaction();
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found." });
+    }
+
+    if (user.isMember) {
+      await session.abortTransaction();
+      return res
+        .status(400)
+        .json({ success: false, message: "User is already a member." });
+    }
+
+    // 2. Update user's isMember status
+    user.isMember = true;
+    await user.save({ session });
+
+    // 3. Create a new transaction record for the membership purchase
+    const newTransaction = new Transaction({
+      userId: user._id,
+      transactionType: "purchase",
+      amount: membershipAmount,
+      description: `Membership purchase for ${user.email}`,
+      status: "success", // Assuming payment is already verified before this step
+      razorpayPaymentId, // Use the provided Razorpay fields
+      razorpayOrderId, // Use the provided Razorpay fields
+      razorpaySignature, // Use the provided Razorpay fields
+    });
+    await newTransaction.save({ session });
+
+    // 4. Create a new membership record
+    const newMembership = new Membership({
+      userId: user._id,
+      amountPaid: membershipAmount,
+      transactionId: newTransaction._id,
+      purchasedAt: Date.now(),
+    });
+    await newMembership.save({ session });
+
+    // Commit the transaction if all operations succeed
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(200).json({
+      success: true,
+      message:
+        "User successfully upgraded to member, membership and transaction recorded.",
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        isMember: user.isMember,
+      },
+      transactionId: newTransaction._id,
+      membershipId: newMembership._id,
+    });
+  } catch (error) {
+    // Abort the transaction if any error occurs
+    await session.abortTransaction();
+    session.endSession();
+    console.error("Error upgrading user to member:", error);
+    res.status(500).json({
+      success: false,
+      message: "An error occurred during user membership upgrade.",
       error: error.message,
     });
   }
