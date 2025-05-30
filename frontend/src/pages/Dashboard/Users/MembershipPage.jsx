@@ -8,9 +8,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useSession } from "../../../context/SessionContext";
 
 export default function MembershipPage() {
-  const isMember = true; // This would come from your user data
+  const { loading, session, user } = useSession();
+  if (loading) {
+    return <>Laoding...</>;
+  }
+  const isMember = user?.isMember; // This would come from your user data
 
   const benefits = [
     "PayLater options on orders above ₹500",
@@ -93,9 +98,7 @@ export default function MembershipPage() {
         <Card className="border-purple-200">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className="">
-                Membership Status
-              </CardTitle>
+              <CardTitle className="">Membership Status</CardTitle>
               <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
                 Active
               </Badge>
@@ -105,9 +108,7 @@ export default function MembershipPage() {
             <div className="flex items-center gap-3">
               <Shield className="h-8 w-8  text-purple-600" />
               <div>
-                <h3 className="font-semibold ">
-                  Premium Member
-                </h3>
+                <h3 className="font-semibold ">Premium Member</h3>
                 <p className="text-sm  text-gray-600">All benefits unlocked</p>
               </div>
             </div>
@@ -115,9 +116,7 @@ export default function MembershipPage() {
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span className="">Member Since:</span>
-                <span className="font-medium ">
-                  March 15, 2024
-                </span>
+                <span className="font-medium ">March 15, 2024</span>
               </div>
               <div className="flex justify-between">
                 <span className="">Payment Amount:</span>
@@ -125,9 +124,7 @@ export default function MembershipPage() {
               </div>
               <div className="flex justify-between">
                 <span className="">Payment Date:</span>
-                <span className="font-medium ">
-                  March 15, 2024
-                </span>
+                <span className="font-medium ">March 15, 2024</span>
               </div>
               <div className="flex justify-between">
                 <span className="">Payment Method:</span>

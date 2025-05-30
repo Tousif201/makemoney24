@@ -111,3 +111,80 @@ export const adminRewardDistributionReport = async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+/**
+ * @desc Get User's Personal Reward Report
+ * @route GET /api/reward/userRewardReport/:userId
+ * @access Private (e.g., Authenticated user, or Admin for specific user)
+ * @param {Object} req - Express request object (expects userId in params)
+ * @param {Object} res - Express response object
+ */
+export const userRewardReport = async (req, res) => {
+  const { userId } = req.params; // Get userId from URL parameters
+
+  // 1. Input Validation
+  if (!userId) {
+    return res.status(400).json({
+      success: false,
+      message: "User ID is required as a URL parameter.",
+    });
+  }
+
+  if (!isValidObjectId(userId)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid User ID format.",
+    });
+  }
+
+  try {
+    const objectUserId = new mongoose.Types.ObjectId(userId);
+
+    // 2. Calculate Total Rewards Earned & Count of Completed Milestones
+    const [userStats] = await RewardLog.aggregate([
+      {
+        $match: {
+          userId: objectUserId,
+        },
+      },
+      {
+        $group: {
+          _id: null, // Group all matching documents for the user
+          totalRewardsEarned: { $sum: "$amount" }, // Sum of all reward amounts
+          completedMilestones: { $sum: 1 }, // Count each reward log as a completed milestone
+          // If you want to count UNIQUE milestone types, use:
+          // completedMilestones: { $addToSet: "$type" } and then get its size in JS
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          totalRewardsEarned: 1,
+          completedMilestones: 1,
+        },
+      },
+    ]);
+
+    // Default values if no rewards found for the user
+    const finalUserStats = userStats || {
+      totalRewardsEarned: 0,
+      completedMilestones: 0,
+    };
+
+    // 3. Fetch Detailed Milestone Rewards History for the user
+    const milestoneRewardsHistory = await RewardLog.find({
+      userId: objectUserId,
+    })
+      .sort({ createdAt: -1 }) // Sort by most recent first
+      .lean(); // Return plain JavaScript objects for efficiency
+
+    res.status(200).json({
+      success: true,
+      totalRewardsEarned: finalUserStats.totalRewardsEarned,
+      completedMilestones: finalUserStats.completedMilestones,
+      MilestoneRewards: milestoneRewardsHistory,
+    });
+  } catch (error) {
+    console.error(`Error fetching user reward report for user ${userId}:`, error);
+    res.status(500).json({ success: false, message: "Internal server error.", error: error.message });
+  }
+};

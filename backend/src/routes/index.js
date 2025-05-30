@@ -16,6 +16,8 @@ import transactionRouter from "./transaction.routes.js";
 import userRouter from "./user.routes.js";
 import memberRouter from "./member.routes.js";
 import rewardRouter from "./reward.route.js";
+import walletRoutes from "./wallet.routes.js";
+import referralRouter from "./referral.routes.js";
 const router = express.Router();
 
 // Mount the routers
@@ -36,5 +38,7 @@ router.use("/transactions", transactionRouter);
 router.use("/users", userRouter);
 router.use("/membership", memberRouter);
 router.use("/reward", rewardRouter);
+router.use("/wallet", walletRoutes);
+router.use("/referral", referralRouter);
 
 export default router;

@@ -3,7 +3,10 @@ import { Vendor } from "../models/Vendor.model.js"; // Adjust path as needed
 import { Franchise } from "../models/Franchise.model.js"; // Adjust path as needed
 import { Order } from "../models/Order.model.js";
 import { RewardLog } from "../models/RewardLog.model.js";
+import { Transaction } from "../models/Transaction.model.js";
+
 import mongoose from "mongoose";
+const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
 /**
  * @desc Get dashboard analytics data for a sales representative's home page
@@ -716,5 +719,124 @@ export const getAdminHomeAnalytics = async (req, res) => {
     res
       .status(500)
       .json({ message: "Server error fetching admin dashboard analytics." });
+  }
+};
+
+/**
+ * @desc Get User Home Analytics Data
+ * @route GET /api/user/home-analytics/:userId
+ * @access Private (e.g., Authenticated user, or Admin)
+ * @param {Object} req - Express request object (expects userId in params)
+ * @param {Object} res - Express response object
+ */
+export const getUserHomeAnalytics = async (req, res) => {
+  const { userId } = req.params; // Get userId from URL parameters
+
+  // Input Validation
+  if (!userId) {
+    return res.status(400).json({
+      success: false,
+      message: "User ID is required as a URL parameter.",
+    });
+  }
+
+  if (!isValidObjectId(userId)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid User ID format.",
+    });
+  }
+
+  try {
+    const objectUserId = new mongoose.Types.ObjectId(userId);
+
+    // 1. Fetch User Data (for walletBalance and referralCode if needed)
+    const user = await User.findById(objectUserId)
+      .select("withdrawableWallet purchaseWallet referralCode name")
+      .lean();
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found." });
+    }
+
+    // 2. Calculate Total Level Earning (from RewardLog)
+    const [levelEarnings] = await RewardLog.aggregate([
+      {
+        $match: {
+          userId: objectUserId,
+          type: "ReferralLevelReward",
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$amount" },
+        },
+      },
+    ]);
+    const totalLevelEarning = levelEarnings ? levelEarnings.total : 0;
+
+    // 3. Count Active Referrals (direct referrals who are members)
+    const activeReferralsCount = await User.countDocuments({
+      parent: objectUserId,
+      isMember: true,
+    });
+
+    // 4. Count Total Orders
+    const totalOrdersCount = await Order.countDocuments({
+      userId: objectUserId,
+    });
+
+    // 5. Fetch Recent Referrals (top 3 direct referrals who are members)
+    const recentReferrals = await User.find({
+      parent: objectUserId,
+      isMember: true,
+    })
+      .sort({ joinedAt: -1 }) // Sort by most recent join date
+      .limit(3)
+      .select("name joinedAt") // Select only necessary fields
+      .lean(); // Get plain JavaScript objects
+
+    // 6. Fetch Recent Transactions (top 3 user transactions)
+    const recentTransactions = await Transaction.find({
+      userId: objectUserId,
+    })
+      .sort({ createdAt: -1 }) // Sort by most recent transaction
+      .limit(3)
+      .select("transactionType amount status createdAt txnId") // Select relevant fields
+      .lean(); // Get plain JavaScript objects
+
+    res.status(200).json({
+      success: true,
+      totalLevelEarning: totalLevelEarning,
+      activeReffrals: activeReferralsCount,
+      walletBalance: user.withdrawableWallet, // Using withdrawableWallet as "walletBalance"
+      purchaseWalletBalance: user.purchaseWallet, // Including purchaseWallet as well for clarity
+      totalOrders: totalOrdersCount,
+      recentReffrals: recentReferrals.map((ref) => ({
+        name: ref.name,
+        joinDate: ref.joinedAt
+          ? ref.joinedAt.toISOString().split("T")[0]
+          : "N/A", // Format date
+      })),
+      recentTransaction: recentTransactions.map((txn) => ({
+        type: txn.transactionType,
+        amount: txn.amount,
+        status: txn.status,
+        date: txn.createdAt ? txn.createdAt.toISOString().split("T")[0] : "N/A", // Format date
+        txnId: txn.txnId,
+      })),
+    });
+  } catch (error) {
+    console.error("Error fetching user home analytics:", error);
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: "Internal server error.",
+        error: error.message,
+      });
   }
 };

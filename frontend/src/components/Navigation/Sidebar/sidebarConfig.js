@@ -49,11 +49,11 @@ export const sidebarConfig = {
       label: "Income",
       icon: BarChart3,
       items: [
-        {
-          label: "Level Income",
-          href: "/dashboard/income/level",
-          icon: Layers,
-        },
+        // {
+        //   label: "Level Income",
+        //   href: "/dashboard/income/level",
+        //   icon: Layers,
+        // },
         {
           label: "Rewards",
           href: "/dashboard/income/rewards",
@@ -83,11 +83,11 @@ export const sidebarConfig = {
       icon: ShoppingCart,
       href: "/dashboard/orders",
     },
-    {
-      label: "Profile Settings",
-      icon: Settings,
-      href: "/dashboard/profile",
-    },
+    // {
+    //   label: "Profile Settings",
+    //   icon: Settings,
+    //   href: "/dashboard/profile",
+    // },
   ],
 
   vendor: [

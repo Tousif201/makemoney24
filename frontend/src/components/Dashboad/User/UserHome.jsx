@@ -1,36 +1,87 @@
-import { BarChart3, Gift, ShieldCheck, ShoppingCart, TrendingUp, UserPlus, Users, Wallet } from "lucide-react"
-import { Link } from "react-router-dom"
+"use client";
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  BarChart3,
+  Gift,
+  ShieldCheck,
+  ShoppingCart,
+  TrendingUp,
+  UserPlus,
+  Users,
+  Wallet,
+} from "lucide-react";
+import { Link } from "react-router-dom";
+import { useState, useEffect } from "react"; // Import useState and useEffect
+
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { useSession } from "../../../context/SessionContext";
+import { getUserHomeAnalytics } from "../../../../api/analytics"; // Correct import for our new API function
 
 export default function UserHome() {
-  const stats = [
+  const { session, loading: sessionLoading, user } = useSession(); // Renamed loading to sessionLoading
+  const [analyticsData, setAnalyticsData] = useState(null); // State for fetched analytics data
+  const [dataLoading, setDataLoading] = useState(true); // Loading state for API call
+  const [error, setError] = useState(null); // Error state for API call
+
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      // Fetch data only if session is loaded and user._id is available
+      if (!sessionLoading && user?._id) {
+        try {
+          setDataLoading(true);
+          setError(null); // Clear any previous errors
+          const response = await getUserHomeAnalytics(user._id);
+          setAnalyticsData(response); // Set the fetched data
+        } catch (err) {
+          console.error("Error fetching user home analytics:", err);
+          setError("Failed to load dashboard data. Please try again.");
+        } finally {
+          setDataLoading(false); // Stop loading
+        }
+      } else if (!sessionLoading && !user?._id) {
+        // If session is loaded but no user ID (e.g., not logged in)
+        setDataLoading(false);
+        setError("Please log in to view your dashboard.");
+      }
+    };
+
+    fetchAnalytics();
+  }, [sessionLoading, user?._id]); // Dependencies: re-run when session or user ID changes
+
+  // Default stats for loading/error states or if data isn't fully loaded yet
+  const defaultStats = [
     {
       title: "Total Earnings",
-      value: "₹45,230",
-      change: "+12.5%",
+      value: analyticsData?.totalLevelEarning !== undefined ? `₹${analyticsData.totalLevelEarning.toLocaleString()}` : "Loading...",
+      change: "From Referral Levels",
       icon: TrendingUp,
     },
     {
       title: "Active Referrals",
-      value: "24",
-      change: "+3 this month",
+      value: analyticsData?.activeReffrals !== undefined ? analyticsData.activeReffrals.toLocaleString() : "Loading...",
+      change: "Active Members",
       icon: Users,
     },
     {
-      title: "Wallet Balance",
-      value: "₹8,450",
-      change: "Available",
+      title: "Available Balance", // More specific title
+      value: analyticsData?.walletBalance !== undefined ? `₹${analyticsData.walletBalance.toLocaleString()}` : "Loading...",
+      change: "Withdrawable",
       icon: Wallet,
     },
     {
       title: "Total Orders",
-      value: "156",
-      change: "+8 this month",
+      value: analyticsData?.totalOrders !== undefined ? analyticsData.totalOrders.toLocaleString() : "Loading...",
+      change: "Lifetime",
       icon: ShoppingCart,
     },
-  ]
+  ];
 
   const quickActions = [
     {
@@ -66,28 +117,51 @@ export default function UserHome() {
     {
       title: "Income Reports",
       description: "Track your level-wise income and commissions",
-      href: "/dashboard/income/level",
+      href: "/dashboard/referrals", // Assuming this links to a page showing income reports
       icon: BarChart3,
     },
-  ]
+  ];
+
+  // Conditional Rendering for Loading/Error states
+  if (sessionLoading || dataLoading) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-6 text-xl text-gray-700">
+        Loading dashboard data...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-6 text-xl text-red-600">
+        {error}
+      </div>
+    );
+  }
+
+  const userDisplayName = user?.name || "User"; // Display user's name
 
   return (
     <div className="flex-1 space-y-6 p-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold ">Welcome back, John!</h1>
-            <p className="text-gray-500">Here's what's happening with your business today.</p>
+            <h1 className="text-3xl font-bold ">Welcome back, {userDisplayName}!</h1>
+            <p className="text-gray-500">
+              Here's what's happening with your business today.
+            </p>
           </div>
         </div>
       </div>
 
       {/* Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
+        {defaultStats.map((stat) => ( // Use defaultStats which now contains dynamic data
           <Card key={stat.title} className="border-purple-100">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium ">{stat.title}</CardTitle>
+              <CardTitle className="text-sm font-medium ">
+                {stat.title}
+              </CardTitle>
               <stat.icon className="h-4 w-4 text-purple-600" />
             </CardHeader>
             <CardContent>
@@ -102,7 +176,9 @@ export default function UserHome() {
       <Card className="border-purple-100">
         <CardHeader>
           <CardTitle className="">Quick Actions</CardTitle>
-          <CardDescription className="">Access your most used features quickly</CardDescription>
+          <CardDescription className="">
+            Access your most used features quickly
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -114,7 +190,9 @@ export default function UserHome() {
                       <action.icon className="h-6 w-6  text-purple-600 mt-1" />
                       <div>
                         <h3 className="font-medium ">{action.title}</h3>
-                        <p className="text-sm text-gray-500">{action.description}</p>
+                        <p className="text-sm text-gray-500">
+                          {action.description}
+                        </p>
                       </div>
                     </div>
                   </CardContent>
@@ -132,22 +210,32 @@ export default function UserHome() {
             <CardTitle className="">Recent Referrals</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {[
-                { name: "Alice Johnson", date: "2 days ago", commission: "₹360" },
-                { name: "Bob Smith", date: "5 days ago", commission: "₹360" },
-                { name: "Carol Davis", date: "1 week ago", commission: "₹120" },
-              ].map((referral) => (
-                <div key={referral.name} className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium ">{referral.name}</p>
-                    <p className="text-sm ">{referral.date}</p>
+            {analyticsData?.recentReffrals && analyticsData.recentReffrals.length > 0 ? (
+              <div className="space-y-3">
+                {analyticsData.recentReffrals.map((referral) => (
+                  <div
+                    key={referral.name} // Assuming name is unique enough for key, or add an id from backend
+                    className="flex items-center justify-between"
+                  >
+                    <div>
+                      <p className="font-medium ">{referral.name}</p>
+                      <p className="text-sm ">{referral.joinDate}</p> {/* Use joinDate */}
+                    </div>
+                    {/* Commission is not directly in recentReffrals from controller, you might need to add it */}
+                    {/* <span className="font-medium text-green-600">
+                      ₹{referral.commission}
+                    </span> */}
+                    <span className="text-sm text-gray-500">New Referral</span>
                   </div>
-                  <span className="font-medium text-green-600">{referral.commission}</span>
-                </div>
-              ))}
-            </div>
-            <Button asChild className="w-full mt-4 bg-purple-600 hover:bg-purple-700">
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-center py-4">No recent referrals.</p>
+            )}
+            <Button
+              asChild
+              className="w-full mt-4 bg-purple-600 hover:bg-purple-700"
+            >
               <Link to="/dashboard/referrals">View All Referrals</Link>
             </Button>
           </CardContent>
@@ -158,25 +246,29 @@ export default function UserHome() {
             <CardTitle className="">Recent Transactions</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {[
-                { type: "Commission", amount: "₹360", date: "Today" },
-                { type: "Withdrawal", amount: "-₹2,000", date: "Yesterday" },
-                { type: "Reward", amount: "₹500", date: "3 days ago" },
-              ].map((transaction, index) => (
-                <div key={index} className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium ">{transaction.type}</p>
-                    <p className="text-sm ">{transaction.date}</p>
+            {analyticsData?.recentTransaction && analyticsData.recentTransaction.length > 0 ? (
+              <div className="space-y-3">
+                {analyticsData.recentTransaction.map((transaction, index) => (
+                  <div key={transaction.txnId || index} className="flex items-center justify-between"> {/* Use txnId as key */}
+                    <div>
+                      <p className="font-medium ">{transaction.type}</p>
+                      <p className="text-sm ">{transaction.date}</p>
+                    </div>
+                    <span
+                      className={`font-medium ${
+                        transaction.amount < 0 // Check if amount is negative
+                          ? "text-red-600"
+                          : "text-green-600"
+                      }`}
+                    >
+                      {transaction.amount < 0 ? `-₹${Math.abs(transaction.amount).toLocaleString()}` : `₹${transaction.amount.toLocaleString()}`}
+                    </span>
                   </div>
-                  <span
-                    className={`font-medium ${transaction.amount.startsWith("-") ? "text-red-600" : "text-green-600"}`}
-                  >
-                    {transaction.amount}
-                  </span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-center py-4">No recent transactions.</p>
+            )}
             <Button
               asChild
               variant="outline"
@@ -188,5 +280,5 @@ export default function UserHome() {
         </Card>
       </div>
     </div>
-  )
+  );
 }
