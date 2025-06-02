@@ -31,6 +31,7 @@ import {
 import { useCart } from "../context/CartContext";
 import { getProductServiceById } from "../../api/productService";
 import LeaveReviewForm from "../components/LeaveReviewForm";
+import { useSession } from "../context/SessionContext";
 
 // --- Framer Motion Variants ---
 const pageVariants = {
@@ -91,7 +92,7 @@ const modalContentVariants = {
 
 export default function ProductDetailPage() {
   const { productId } = useParams();
-
+  const { session } = useSession();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -200,7 +201,7 @@ export default function ProductDetailPage() {
         product.portfolio?.[selectedImageIndex]?.url ||
         currentVariant?.images?.[0]?.url ||
         "/placeholder.svg",
-      vendor: product.vendorId?.name || "Unknown Vendor", // Access vendor name if populated
+      vendor: product.vendorId || "Unknown Vendor", // Access vendor name if populated
       type: product.type,
       variant: currentVariant
         ? {
