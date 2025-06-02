@@ -37,7 +37,8 @@ import {
   ShoppingBag,
   UserPlus,
   Target,
-  Loader2, // Added for loading state
+  Loader2,
+  IndianRupee, // Added for loading state
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -192,12 +193,12 @@ export default function AdminHome() {
                 Total Revenue
               </CardTitle>
               <div className="p-2 bg-blue-500 rounded-lg">
-                <DollarSign className="h-4 w-4 text-white" />
+                <IndianRupee className="h-4 w-4 text-white" />
               </div>
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-blue-900">
-                ${parseFloat(totalRevenue.amt).toLocaleString()}
+              ₹{parseFloat(totalRevenue.amt).toLocaleString()}
               </div>
               <div className="flex items-center gap-1 mt-2">
                 {(() => {
@@ -350,7 +351,7 @@ export default function AdminHome() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-orange-900">
-                ${parseFloat(rewardsDistributed.amt).toLocaleString()}
+              ₹{parseFloat(rewardsDistributed.amt).toLocaleString()}
               </div>
               <div className="flex items-center gap-1 mt-2">
                 {(() => {

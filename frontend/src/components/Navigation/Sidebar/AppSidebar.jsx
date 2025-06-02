@@ -58,7 +58,7 @@ export function AppSidebar() {
           asChild
           className="w-full rounded-md px-2 py-2 flex justify-center items-center text-xl font-bold text-white bg-red-600 hover:bg-red-500 transition cursor-pointer"
         >
-          <button onClick={handleLogout} className="w-full mb-10">
+          <button onClick={handleLogout} className="w-full mb-10 ">
             Logout
           </button>
         </SidebarMenuButton>

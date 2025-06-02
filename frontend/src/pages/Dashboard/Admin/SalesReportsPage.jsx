@@ -33,7 +33,8 @@ import {
   TrendingUp,
   Package,
   DollarSign,
-  Loader2, // Added for loading spinner
+  Loader2,
+  IndianRupee, // Added for loading spinner
 } from "lucide-react";
 // DatePickerWithRange is not used in this basic integration
 // import { DatePickerWithRange } from "@/components/ui/date-range-picker";
@@ -57,6 +58,7 @@ export default function SalesReportsPage() {
       setError(null);
       try {
         const data = await getAdminSalesReportApi();
+        console.log("frontend page sales rep",data)
         setSalesReportData(data);
       } catch (err) {
         console.error("Failed to fetch sales report:", err);
@@ -209,7 +211,7 @@ export default function SalesReportsPage() {
               <CardTitle className="text-sm font-medium">
                 Total Revenue
               </CardTitle>
-              <DollarSign className="h-4 w-4 text-purple-700" />
+              <IndianRupee className="h-4 w-4 text-purple-700" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
@@ -227,7 +229,7 @@ export default function SalesReportsPage() {
               <CardTitle className="text-sm font-medium">
                 Total Commission
               </CardTitle>
-              <DollarSign className="h-4 w-4 text-purple-700" />
+              <IndianRupee className="h-4 w-4 text-purple-700" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">

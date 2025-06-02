@@ -27,6 +27,7 @@ export const getOrders = async (payload = {}) => {
     const response = await apiClient.get("/orders", {
       params: payload, // Axios automatically serializes this object into query parameters
     });
+    console.log("api response get order",response);
     return response.data; // The actual order data is in response.data
   } catch (error) {
     console.error("Error fetching orders:", error);

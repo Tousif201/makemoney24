@@ -31,7 +31,7 @@ import { getOrders } from "../../../../api/vendor";
 import { useSession } from "../../../context/SessionContext";
 
 export default function VendorOrders() {
-  const {  loading: sessionLoading, session } = useSession(); // Use your custom useSession
+  const { loading: sessionLoading, session } = useSession(); // Use your custom useSession
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true); // For order fetching
   const [error, setError] = useState(null);
@@ -59,6 +59,7 @@ export default function VendorOrders() {
 
   useEffect(() => {
     const fetchOrders = async () => {
+      
       // If session data is still loading OR if session (vendor) is not available in the session
       if (sessionLoading || !session?.id) { // Assuming your session object has an 'id' property
         setLoading(true); // Keep the main component loading state true
@@ -217,7 +218,7 @@ export default function VendorOrders() {
                                 <div className="text-sm">
                                   <span className="text-gray-600">Amount:</span>
                                   <span className="ml-1 font-medium">
-                                    ${order.totalAmount?.toFixed(2)}
+                                  ₹{order.totalAmount?.toFixed(2)}
                                   </span>
                                 </div>
                                 <Badge variant={getStatusBadgeVariant(order.orderStatus)}>
@@ -256,7 +257,7 @@ export default function VendorOrders() {
                                 <TableCell>
                                   {order.items.map(item => item.productServiceId?.title).join(', ')}
                                 </TableCell>
-                                <TableCell>${order.totalAmount?.toFixed(2)}</TableCell>
+                                <TableCell>₹{order.totalAmount?.toFixed(2)}</TableCell>
                                 <TableCell>
                                   <Badge variant={getStatusBadgeVariant(order.orderStatus)}>
                                     {order.orderStatus}
@@ -330,7 +331,7 @@ export default function VendorOrders() {
                               <TableCell>
                                 {order.items.map(item => item.productServiceId?.title).join(', ')}
                               </TableCell>
-                              <TableCell>${order.totalAmount?.toFixed(2)}</TableCell>
+                              <TableCell>₹{order.totalAmount?.toFixed(2)}</TableCell>
                               <TableCell>
                                 <Badge variant={getStatusBadgeVariant(order.orderStatus)}>
                                   {order.orderStatus}
@@ -403,7 +404,7 @@ export default function VendorOrders() {
                               <TableCell>
                                 {order.items.map(item => item.productServiceId?.title).join(', ')}
                               </TableCell>
-                              <TableCell>${order.totalAmount?.toFixed(2)}</TableCell>
+                              <TableCell>₹{order.totalAmount?.toFixed(2)}</TableCell>
                               <TableCell>
                                 <Badge variant={getStatusBadgeVariant(order.orderStatus)}>
                                   {order.orderStatus}
@@ -480,7 +481,7 @@ export default function VendorOrders() {
                               <TableCell>
                                 {order.items.map(item => item.productServiceId?.title).join(', ')}
                               </TableCell>
-                              <TableCell>${order.totalAmount?.toFixed(2)}</TableCell>
+                              <TableCell>₹{order.totalAmount?.toFixed(2)}</TableCell>
                               <TableCell>
                                 <Badge variant={getStatusBadgeVariant(order.orderStatus)}>
                                   {order.orderStatus}
