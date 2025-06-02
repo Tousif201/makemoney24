@@ -145,7 +145,7 @@ const routes = [
     ),
   },
   {
-    path: "/item/:id",
+    path: "/item/:productId",
     element: (
       <MainLayout>
         <ProductDetailPage />

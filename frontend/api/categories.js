@@ -1,12 +1,12 @@
-import axios from 'axios';
-import { backendConfig } from '../constant/config'; // Ensure this path is correct
+import axios from "axios";
+import { backendConfig } from "../constant/config"; // Ensure this path is correct
 
 const backendOriginUrl = backendConfig.base; // e.g., "http://localhost:5000/api"
 
 const apiClient = axios.create({
   baseURL: `${backendOriginUrl}/categories`, // Base URL for category endpoints
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
@@ -36,10 +36,13 @@ const apiClient = axios.create({
  */
 export const createCategory = async (categoryData) => {
   try {
-    const response = await apiClient.post('/', categoryData);
+    const response = await apiClient.post("/", categoryData);
     return response.data;
   } catch (error) {
-    console.error('Error creating category:', error.response?.data || error.message);
+    console.error(
+      "Error creating category:",
+      error.response?.data || error.message
+    );
     throw error;
   }
 };
@@ -56,10 +59,13 @@ export const getCategories = async (type = null) => {
     if (type) {
       params.type = type;
     }
-    const response = await apiClient.get('/', { params });
+    const response = await apiClient.get("/", { params });
     return response.data;
   } catch (error) {
-    console.error('Error fetching categories:', error.response?.data || error.message);
+    console.error(
+      "Error fetching categories:",
+      error.response?.data || error.message
+    );
     throw error;
   }
 };
@@ -73,12 +79,15 @@ export const getCategories = async (type = null) => {
 export const getCategoryById = async (id) => {
   try {
     if (!id) {
-      throw new Error('Category ID is required.');
+      throw new Error("Category ID is required.");
     }
     const response = await apiClient.get(`/${id}`);
     return response.data;
   } catch (error) {
-    console.error(`Error fetching category with ID ${id}:`, error.response?.data || error.message);
+    console.error(
+      `Error fetching category with ID ${id}:`,
+      error.response?.data || error.message
+    );
     throw error;
   }
 };
@@ -93,12 +102,15 @@ export const getCategoryById = async (id) => {
 export const updateCategory = async (id, updateData) => {
   try {
     if (!id) {
-      throw new Error('Category ID is required for update.');
+      throw new Error("Category ID is required for update.");
     }
     const response = await apiClient.put(`/${id}`, updateData);
     return response.data;
   } catch (error) {
-    console.error(`Error updating category with ID ${id}:`, error.response?.data || error.message);
+    console.error(
+      `Error updating category with ID ${id}:`,
+      error.response?.data || error.message
+    );
     throw error;
   }
 };
@@ -112,48 +124,34 @@ export const updateCategory = async (id, updateData) => {
 export const deleteCategory = async (id) => {
   try {
     if (!id) {
-      throw new Error('Category ID is required for deletion.');
+      throw new Error("Category ID is required for deletion.");
     }
     const response = await apiClient.delete(`/${id}`);
     return response.data;
   } catch (error) {
-    console.error(`Error deleting category with ID ${id}:`, error.response?.data || error.message);
+    console.error(
+      `Error deleting category with ID ${id}:`,
+      error.response?.data || error.message
+    );
     throw error;
   }
 };
 
-// --- Example Usage ---
-/*
-// 1. Create a category
-createCategory({ name: 'Groceries', description: 'Daily food items', type: 'product' })
-  .then(category => console.log('Created category:', category))
-  .catch(error => console.error('Failed to create category:', error.message));
-
-// 2. Get all categories
-getCategories()
-  .then(categories => console.log('All categories:', categories))
-  .catch(error => console.error('Failed to get categories:', error.message));
-
-// 3. Get all service categories
-getCategories('service')
-  .then(serviceCategories => console.log('Service categories:', serviceCategories))
-  .catch(error => console.error('Failed to get service categories:', error.message));
-
-// 4. Get a category by ID
-const categoryId = '60d0fe4f3b8b1a001c8a123a'; // Replace with a real ID
-getCategoryById(categoryId)
-  .then(category => console.log('Category by ID:', category))
-  .catch(error => console.error(`Failed to get category ${categoryId}:`, error.message));
-
-// 5. Update a category
-const updateCategoryId = '60d0fe4f3b8b1a001c8a123b'; // Replace with a real ID
-updateCategory(updateCategoryId, { name: 'Updated Electronics', description: 'All electronic gadgets' })
-  .then(updatedCat => console.log('Updated category:', updatedCat))
-  .catch(error => console.error('Failed to update category:', error.message));
-
-// 6. Delete a category
-const deleteCategoryId = '60d0fe4f3b8b1a001c8a123c'; // Replace with a real ID
-deleteCategory(deleteCategoryId)
-  .then(message => console.log('Delete message:', message))
-  .catch(error => console.error('Failed to delete category:', error.message));
-*/
+/**
+ * @desc Fetches all categories with a representative image.
+ * @route GET /api/categories-with-images
+ * @returns {Promise<CategoryWithImageResponse[]>} A promise that resolves to an array of category objects with an image URL.
+ * @throws {Error} Throws an error if the API call fails.
+ */
+export const getAllCategoriesWithImages = async () => {
+  try {
+    const response = await apiClient.get("/categories-with-images");
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Error fetching categories with images:",
+      error.response?.data || error.message
+    );
+    throw error;
+  }
+};

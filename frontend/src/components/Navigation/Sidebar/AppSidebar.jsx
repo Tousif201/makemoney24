@@ -8,8 +8,9 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import SidebarMenuContent from "./SidebarMenuContent";
 import logo from "../../../assets/makemoney.png";
-import { logoutUser } from "../../../../api/auth"; 
+import { logoutUser } from "../../../../api/auth";
 import { useEffect } from "react";
+import { useSession } from "../../../context/SessionContext";
 
 // Sidebar Header Component
 function SidebarHeaderContent() {

@@ -1,87 +1,100 @@
 // components/ProductList.jsx
-import React from "react";
+import React, { useEffect, useState } from "react";
 import ProductCard from "./ProductCard";
-
-const products = [
-  {
-    id: 1,
-    title: "Stylish Headphones",
-    description: "High-quality sound and noise cancellation.",
-    price: 129.99,
-    image: "https://images.unsplash.com/photo-1505751171710-1f6d0ace5a85?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-  },
-  {
-    id: 2,
-    title: "Smartwatch Pro",
-    description: "Track fitness and stay connected on the go.",
-    price: 199.99,
-    image: "https://images.unsplash.com/photo-1617625802912-cde586faf331?q=80&w=1932&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-  },
-  {
-    id: 3,
-    title: "Wireless Mouse",
-    description: "Ergonomic design with long battery life.",
-    price: 49.99,
-    image: "https://images.unsplash.com/photo-1613141411244-0e4ac259d217?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-  },
-  {
-    id: 4,
-    title: "Gaming Keyboard",
-    description: "RGB lighting and mechanical keys.",
-    price: 89.99,
-    image: "https://images.unsplash.com/photo-1592424002053-21f369ad7fdb?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-  },
-  {
-    id: 5,
-    title: "Portable Speaker",
-    description: "Loud, clear sound with deep bass.",
-    price: 59.99,
-    image: "https://images.unsplash.com/photo-1605648916319-cf082f7524a1?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-  },
-  {
-    id: 6,
-    title: "Drone Camera",
-    description: "4K camera with live GPS tracking.",
-    price: 499.99,
-    image: "https://plus.unsplash.com/premium_photo-1714618849685-89cad85746b1?q=80&w=1888&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-  },
-  {
-    id: 7,
-    title: "Laptop Stand",
-    description: "Adjustable and lightweight aluminum stand.",
-    price: 34.99,
-    image: "https://images.unsplash.com/photo-1603302576837-37561b2e2302?q=80&w=2068&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-  },
-  {
-    id: 8,
-    title: "Smart LED Bulb",
-    description: "Control with app or voice assistant.",
-    price: 14.99,
-    image: "https://plus.unsplash.com/premium_photo-1661935889429-5079b2bac1b8?q=80&w=2069&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-  },
-  {
-    id: 9,
-    title: "Fitness Tracker",
-    description: "Monitor your steps, heart rate, and sleep.",
-    price: 79.99,
-    image: "https://plus.unsplash.com/premium_photo-1712761997182-45455a50d8c4?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-  },
-  {
-    id: 10,
-    title: "Wireless Charger",
-    description: "Fast charging for all devices.",
-    price: 29.99,
-    image: "https://images.unsplash.com/photo-1606077095660-726118e877fd?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8d2lyZWxlc3MlMjBjaGFyZ2VyfGVufDB8fDB8fHww",
-  },
-];
+import { getProductServices } from "../../api/productService"; // Make sure this path is correct
 
 const ProductList = () => {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        setError(null); // Clear any previous errors
+
+        // Fetch products and services.
+        // We can now send parameters for sorting or limiting,
+        // for example, to get the latest 6 products ordered by creation date.
+        const params = {
+          limit: 6, // Request only 6 items
+          sortBy: "createdAt", // Sort by creation date
+          order: "desc", // Get the newest first
+          page: 1, // Ensure we get the first page
+        };
+
+        const response = await getProductServices(params);
+
+        // *** Crucial Update: Access response.data instead of response directly ***
+        if (response && response.data && Array.isArray(response.data)) {
+          setProducts(response.data);
+        } else {
+          // Log a warning if the data structure is unexpected
+          console.warn("API response data is not an array or is missing 'data' property:", response);
+          setProducts([]); // Ensure products is an empty array if data is malformed
+          // You might set an error here if this is a critical issue
+          // setError("Unexpected data format from the server.");
+        }
+      } catch (err) {
+        console.error("Error fetching products:", err);
+        // Access nested error message if available, otherwise use a generic message
+        setError(err.response?.data?.message || "Failed to load products. Please try again later.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []); // Empty dependency array means this runs once on mount
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-48">
+        <p>Loading products...</p> {/* Consider using a more visually engaging spinner */}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center h-48 text-red-600">
+        <p>{error}</p>
+      </div>
+    );
+  }
+
+  // If no products are found after loading
+  if (products.length === 0) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-10 text-center">
+        <h2 className="text-3xl font-bold mb-10">Latest Products</h2>
+        <p className="text-gray-600">No products or services available at the moment.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-10">
       <h2 className="text-3xl font-bold text-center mb-10">Latest Products</h2>
       <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        {/* Map over the fetched products directly; no need for .slice(0, 6)
+            because the backend is already limiting the results to 6. */}
         {products.map((product) => (
-          <ProductCard key={product.id} product={product} />
+          <ProductCard
+            key={product._id} // Use product._id from MongoDB for unique key
+            product={{
+              id: product._id,
+              title: product.title,
+              description: product.description,
+              price: product.price,
+              // Check if portfolio has items, and get the first image URL
+              // Assuming portfolio items have a 'url' property for the image
+              image: product.portfolio && product.portfolio.length > 0
+                     ? product.portfolio[0].url
+                     : "https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png", // Placeholder if no image
+            }}
+          />
         ))}
       </div>
     </div>

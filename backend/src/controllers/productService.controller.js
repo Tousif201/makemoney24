@@ -3,6 +3,7 @@
 // ===================================
 import { ProductService } from "../models/ProductService.model.js";
 import mongoose from "mongoose";
+import { Review } from "../models/Review.model.js";
 
 // Helper function to validate ObjectId
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
@@ -32,12 +33,9 @@ export const createProductService = async (req, res) => {
 
     // Basic validation for required fields
     if (!vendorId || !categoryId || !type || !title || price === undefined) {
-      return res
-        .status(400)
-        .json({
-          message:
-            "Vendor ID, Category ID, type, title, and price are required.",
-        });
+      return res.status(400).json({
+        message: "Vendor ID, Category ID, type, title, and price are required.",
+      });
     }
     if (!isValidObjectId(vendorId)) {
       return res.status(400).json({ message: "Invalid Vendor ID format." });
@@ -105,43 +103,82 @@ export const createProductService = async (req, res) => {
 };
 
 /**
- * @desc Get all products/services or filter by various criteria, including vendorId
- * @route GET /api/productservices (with query parameters: vendorId, categoryId, type, pincode, title, minPrice, maxPrice)
+ * @desc Get all products/services with advanced filtering, sorting, pagination, and population
+ * @route GET /api/product-services
  * @access Public
- * @param {Object} req - Express request object (query parameters: vendorId, categoryId, type, pincode, title, minPrice, maxPrice)
+ * @param {Object} req - Express request object
+ * @query {string} [vendorId] - Filter by vendor ID.
+ * @query {string} [categoryId] - Comma-separated category IDs.
+ * @query {"product" | "service"} [type] - Filter by type.
+ * @query {string} [pincode] - Filter by pincode.
+ * @query {string} [title] - Case-insensitive search by title.
+ * @query {number} [minPrice] - Minimum price.
+ * @query {number} [maxPrice] - Maximum price.
+ * @query {string} [sortBy] - Field to sort by (e.g., 'price', 'createdAt', 'title', 'rating').
+ * @query {"asc" | "desc"} [order] - Sort order ('asc' or 'desc', default 'desc').
+ * @query {number} [page] - Page number (default 1).
+ * @query {number} [limit] - Number of items per page (default 10).
  * @param {Object} res - Express response object
+ * @returns {Object} { data: ProductServiceData[], totalCount: number, page: number, totalPages: number }
  */
 export const getProductServices = async (req, res) => {
-  // This is the controller to update
   try {
-    const { vendorId, categoryId, type, pincode, title, minPrice, maxPrice } =
-      req.query;
-    const filter = {};
+    const {
+      vendorId,
+      categoryId,
+      type,
+      pincode,
+      title,
+      minPrice,
+      maxPrice,
+      sortBy, // New: for sorting field
+      order, // New: for sort order
+      page, // New: for pagination
+      limit, // New: for pagination
+    } = req.query;
 
-    // --- NEW / MODIFIED LOGIC FOR vendorId ---
+    const filter = {};
+    let sort = { createdAt: -1 }; // Default sort: newest first
+
+    // 1. Filtering Logic
     if (vendorId) {
       if (!isValidObjectId(vendorId)) {
         return res.status(400).json({ message: "Invalid Vendor ID format." });
       }
-      filter.vendorId = vendorId; // Add vendorId to filter if present
+      filter.vendorId = vendorId;
     }
-    // --- END NEW / MODIFIED LOGIC ---
 
+    // Handle multiple category IDs (comma-separated string)
     if (categoryId) {
-      if (!isValidObjectId(categoryId))
-        return res.status(400).json({ message: "Invalid Category ID format." });
-      filter.categoryId = categoryId;
+      const categoryIdsArray = categoryId.split(",").map((id) => id.trim());
+      const validCategoryIds = categoryIdsArray.filter((id) =>
+        isValidObjectId(id)
+      );
+
+      if (validCategoryIds.length === 0 && categoryIdsArray.length > 0) {
+        return res
+          .status(400)
+          .json({ message: "Invalid Category ID format(s)." });
+      }
+      // Use $in operator for multiple category IDs
+      filter.categoryId = {
+        $in: validCategoryIds.map((id) => new mongoose.Types.ObjectId(id)),
+      };
     }
+
     if (type) {
-      if (!["product", "service"].includes(type))
+      if (!["product", "service"].includes(type)) {
         return res
           .status(400)
           .json({ message: 'Type must be "product" or "service".' });
+      }
       filter.type = type;
     }
+
     if (pincode) {
       filter.pincode = pincode;
     }
+
     if (title) {
       filter.title = { $regex: title, $options: "i" }; // Case-insensitive search
     }
@@ -152,43 +189,123 @@ export const getProductServices = async (req, res) => {
       if (maxPrice) filter.price.$lte = parseFloat(maxPrice);
     }
 
-    const productServices = await ProductService.find(filter).sort({
-      createdAt: -1,
-    }); // Sort by newest first
-    res.status(200).json(productServices);
+    // 2. Sorting Logic
+    if (sortBy) {
+      const sortOrder = order === "asc" ? 1 : -1; // 1 for ascending, -1 for descending
+      // Whitelist allowed sort fields to prevent injection or unexpected behavior
+      const allowedSortFields = ["price", "createdAt", "title", "rating"]; // Assuming 'rating' exists or is aggregated
+      if (allowedSortFields.includes(sortBy)) {
+        sort = { [sortBy]: sortOrder };
+        // If sorting by rating, consider adding a secondary sort by createdAt for consistent order
+        if (sortBy === "rating") {
+          sort.createdAt = -1; // Newest first for same rating
+        }
+      } else {
+        // Optionally, return an error or default to createdAt if sortBy is invalid
+        // return res.status(400).json({ message: `Invalid sortBy field: ${sortBy}.` });
+        console.warn(
+          `Invalid sortBy field received: ${sortBy}. Defaulting to createdAt.`
+        );
+      }
+    }
+
+    // 3. Pagination Logic
+    const pageNum = parseInt(page, 10) || 1;
+    const limitNum = parseInt(limit, 10) || 10;
+    const skip = (pageNum - 1) * limitNum;
+
+    // Get total count of documents matching the filter (before pagination)
+    const totalCount = await ProductService.countDocuments(filter);
+    const totalPages = Math.ceil(totalCount / limitNum);
+
+    // 4. Mongoose Query Execution
+    const productServices = await ProductService.find(filter)
+      .populate({ path: "vendorId", select: "name" }) // Populate vendor name
+      .populate({ path: "categoryId", select: "name" }) // Populate category name
+      .sort(sort)
+      .skip(skip)
+      .limit(limitNum);
+
+    res.status(200).json({
+      data: productServices,
+      totalCount,
+      page: pageNum,
+      totalPages,
+    });
   } catch (error) {
     console.error("Error fetching products/services:", error);
+    if (error.name === "CastError" && error.kind === "ObjectId") {
+      return res
+        .status(400)
+        .json({ message: `Invalid ID format for ${error.path}.` });
+    }
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
 /**
- * @desc Get a single product/service by ID
- * @route GET /api/productservices/:id
+ * @desc Get a single product or service by ID, populating related fields and associated reviews
+ * @route GET /api/products/:id or /api/services/:id
  * @access Public
- * @param {Object} req - Express request object (params: id)
- * @param {Object} res - Express response object
  */
 export const getProductServiceById = async (req, res) => {
   try {
     const { id } = req.params;
+
+    // Validate if the ID is a valid MongoDB ObjectId
     if (!isValidObjectId(id)) {
-      return res
-        .status(400)
-        .json({ message: "Invalid Product/Service ID format." });
+      return res.status(400).json({
+        success: false,
+        message: "Invalid Product/Service ID format.",
+      });
     }
 
-    const productService = await ProductService.findById(id);
+    // 1. Find the product/service and populate the 'categoryId' and 'vendorId' fields.
+    // Ensure you populate 'vendorId' as well if you need vendor details on the frontend.
+    // If your ProductService model has 'vendorId', you should populate it.
+    const productService = await ProductService.findById(id).populate(
+      "categoryId",
+      "name description"
+    ); // Populating category details
+    // .populate("vendorId", "name email"); // Uncomment and adjust if you need vendor details
+    // Select fields carefully to avoid sensitive data.
+
+    // Check if the product/service was found
     if (!productService) {
-      return res.status(404).json({ message: "Product or Service not found." });
+      return res
+        .status(404)
+        .json({ success: false, message: "Product or Service not found." });
     }
-    res.status(200).json(productService);
+
+    // 2. Fetch associated reviews for the found product/service
+    const reviews = await Review.find({
+      itemId: productService._id,
+      itemType: productService.type, // Assuming 'type' (product/service) is on your ProductService model
+    }).populate("userId", "name avatar"); // Populate user details for each review (e.g., username, avatar)
+    // Adjust 'username' and 'avatar' to match your User model fields.
+
+    // 3. Combine the product/service data with its reviews
+    const responseData = {
+      ...productService.toObject(), // Convert Mongoose document to plain JavaScript object
+      reviews: reviews,
+    };
+
+    // Send the populated product/service data along with its reviews
+    res.status(200).json({ success: true, data: responseData });
   } catch (error) {
     console.error("Error fetching product/service by ID:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    // Handle specific Mongoose CastError if an invalid ID is passed that bypasses isValidObjectId
+    if (error.name === "CastError") {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid ID format for lookup." });
+    }
+    // Generic server error for other issues
+    res
+      .status(500)
+      .json({ success: false, message: "Server Error", error: error.message });
   }
 };
-
 /**
  * @desc Update an existing product or service
  * @route PUT /api/productservices/:id

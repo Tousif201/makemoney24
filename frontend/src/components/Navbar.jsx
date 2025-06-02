@@ -32,16 +32,10 @@ export default function Navbar() {
         {/* Desktop Nav Links */}
         <nav className="hidden sm:flex items-center space-x-6">
           <Link
-            to="/products"
+            to="/browse"
             className="hover:underline font-medium text-gray-700"
           >
-            Products
-          </Link>
-          <Link
-            to="/services"
-            className="hover:underline font-medium text-gray-700"
-          >
-            Services
+            Browse
           </Link>
         </nav>
         {/* Auth Buttons / User */}
@@ -93,12 +87,10 @@ export default function Navbar() {
       {/* Mobile Nav */}
       {isOpen && (
         <div className="sm:hidden bg-white border-t px-4 pb-4 space-y-3">
-          <Link to="/products" className="block text-gray-700 hover:underline">
-            Products
+          <Link to="/browse" className="block text-gray-700 hover:underline">
+            Browse
           </Link>
-          <Link to="/services" className="block text-gray-700 hover:underline">
-            Services
-          </Link>
+
           {isLoggedIn ? (
             <>
               <Link

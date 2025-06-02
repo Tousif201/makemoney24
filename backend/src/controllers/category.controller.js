@@ -1,8 +1,9 @@
 // ===================================
 // File: controllers/category.controller.js
 // ===================================
-import { Category } from '../models/Category.model.js';
-import mongoose from 'mongoose';
+import { Category } from "../models/Category.model.js";
+import { ProductService } from "../models/ProductService.model.js"; // Ensure ProductService model is imported
+import mongoose from "mongoose";
 
 // Helper function to validate ObjectId
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
@@ -20,16 +21,22 @@ export const createCategory = async (req, res) => {
 
     // Basic validation
     if (!name || !type) {
-      return res.status(400).json({ message: 'Name and type are required for a category.' });
+      return res
+        .status(400)
+        .json({ message: "Name and type are required for a category." });
     }
-    if (!['product', 'service'].includes(type)) {
-      return res.status(400).json({ message: 'Category type must be "product" or "service".' });
+    if (!["product", "service"].includes(type)) {
+      return res
+        .status(400)
+        .json({ message: 'Category type must be "product" or "service".' });
     }
 
     // Check if a category with the same name and type already exists
     const existingCategory = await Category.findOne({ name: name, type: type });
     if (existingCategory) {
-      return res.status(409).json({ message: 'Category with this name and type already exists.' });
+      return res
+        .status(409)
+        .json({ message: "Category with this name and type already exists." });
     }
 
     const newCategory = new Category({
@@ -41,8 +48,12 @@ export const createCategory = async (req, res) => {
     const savedCategory = await newCategory.save();
     res.status(201).json(savedCategory);
   } catch (error) {
-    console.error('Error creating category:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error("Error creating category:", error);
+    // Handle Mongoose validation errors
+    if (error.name === "ValidationError") {
+      return res.status(400).json({ message: error.message });
+    }
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
@@ -59,8 +70,10 @@ export const getCategories = async (req, res) => {
     const filter = {};
 
     if (type) {
-      if (!['product', 'service'].includes(type)) {
-        return res.status(400).json({ message: 'Category type must be "product" or "service".' });
+      if (!["product", "service"].includes(type)) {
+        return res
+          .status(400)
+          .json({ message: 'Category type must be "product" or "service".' });
       }
       filter.type = type;
     }
@@ -68,8 +81,8 @@ export const getCategories = async (req, res) => {
     const categories = await Category.find(filter).sort({ name: 1 }); // Sort by name alphabetically
     res.status(200).json(categories);
   } catch (error) {
-    console.error('Error fetching categories:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error("Error fetching categories:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
@@ -84,17 +97,17 @@ export const getCategoryById = async (req, res) => {
   try {
     const { id } = req.params;
     if (!isValidObjectId(id)) {
-      return res.status(400).json({ message: 'Invalid Category ID format.' });
+      return res.status(400).json({ message: "Invalid Category ID format." });
     }
 
     const category = await Category.findById(id);
     if (!category) {
-      return res.status(404).json({ message: 'Category not found.' });
+      return res.status(404).json({ message: "Category not found." });
     }
     res.status(200).json(category);
   } catch (error) {
-    console.error('Error fetching category by ID:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error("Error fetching category by ID:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
@@ -111,7 +124,7 @@ export const updateCategory = async (req, res) => {
     const { name, description, type } = req.body;
 
     if (!isValidObjectId(id)) {
-      return res.status(400).json({ message: 'Invalid Category ID format.' });
+      return res.status(400).json({ message: "Invalid Category ID format." });
     }
 
     const updateFields = {};
@@ -122,8 +135,10 @@ export const updateCategory = async (req, res) => {
       updateFields.description = description;
     }
     if (type !== undefined) {
-      if (!['product', 'service'].includes(type)) {
-        return res.status(400).json({ message: 'Category type must be "product" or "service".' });
+      if (!["product", "service"].includes(type)) {
+        return res
+          .status(400)
+          .json({ message: 'Category type must be "product" or "service".' });
       }
       updateFields.type = type;
     }
@@ -132,7 +147,7 @@ export const updateCategory = async (req, res) => {
     if (name !== undefined || type !== undefined) {
       const categoryToUpdate = await Category.findById(id);
       if (!categoryToUpdate) {
-        return res.status(404).json({ message: 'Category not found.' });
+        return res.status(404).json({ message: "Category not found." });
       }
 
       const newName = name !== undefined ? name : categoryToUpdate.name;
@@ -141,11 +156,13 @@ export const updateCategory = async (req, res) => {
       const existingCategory = await Category.findOne({
         name: newName,
         type: newType,
-        _id: { $ne: id } // Exclude the current category being updated
+        _id: { $ne: id }, // Exclude the current category being updated
       });
 
       if (existingCategory) {
-        return res.status(409).json({ message: 'Another category with this name and type already exists.' });
+        return res.status(409).json({
+          message: "Another category with this name and type already exists.",
+        });
       }
     }
 
@@ -156,12 +173,16 @@ export const updateCategory = async (req, res) => {
     );
 
     if (!updatedCategory) {
-      return res.status(404).json({ message: 'Category not found.' });
+      return res.status(404).json({ message: "Category not found." });
     }
     res.status(200).json(updatedCategory);
   } catch (error) {
-    console.error('Error updating category:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error("Error updating category:", error);
+    // Handle Mongoose validation errors
+    if (error.name === "ValidationError") {
+      return res.status(400).json({ message: error.message });
+    }
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
@@ -176,16 +197,71 @@ export const deleteCategory = async (req, res) => {
   try {
     const { id } = req.params;
     if (!isValidObjectId(id)) {
-      return res.status(400).json({ message: 'Invalid Category ID format.' });
+      return res.status(400).json({ message: "Invalid Category ID format." });
     }
 
     const deletedCategory = await Category.findByIdAndDelete(id);
     if (!deletedCategory) {
-      return res.status(404).json({ message: 'Category not found.' });
+      return res.status(404).json({ message: "Category not found." });
     }
-    res.status(200).json({ message: 'Category deleted successfully.' });
+    res.status(200).json({ message: "Category deleted successfully." });
   } catch (error) {
-    console.error('Error deleting category:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error("Error deleting category:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+/**
+ * @desc Get all categories with a representative image from an associated product/service
+ * @route GET /api/categories-with-images
+ * @access Public
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
+export const getAllCategoriesWithImages = async (req, res) => {
+  try {
+    // Fetch all categories from the database
+    const categories = await Category.find({});
+    // Use Promise.all to concurrently fetch an image for each category
+    const categoriesWithImages = await Promise.all(
+      categories.map(async (category) => {
+        let imageUrl = null;
+
+        // Attempt to find a product or service associated with the current category
+        // We look for one that has at least one item in its 'portfolio' array.
+        // We only select the 'portfolio.url' field to optimize data transfer.
+        const productService = await ProductService.findOne({
+          categoryId: category._id,
+          "portfolio.0": { $exists: true }, // Checks if the portfolio array has at least one element
+        }).select("portfolio.url");
+
+        // If a product/service is found and it has images in its portfolio,
+        // use the URL of the first image.
+        if (productService && productService.portfolio.length > 0) {
+          imageUrl = productService.portfolio[0].url;
+        }
+
+        // Return the category details along with the found image URL
+        return {
+          categoryName: category.name,
+          description: category.description,
+          type: category.type,
+          imageUrl: imageUrl, // Will be null if no product/service or image is found
+        };
+      })
+    );
+
+    // Send the formatted array of categories with images as a successful response
+    res.status(200).json(categoriesWithImages);
+  } catch (error) {
+    // Log the error for debugging purposes
+    console.error("Error fetching categories with images:", error);
+
+    // Send a 500 Internal Server Error response
+    res.status(500).json({
+      message:
+        "Failed to retrieve categories with images due to a server error.",
+      error: error.message,
+    });
   }
 };
