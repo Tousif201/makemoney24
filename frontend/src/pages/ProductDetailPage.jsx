@@ -1,8 +1,7 @@
-import { useEffect, useState } from "react";
-// Assuming you are using react-router-dom to get the ID from the URL
-import { useParams } from "react-router-dom"; // <--- Import useParams
+import { useEffect, useState, useCallback } from "react"; // Import useCallback
+import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner"; // For toasts
+import { toast } from "sonner";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -24,17 +23,18 @@ import {
   Clock,
   Shield,
   Truck,
+  UserCircle, // For displaying user profile in reviews
 } from "lucide-react";
 import { useCart } from "../context/CartContext";
-import { getProductServiceById } from "../../api/productService"; // Correct import for your API function
+import { getProductServiceById } from "../../api/productService";
+import LeaveReviewForm from "../components/LeaveReviewForm";
 
 export default function ProductDetailPage() {
-  // Get the product ID from the URL parameters
   const { productId } = useParams();
 
-  const [product, setProduct] = useState(null); // State to store the fetched product
-  const [loading, setLoading] = useState(true); // State for loading status
-  const [error, setError] = useState(null); // State for error handling
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
@@ -42,68 +42,60 @@ export default function ProductDetailPage() {
 
   const { addItem } = useCart();
 
-  useEffect(() => {
-    // If productId is not available (e.g., direct access without ID in URL), handle it
+  // Encapsulate fetch logic in useCallback to make it stable
+  const fetchProductDetails = useCallback(async () => {
     if (!productId) {
       setLoading(false);
       setError("No product ID provided in the URL.");
       return;
     }
 
-    const fetchProduct = async () => {
-      try {
-        setLoading(true);
-        setError(null); // Clear any previous errors
+    try {
+      setLoading(true);
+      setError(null);
 
-        const { data } = await getProductServiceById(productId); // Use the actual productId from URL
-        setProduct(data);
-        console.log(data);
+      const { data } = await getProductServiceById(productId);
+      setProduct(data);
+      console.log("Fetched product data with reviews:", data); // Log the full data
 
-        // Reset selected variant/image/quantity when a new product is loaded
-        setSelectedVariantIndex(0);
-        setQuantity(1);
-        setSelectedImageIndex(0);
-      } catch (err) {
-        console.error("Error fetching product details:", err);
-        // Handle specific error types if needed (e.g., 404, 400)
-        if (err.response) {
-          // The request was made and the server responded with a status code
-          // that falls out of the range of 2xx
-          if (err.response.status === 404) {
-            setError("Product or Service not found.");
-          } else if (err.response.status === 400) {
-            setError("Invalid product ID format.");
-          } else {
-            setError(
-              err.response.data.message || "An unexpected error occurred."
-            );
-          }
-        } else if (err.request) {
-          // The request was made but no response was received
-          setError("Network error. Please check your internet connection.");
+      setSelectedVariantIndex(0);
+      setQuantity(1);
+      setSelectedImageIndex(0);
+    } catch (err) {
+      console.error("Error fetching product details:", err);
+      if (err.response) {
+        if (err.response.status === 404) {
+          setError("Product or Service not found.");
+        } else if (err.response.status === 400) {
+          setError("Invalid product ID format.");
         } else {
-          // Something happened in setting up the request that triggered an Error
-          setError("Error setting up the request: " + err.message);
+          setError(
+            err.response.data.message || "An unexpected error occurred."
+          );
         }
-        setProduct(null); // Ensure product is null on error
-      } finally {
-        setLoading(false);
+      } else if (err.request) {
+        setError("Network error. Please check your internet connection.");
+      } else {
+        setError("Error setting up the request: " + err.message);
       }
-    };
+      setProduct(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [productId]); // productId is the only dependency
 
-    fetchProduct();
-  }, [productId]); // Re-run effect if productId changes
-  console.log(product);
-  // Handlers
+  useEffect(() => {
+    fetchProductDetails();
+  }, [fetchProductDetails]); // Depend on the memoized fetch function
+
   const handleAddToCart = () => {
     if (!product) {
       toast.error("Cannot add to cart: Product data not available.");
       return;
     }
 
-    const currentVariant = product.variants?.[selectedVariantIndex]; // Use optional chaining
+    const currentVariant = product.variants?.[selectedVariantIndex];
 
-    // Check if a product variant is required and selected
     if (
       product.type === "product" &&
       product.variants &&
@@ -113,7 +105,6 @@ export default function ProductDetailPage() {
       toast.error("Please select a variant.");
       return;
     }
-    // Check stock for products
     if (
       product.type === "product" &&
       currentVariant &&
@@ -124,7 +115,6 @@ export default function ProductDetailPage() {
       );
       return;
     }
-    // Check if the product itself is in stock (for products without variants, or general check)
     if (
       product.type === "product" &&
       !product.isInStock &&
@@ -134,21 +124,19 @@ export default function ProductDetailPage() {
       return;
     }
 
-    // Prepare item for cart
     const itemToAdd = {
-      id: `${product._id}`, // More robust unique ID
+      id: `${product._id}`,
       productId: product._id,
       productServiceId: productId,
       title: product.title,
       price: product.price,
       originalPrice: product.originalPrice,
       quantity: quantity,
-      // Prioritize selected portfolio image, then variant image, then fallback
       image:
         product.portfolio?.[selectedImageIndex]?.url ||
-        currentVariant?.images?.[0] ||
+        currentVariant?.images?.[0]?.url ||
         "/placeholder.svg",
-      vendor: product.vendorId || "Unknown Vendor", // Use optional chaining
+      vendor: product.vendorId?.name || "Unknown Vendor", // Access vendor name if populated
       type: product.type,
       variant: currentVariant
         ? {
@@ -181,7 +169,6 @@ export default function ProductDetailPage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center p-4">
           <p className="text-xl text-gray-700">Loading product details...</p>
-          {/* You can add a spinner here */}
           <svg
             className="animate-spin h-10 w-10 text-blue-500 mx-auto mt-4"
             viewBox="0 0 24 24"
@@ -205,7 +192,6 @@ export default function ProductDetailPage() {
     );
   }
 
-  // If product is null after loading, it means it was not found
   if (!product) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -217,7 +203,6 @@ export default function ProductDetailPage() {
             The product or service you are looking for does not exist or has
             been removed.
           </p>
-          {/* Replaced Link with Button for consistency, assuming no Next.js Link */}
           <Button onClick={() => window.history.back()} className="mt-6 mr-2">
             Go Back
           </Button>
@@ -229,7 +214,17 @@ export default function ProductDetailPage() {
     );
   }
 
-  // --- Render Product Details (only if product is loaded and not null) ---
+  // Calculate average rating if needed (though backend can provide it)
+  const averageRating =
+    product.reviews && product.reviews.length > 0
+      ? (
+          product.reviews.reduce((acc, review) => acc + review.rating, 0) /
+          product.reviews.length
+        ).toFixed(1)
+      : (product.rating || 0).toFixed(1); // Use backend rating if no reviews or fallback
+
+  const totalReviewsCount = product.reviews ? product.reviews.length : 0;
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
@@ -240,8 +235,8 @@ export default function ProductDetailPage() {
               <img
                 src={
                   product.portfolio?.[selectedImageIndex]?.url ||
-                  product.variants?.[selectedVariantIndex]?.images?.[0]?.url || // Access .url for variant images
-                  "/placeholder.svg" // Final fallback
+                  product.variants?.[selectedVariantIndex]?.images?.[0]?.url ||
+                  "/placeholder.svg"
                 }
                 alt={product.title}
                 className="object-cover w-full h-full"
@@ -261,14 +256,12 @@ export default function ProductDetailPage() {
                 )}
             </div>
             <div className="grid grid-cols-4 gap-4">
-              {/* Ensure portfolio and variant images are properly mapped and unique */}
               {[
                 ...(product.portfolio || []),
                 ...(product.variants?.[selectedVariantIndex]?.images || []),
               ]
                 .filter(
                   (item, index, self) =>
-                    // Ensure item and item.url exist and filter out duplicates by URL
                     item &&
                     item.url &&
                     self.findIndex((t) => t.url === item.url) === index
@@ -309,14 +302,14 @@ export default function ProductDetailPage() {
                     <Star
                       key={i}
                       className={`h-5 w-5 ${
-                        i < Math.floor(product.rating || 0)
+                        i < Math.floor(averageRating)
                           ? "fill-yellow-400 text-yellow-400"
                           : "text-gray-300"
                       }`}
                     />
                   ))}
                   <span className="ml-2 text-sm text-gray-600">
-                    {product.rating || 0} ({product.reviews || 0} reviews)
+                    {averageRating} ({totalReviewsCount} reviews)
                   </span>
                 </div>
               </div>
@@ -380,9 +373,9 @@ export default function ProductDetailPage() {
                         {[
                           ...Array(
                             Math.min(
-                              10, // Max quantity selectable from dropdown
+                              10,
                               product.variants[selectedVariantIndex]
-                                ?.quantity || 1 // Or available stock
+                                ?.quantity || 1
                             )
                           ),
                         ].map((_, i) => (
@@ -429,9 +422,14 @@ export default function ProductDetailPage() {
         <Card className="mb-12">
           <CardContent className="p-6">
             <Tabs defaultValue="description" className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
+                {" "}
+                {/* Adjusted grid-cols */}
                 <TabsTrigger value="description">Description</TabsTrigger>
-                <TabsTrigger value="reviews">Reviews</TabsTrigger>
+                <TabsTrigger value="reviews">
+                  Reviews ({totalReviewsCount})
+                </TabsTrigger>
+                {/* Add other tabs if you have them, e.g., "Shipping", "Vendor Info" */}
               </TabsList>
               <TabsContent value="description" className="mt-6">
                 <div className="prose max-w-none">
@@ -443,17 +441,16 @@ export default function ProductDetailPage() {
 
               <TabsContent value="reviews" className="mt-6">
                 <div className="space-y-6">
+                  {/* Overall Review Summary */}
                   <div className="flex items-center gap-6">
                     <div className="text-center">
-                      <div className="text-3xl font-bold">
-                        {product.rating || 0}
-                      </div>
+                      <div className="text-3xl font-bold">{averageRating}</div>
                       <div className="flex items-center justify-center">
                         {[...Array(5)].map((_, i) => (
                           <Star
                             key={i}
                             className={`h-4 w-4 ${
-                              i < Math.floor(product.rating || 0)
+                              i < Math.floor(averageRating)
                                 ? "fill-yellow-400 text-yellow-400"
                                 : "text-gray-300"
                             }`}
@@ -461,44 +458,91 @@ export default function ProductDetailPage() {
                         ))}
                       </div>
                       <div className="text-sm text-gray-600">
-                        {product.reviews || 0} reviews
+                        {totalReviewsCount} reviews
                       </div>
                     </div>
+                    {/* Could add rating breakdown bars here (e.g., 5-star, 4-star, etc.) */}
                   </div>
                   <Separator />
-                  <div className="space-y-4">
-                    {/* Placeholder for real reviews */}
-                    {product.reviews > 0 ? (
-                      [1, 2, 3].map(
-                        (
-                          review // Replace with actual product.reviews.map
-                        ) => (
-                          <div key={review} className="border-b pb-4">
+
+                  {/* Leave a Review Section */}
+                  <LeaveReviewForm
+                    productId={productId}
+                    itemType={product.type}
+                    onReviewSubmitted={fetchProductDetails} // Pass the fetch function to re-fetch reviews
+                  />
+                  <Separator />
+
+                  {/* Individual Reviews List */}
+                  <h3 className="text-xl font-semibold mb-4">
+                    Customer Reviews
+                  </h3>
+                  <div className="space-y-6">
+                    {totalReviewsCount > 0 ? (
+                      product.reviews
+                        .sort(
+                          (a, b) =>
+                            new Date(b.createdAt) - new Date(a.createdAt)
+                        ) // Sort newest first
+                        .map((review) => (
+                          <div
+                            key={review._id}
+                            className="border-b pb-4 last:border-b-0"
+                          >
                             <div className="flex items-center gap-2 mb-2">
-                              <div className="flex">
-                                {[...Array(5)].map((_, i) => (
-                                  <Star
-                                    key={i}
-                                    className="h-4 w-4 fill-yellow-400 text-yellow-400"
+                              {review.userId?.avatar ? ( // Display user avatar if available
+                                <img
+                                  src={review.userId.avatar}
+                                  alt={review.userId.username || "User"}
+                                  className="h-8 w-8 rounded-full object-cover"
+                                />
+                              ) : (
+                                <UserCircle className="h-8 w-8 text-gray-400" /> // Fallback icon
+                              )}
+                              <span className="font-medium">
+                                {review.userId?.username || "Anonymous User"}
+                              </span>
+                              <span className="text-sm text-gray-500">
+                                {" "}
+                                &bull;{" "}
+                                {new Date(
+                                  review.createdAt
+                                ).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <div className="flex mb-2">
+                              {[...Array(5)].map((_, i) => (
+                                <Star
+                                  key={i}
+                                  className={`h-4 w-4 ${
+                                    i < review.rating
+                                      ? "fill-yellow-400 text-yellow-400"
+                                      : "text-gray-300"
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                            <p className="text-gray-700 leading-relaxed">
+                              {review.comment}
+                            </p>
+                            {review.media && review.media.length > 0 && (
+                              <div className="flex gap-2 mt-3">
+                                {review.media.map((mediaItem, idx) => (
+                                  <img
+                                    key={idx}
+                                    src={mediaItem.url}
+                                    alt={`Review media ${idx + 1}`}
+                                    className="w-20 h-20 object-cover rounded-md"
                                   />
                                 ))}
                               </div>
-                              <span className="font-medium">John Doe</span>
-                              <span className="text-sm text-gray-500">
-                                2 days ago
-                              </span>
-                            </div>
-                            <p className="text-gray-700">
-                              Excellent chair! Very comfortable for long working
-                              hours. The leather quality is premium and the
-                              adjustability is perfect.
-                            </p>
+                            )}
                           </div>
-                        )
-                      )
+                        ))
                     ) : (
                       <p className="text-gray-600">
-                        No reviews yet for this product.
+                        No reviews yet for this product. Be the first to leave
+                        one!
                       </p>
                     )}
                   </div>

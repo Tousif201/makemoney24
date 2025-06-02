@@ -3,6 +3,7 @@
 // ===================================
 import { ProductService } from "../models/ProductService.model.js";
 import mongoose from "mongoose";
+import { Review } from "../models/Review.model.js";
 
 // Helper function to validate ObjectId
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
@@ -241,8 +242,9 @@ export const getProductServices = async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
 /**
- * @desc Get a single product or service by ID, populating related fields
+ * @desc Get a single product or service by ID, populating related fields and associated reviews
  * @route GET /api/products/:id or /api/services/:id
  * @access Public
  */
@@ -258,13 +260,15 @@ export const getProductServiceById = async (req, res) => {
       });
     }
 
-    // Find the product/service and populate the 'vendorId' and 'categoryId' fields.
-    // Adjust the second argument of populate to select specific fields from the populated documents
-    // to avoid sending sensitive data or unnecessarily large objects.
+    // 1. Find the product/service and populate the 'categoryId' and 'vendorId' fields.
+    // Ensure you populate 'vendorId' as well if you need vendor details on the frontend.
+    // If your ProductService model has 'vendorId', you should populate it.
     const productService = await ProductService.findById(id).populate(
       "categoryId",
       "name description"
-    ); // Populating category details, select fields carefully
+    ); // Populating category details
+    // .populate("vendorId", "name email"); // Uncomment and adjust if you need vendor details
+    // Select fields carefully to avoid sensitive data.
 
     // Check if the product/service was found
     if (!productService) {
@@ -273,8 +277,21 @@ export const getProductServiceById = async (req, res) => {
         .json({ success: false, message: "Product or Service not found." });
     }
 
-    // Send the populated product/service data
-    res.status(200).json({ success: true, data: productService });
+    // 2. Fetch associated reviews for the found product/service
+    const reviews = await Review.find({
+      itemId: productService._id,
+      itemType: productService.type, // Assuming 'type' (product/service) is on your ProductService model
+    }).populate("userId", "username avatar"); // Populate user details for each review (e.g., username, avatar)
+    // Adjust 'username' and 'avatar' to match your User model fields.
+
+    // 3. Combine the product/service data with its reviews
+    const responseData = {
+      ...productService.toObject(), // Convert Mongoose document to plain JavaScript object
+      reviews: reviews,
+    };
+
+    // Send the populated product/service data along with its reviews
+    res.status(200).json({ success: true, data: responseData });
   } catch (error) {
     console.error("Error fetching product/service by ID:", error);
     // Handle specific Mongoose CastError if an invalid ID is passed that bypasses isValidObjectId
