@@ -1,8 +1,5 @@
 // ============================
-// File: models/CashbackMilestone.js
-// ============================
-// ============================
-// File: models/CashbackMilestone.js
+// File: models/membershipMilestone.js
 // ============================
 import mongoose, { Schema, model } from "mongoose";
 // import { RewardLog } from "../models/RewardLog.js"
@@ -18,7 +15,7 @@ import mongoose, { Schema, model } from "mongoose";
 //   }
 
 //   // Check if the generated ID already exists in the database
-//   const existingMilestone = await CashbackMilestone.findOne({
+//   const existingMilestone = await membershipMilestone.findOne({
 //     milestoneId: result,
 //   });
 //   if (existingMilestone) {
@@ -28,7 +25,7 @@ import mongoose, { Schema, model } from "mongoose";
 //   return result;
 // }
 
-const CashbackMilestoneSchema = new Schema(
+const membershipMilestoneSchema = new Schema(
   {
     name: {
       type: String,
@@ -85,9 +82,6 @@ const CashbackMilestoneSchema = new Schema(
       default: 0, // 0 can signify no time limit, or you could use null
       min: [0, "Time limit cannot be negative."],
     },
-    purchaseValue:{
-      type :Number,
-    }
   },
   {
     timestamps: true, // Automatically adds createdAt and updatedAt fields
@@ -95,7 +89,7 @@ const CashbackMilestoneSchema = new Schema(
 );
 
 // Pre-save hook to generate a unique 4-character milestoneId
-CashbackMilestoneSchema.pre("save", async function (next) {
+membershipMilestoneSchema.pre("save", async function (next) {
   if (this.isNew && !this.milestoneId) {
     const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
@@ -105,7 +99,7 @@ CashbackMilestoneSchema.pre("save", async function (next) {
         result += characters.charAt(Math.floor(Math.random() * characters.length));
       }
 
-      const existing = await mongoose.models.CashbackMilestone.findOne({ milestoneId: result });
+      const existing = await mongoose.models.membershipMilestone.findOne({ milestoneId: result });
       if (existing) return generateUniqueId();
       return result;
     };
@@ -116,12 +110,14 @@ CashbackMilestoneSchema.pre("save", async function (next) {
 });
 
 // Optional: Add indexes for frequently queried fields to improve performance
-CashbackMilestoneSchema.index({ status: 1 });
-CashbackMilestoneSchema.index({ milestone: 1 });
-CashbackMilestoneSchema.index({ rewardAmount: 1 });
+membershipMilestoneSchema.index({ status: 1 });
+membershipMilestoneSchema.index({ milestone: 1 });
+membershipMilestoneSchema.index({ rewardAmount: 1 });
+
+export const membershipMilestone = model(
+  "membershipMilestone",
+  membershipMilestoneSchema
+);
 
 
 
-
-
-export const CashbackMilestone = model('CashbackMilestone', CashbackMilestoneSchema);

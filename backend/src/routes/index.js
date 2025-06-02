@@ -16,6 +16,9 @@ import transactionRouter from "./transaction.routes.js";
 import userRouter from "./user.routes.js";
 import memberRouter from "./member.routes.js";
 import rewardRouter from "./reward.route.js";
+import franchisheMilestoneRouter from "./franchise.milestone.routes.js";
+import cashbackMilestoneRouter from "./cashback.milestone.routes.js";
+import membershipMilestoneRouter from "./membership.milestone.routes.js";
 const router = express.Router();
 
 // Mount the routers
@@ -36,5 +39,8 @@ router.use("/transactions", transactionRouter);
 router.use("/users", userRouter);
 router.use("/membership", memberRouter);
 router.use("/reward", rewardRouter);
+router.use("/franchise-milestone", franchisheMilestoneRouter);
+router.use("/cashback-milestone", cashbackMilestoneRouter);
+router.use("/membership-milestones", membershipMilestoneRouter);
 
 export default router;

@@ -2,27 +2,28 @@
 // File: models/FranchiseMilestone.js
 // ============================
 import mongoose, { Schema, model } from "mongoose";
+// import { RewardLog } from "../models/RewardLog.js"
 
 // Function to generate a unique 4-character alphanumeric ID
 // This is a simple generator; for high-concurrency systems,
 // consider more robust ID generation strategies or UUIDs.
-async function generateUniqueMilestoneId() {
-  const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  let result = "";
-  for (let i = 0; i < 4; i++) {
-    result += characters.charAt(Math.floor(Math.random() * characters.length));
-  }
+// async function generateUniqueMilestoneId() {
+//   const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+//   let result = "";
+//   for (let i = 0; i < 4; i++) {
+//     result += characters.charAt(Math.floor(Math.random() * characters.length));
+//   }
 
-  // Check if the generated ID already exists in the database
-  const existingMilestone = await FranchiseMilestone.findOne({
-    milestoneId: result,
-  });
-  if (existingMilestone) {
-    // If it exists, recursively call to generate another one
-    return generateUniqueMilestoneId();
-  }
-  return result;
-}
+//   // Check if the generated ID already exists in the database
+//   const existingMilestone = await FranchiseMilestone.findOne({
+//     milestoneId: result,
+//   });
+//   if (existingMilestone) {
+//     // If it exists, recursively call to generate another one
+//     return generateUniqueMilestoneId();
+//   }
+//   return result;
+// }
 
 const franchiseMilestoneSchema = new Schema(
   {
@@ -47,12 +48,18 @@ const franchiseMilestoneSchema = new Schema(
     milestoneId: {
       type: String,
       unique: true, // Ensures each milestone has a unique 4-char ID
-      required: true,
+      // required: true,
       // Add a regex to validate the format if necessary (e.g., exactly 4 alphanumeric chars)
       match: [
         /^[A-Z0-9]{4}$/,
         "Milestone ID must be 4 uppercase alphanumeric characters.",
       ],
+      validate: {
+    validator: function (val) {
+      return val && val.length === 4;
+    },
+    message: "milestoneId must be exactly 4 characters."
+  }
     },
     milestone: {
       type: Number,
@@ -83,9 +90,21 @@ const franchiseMilestoneSchema = new Schema(
 
 // Pre-save hook to generate a unique 4-character milestoneId
 franchiseMilestoneSchema.pre("save", async function (next) {
-  // Only generate if it's a new document and milestoneId is not already set
   if (this.isNew && !this.milestoneId) {
-    this.milestoneId = await generateUniqueMilestoneId();
+    const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+    const generateUniqueId = async () => {
+      let result = "";
+      for (let i = 0; i < 4; i++) {
+        result += characters.charAt(Math.floor(Math.random() * characters.length));
+      }
+
+      const existing = await mongoose.models.FranchiseMilestone.findOne({ milestoneId: result });
+      if (existing) return generateUniqueId();
+      return result;
+    };
+
+    this.milestoneId = await generateUniqueId();
   }
   next();
 });
@@ -99,3 +118,6 @@ export const FranchiseMilestone = model(
   "FranchiseMilestone",
   franchiseMilestoneSchema
 );
+
+
+
