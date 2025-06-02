@@ -2,9 +2,11 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors"; // Import cors
 import { beyonderLogger } from "./utils/logger.js";
-import apiRoutes from "./routes/index.js"; // Renamed for clarity
+import apiRoutes from "./routes/index.js"; // Renamed or clarity
 import { connectDB } from "./config/database.js";
-
+import startScoreUpdaterCron from "./cron-jobs/profileScoreUpdater.cron.js";
+import startMilestoneRewarderCron from "./cron-jobs/milestoneRewarder.cron.js";
+import startProfileScoreRewarderCron from "./cron-jobs/profileScoreRewarder.cron.js";
 // Load environment variables
 dotenv.config();
 
@@ -50,7 +52,12 @@ connectDB()
       beyonderLogger(); // Log startup message
       console.log(`✅ Server listening on http://localhost:${PORT}`);
     });
-  })
+  }).then(() => {
+    // --- Start Cron Jobs ---
+    startScoreUpdaterCron();
+    startProfileScoreRewarderCron();
+    startMilestoneRewarderCron(); // Start the new generalized cron job
+    console.log('All cron jobs initialized.')})
   .catch((err) => {
     console.error("❌ Failed to start server:", err);
     process.exit(1); // Exit if database connection fails
