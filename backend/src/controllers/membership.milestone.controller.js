@@ -2,7 +2,7 @@
 // File: controllers/membershipMilestoneController.js
 // ======================================
 
-import { membershipMilestone } from "../models/membership.milestone.model.js";
+import { membershipMilestone } from "../models/membershipMilestone.model.js";
 import { RewardLog } from "../models/RewardLog.model.js"; // Assuming you have this model for stats
 
 // @desc    Create a new Membership Milestone

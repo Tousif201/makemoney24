@@ -29,7 +29,6 @@ const userSchema = new Schema({
   purchaseWallet: { type: Number, default: 0 },
   withdrawableWallet: { type: Number, default: 0 },
 
-  // Referral system
   referralCode: { type: String, unique: true },
   referredByCode: { type: String },
 
@@ -51,5 +50,6 @@ const userSchema = new Schema({
 },{
   timestamps: true // <--- ADD THIS LINE
 });
+  // Referral system
 userSchema.index({ parent: 1 });
 export const User = model("User", userSchema);
