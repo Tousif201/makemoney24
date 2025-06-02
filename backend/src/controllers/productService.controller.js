@@ -161,34 +161,45 @@ export const getProductServices = async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
-
 /**
- * @desc Get a single product/service by ID
- * @route GET /api/productservices/:id
+ * @desc Get a single product or service by ID, populating related fields
+ * @route GET /api/products/:id or /api/services/:id
  * @access Public
- * @param {Object} req - Express request object (params: id)
- * @param {Object} res - Express response object
  */
 export const getProductServiceById = async (req, res) => {
   try {
     const { id } = req.params;
+
+    // Validate if the ID is a valid MongoDB ObjectId
     if (!isValidObjectId(id)) {
       return res
         .status(400)
-        .json({ message: "Invalid Product/Service ID format." });
+        .json({ success: false, message: "Invalid Product/Service ID format." });
     }
 
-    const productService = await ProductService.findById(id);
+    // Find the product/service and populate the 'vendorId' and 'categoryId' fields.
+    // Adjust the second argument of populate to select specific fields from the populated documents
+    // to avoid sending sensitive data or unnecessarily large objects.
+    const productService = await ProductService.findById(id)
+      .populate("categoryId", "name description"); // Populating category details, select fields carefully
+
+    // Check if the product/service was found
     if (!productService) {
-      return res.status(404).json({ message: "Product or Service not found." });
+      return res.status(404).json({ success: false, message: "Product or Service not found." });
     }
-    res.status(200).json(productService);
+
+    // Send the populated product/service data
+    res.status(200).json({ success: true, data: productService });
   } catch (error) {
     console.error("Error fetching product/service by ID:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    // Handle specific Mongoose CastError if an invalid ID is passed that bypasses isValidObjectId
+    if (error.name === 'CastError') {
+      return res.status(400).json({ success: false, message: "Invalid ID format for lookup." });
+    }
+    // Generic server error for other issues
+    res.status(500).json({ success: false, message: "Server Error", error: error.message });
   }
 };
-
 /**
  * @desc Update an existing product or service
  * @route PUT /api/productservices/:id

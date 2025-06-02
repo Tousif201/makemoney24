@@ -192,9 +192,6 @@ export default function RazorpayPaymentButton({
       className={className}
     >
       {isProcessing ? "Processing..." : children}
-      {paymentError && (
-        <span className="ml-2 text-red-500 text-sm">{paymentError}</span>
-      )}
     </Button>
   );
 }

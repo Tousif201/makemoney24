@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom"; // Changed from 'next/navigation'
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,15 +15,18 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { CreditCard, MapPin, User, Lock } from "lucide-react";
+import { MapPin, User, Lock } from "lucide-react";
 import { useCart } from "../../context/CartContext";
+import RazorpayPaymentButton from "../RazorpayPaymentButton";
+import { useSession } from "../../context/SessionContext";
+import { handleCheckout } from "../../../api/checkout"; // Your integrated checkout API
 
 export default function CheckoutPage() {
-  const navigate = useNavigate(); // Using useNavigate from react-router-dom
+  const navigate = useNavigate();
   const { items, getTotalPrice, clearCart } = useCart();
   const [isProcessing, setIsProcessing] = useState(false);
   const [sameAsShipping, setSameAsShipping] = useState(true);
-
+  const { session } = useSession();
   const [shippingInfo, setShippingInfo] = useState({
     firstName: "",
     lastName: "",
@@ -48,20 +51,24 @@ export default function CheckoutPage() {
     country: "India",
   });
 
-  const [paymentInfo, setPaymentInfo] = useState({
-    cardNumber: "",
-    expiryDate: "",
-    cvv: "",
-    cardholderName: "",
-  });
+  if (!session) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">
+            You need to log in to place an order
+          </h1>
+          <Button onClick={() => navigate("/login")}>Login</Button>
+        </div>
+      </div>
+    );
+  }
 
   const totalPrice = getTotalPrice();
   const shippingCost = 0; // Free shipping
-  const tax = Math.round(totalPrice * 0.18); // 18% GST
-  const finalTotal = totalPrice + shippingCost + tax;
+  const finalTotal = totalPrice + shippingCost;
 
   const handleShippingChange = (field, value) => {
-    // Removed type annotations
     setShippingInfo((prev) => ({ ...prev, [field]: value }));
     if (sameAsShipping) {
       setBillingInfo((prev) => ({ ...prev, [field]: value }));
@@ -69,51 +76,116 @@ export default function CheckoutPage() {
   };
 
   const handleBillingChange = (field, value) => {
-    // Removed type annotations
     setBillingInfo((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handlePaymentChange = (field, value) => {
-    // Removed type annotations
-    setPaymentInfo((prev) => ({ ...prev, [field]: value }));
+  /**
+   * handlePaymentSuccess now filters items by vendor and calls the backend's
+   * handleCheckout API for each vendor, after a successful Razorpay payment.
+   * @param {Object} razorpayResponse - The response object from a successful Razorpay payment.
+   */
+  const handlePaymentSuccess = async (razorpayResponse) => {
+    console.log("--- handlePaymentSuccess initiated (Razorpay callback) ---");
+    console.log("Razorpay Response:", razorpayResponse);
+    setIsProcessing(true); // Start processing after successful payment
+
+    try {
+      // 1. Group cart items by vendor
+      console.log("Step 1: Grouping cart items by vendor...");
+      const itemsByVendor = items.reduce((acc, item) => {
+        const vendorId = item.vendor; // Assuming 'vendor' property holds the vendor ID
+        if (!acc[vendorId]) {
+          acc[vendorId] = [];
+        }
+        acc[vendorId].push(item);
+        return acc;
+      }, {});
+      console.log("Items grouped by vendor:", itemsByVendor);
+
+      const createdOrderIds = [];
+      let successCount = 0;
+      let failureCount = 0;
+
+      // 2. Iterate through each vendor group and call handleCheckout
+      console.log("Step 2: Calling handleCheckout for each vendor...");
+      for (const vendorId in itemsByVendor) {
+        const vendorItems = itemsByVendor[vendorId];
+        const vendorOrderSubtotal = vendorItems.reduce(
+          (sum, item) => sum + item.price * item.quantity,
+          0
+        );
+
+        const checkoutPayload = {
+          userId: session?.id,
+          vendorId: vendorId, // Specific vendor ID for this order
+          items: vendorItems.map((item) => ({
+            productServiceId: item.id,
+            quantity: item.quantity,
+            price: item.price,
+            variant: item.variant, // Include variant if applicable
+          })),
+          totalAmount: vendorOrderSubtotal, // Total for this specific vendor's order
+          address: shippingInfo, // Using shipping info as the primary address for the order
+          // Pass Razorpay details for the first order, or adapt if your backend needs them for each.
+          // For simplicity, we'll pass them to the first successful order.
+          razorpayPaymentId: razorpayResponse.razorpay_payment_id,
+          razorpayOrderId: razorpayResponse.razorpay_order_id,
+          razorpaySignature: razorpayResponse.razorpay_signature,
+        };
+
+        console.log(`Attempting to call handleCheckout for Vendor ID: ${vendorId} with payload:`, checkoutPayload);
+
+        try {
+          const response = await handleCheckout(checkoutPayload);
+          if (response.success) {
+            console.log(`Order for Vendor ID ${vendorId} successful:`, response);
+            createdOrderIds.push(response.order._id);
+            successCount++;
+          } else {
+            console.error(`Order for Vendor ID ${vendorId} failed:`, response.message);
+            failureCount++;
+            // Optionally, accumulate messages for a final alert
+          }
+        } catch (error) {
+          console.error(`Error calling handleCheckout for Vendor ID ${vendorId}:`, error);
+          failureCount++;
+        }
+      }
+
+      console.log("All handleCheckout calls completed.");
+      console.log(`Successful orders: ${successCount}, Failed orders: ${failureCount}`);
+
+      if (successCount > 0) {
+        alert(`Orders placed successfully for ${successCount} vendor(s)! ${failureCount > 0 ? `(${failureCount} failed)` : ''}`);
+        clearCart(); // Clear the entire cart after all orders are processed
+        console.log("Cart cleared.");
+        navigate(`/checkout/success?orderIds=${createdOrderIds.join(',')}`); // Navigate to a success page
+      } else {
+        alert("All orders failed to place. Please contact support.");
+      }
+
+    } catch (error) {
+      console.error("An unexpected error occurred during multi-vendor checkout:", error);
+      alert("An unexpected error occurred during checkout. Please try again.");
+    } finally {
+      console.log("--- handlePaymentSuccess finished ---");
+      setIsProcessing(false);
+    }
   };
 
-  const handleSubmit = async (e) => {
-    // Removed type annotation
-    e.preventDefault();
-    setIsProcessing(true);
+  const handlePaymentError = (error) => {
+    console.error("Payment error (from Razorpay):", error);
+    alert(
+      `Payment Failed: ${
+        error.description || error.message || "Please try again."
+      }`
+    );
+    setIsProcessing(false); // Stop processing on payment error
+  };
 
-    // Simulate payment processing
-    await new Promise((resolve) => setTimeout(resolve, 3000));
-
-    // Create order data
-    const orderData = {
-      id: `ORD-${Date.now()}`,
-      items,
-      shippingInfo,
-      billingInfo: sameAsShipping ? shippingInfo : billingInfo,
-      paymentInfo: {
-        ...paymentInfo,
-        cardNumber: `****-****-****-${paymentInfo.cardNumber.slice(-4)}`,
-      },
-      totals: {
-        subtotal: totalPrice,
-        shipping: shippingCost,
-        tax,
-        total: finalTotal,
-      },
-      status: "confirmed",
-      createdAt: new Date().toISOString(),
-    };
-
-    // Store order in localStorage
-    localStorage.setItem("lastOrder", JSON.stringify(orderData));
-
-    // Clear cart
-    clearCart();
-
-    // Redirect to success page
-    navigate("/checkout/success"); // Using navigate for redirection
+  const generateReceiptId = (userId) => {
+    const timestampSuffix = Date.now().toString().slice(-10);
+    return `MM_${userId}_${timestampSuffix}`;
   };
 
   if (items.length === 0) {
@@ -124,12 +196,52 @@ export default function CheckoutPage() {
           <p className="text-gray-600 mb-6">
             Add some items to proceed with checkout
           </p>
-          <Button onClick={() => navigate("/browse")}>Continue Shopping</Button>{" "}
-          {/* Using navigate */}
+          <Button onClick={() => navigate("/browse")}>Continue Shopping</Button>
         </div>
       </div>
     );
   }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    console.log("Form submission initiated (client-side validation check).");
+    if (
+      !shippingInfo.firstName ||
+      !shippingInfo.lastName ||
+      !shippingInfo.email ||
+      !shippingInfo.phone ||
+      !shippingInfo.address ||
+      !shippingInfo.city ||
+      !shippingInfo.state ||
+      !shippingInfo.pincode
+    ) {
+      alert(
+        "Please fill in all shipping information before proceeding to payment."
+      );
+      console.log("Shipping information missing.");
+      return;
+    }
+    if (
+      !sameAsShipping &&
+      (!billingInfo.firstName ||
+        !billingInfo.lastName ||
+        !billingInfo.address ||
+        !billingInfo.city ||
+        !billingInfo.state ||
+        !billingInfo.pincode)
+    ) {
+      alert(
+        "Please fill in all billing information before proceeding to payment."
+      );
+      console.log("Billing information missing.");
+      return;
+    }
+    console.log(
+      "Client-side validation passed. Razorpay payment expected to be triggered next."
+    );
+    // The RazorpayPaymentButton will handle the payment initiation
+    // and then call handlePaymentSuccess on success.
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -241,6 +353,7 @@ export default function CheckoutPage() {
                           <SelectItem value="bangalore">Bangalore</SelectItem>
                           <SelectItem value="chennai">Chennai</SelectItem>
                           <SelectItem value="kolkata">Kolkata</SelectItem>
+                          {/* Add more states as needed */}
                         </SelectContent>
                       </Select>
                     </div>
@@ -273,7 +386,7 @@ export default function CheckoutPage() {
                       id="same-as-shipping"
                       checked={sameAsShipping}
                       onCheckedChange={(checked) => {
-                        setSameAsShipping(checked); // No need for 'as boolean'
+                        setSameAsShipping(checked);
                         if (checked) {
                           setBillingInfo(shippingInfo);
                         }
@@ -350,6 +463,7 @@ export default function CheckoutPage() {
                               <SelectItem value="bangalore">
                                 Bangalore
                               </SelectItem>
+                              {/* Add more states as needed */}
                             </SelectContent>
                           </Select>
                         </div>
@@ -369,74 +483,6 @@ export default function CheckoutPage() {
                   )}
                 </CardContent>
               </Card>
-
-              {/* Payment Information */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <CreditCard className="h-5 w-5 text-teal-500" />
-                    Payment Information
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="cardholder-name">Cardholder Name</Label>
-                    <Input
-                      id="cardholder-name"
-                      value={paymentInfo.cardholderName}
-                      onChange={(e) =>
-                        handlePaymentChange("cardholderName", e.target.value)
-                      }
-                      placeholder="John Doe"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="card-number">Card Number</Label>
-                    <Input
-                      id="card-number"
-                      value={paymentInfo.cardNumber}
-                      onChange={(e) =>
-                        handlePaymentChange("cardNumber", e.target.value)
-                      }
-                      placeholder="1234 5678 9012 3456"
-                      required
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="expiry-date">Expiry Date</Label>
-                      <Input
-                        id="expiry-date"
-                        value={paymentInfo.expiryDate}
-                        onChange={(e) =>
-                          handlePaymentChange("expiryDate", e.target.value)
-                        }
-                        placeholder="MM/YY"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="cvv">CVV</Label>
-                      <Input
-                        id="cvv"
-                        value={paymentInfo.cvv}
-                        onChange={(e) =>
-                          handlePaymentChange("cvv", e.target.value)
-                        }
-                        placeholder="123"
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Lock className="h-4 w-4 text-green-400" />
-                    <span>
-                      Your payment information is secure and encrypted
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
             </div>
 
             {/* Right Column - Order Summary */}
@@ -453,7 +499,6 @@ export default function CheckoutPage() {
                         className="flex gap-3"
                       >
                         <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-100">
-                          {/* Replaced Next.js Image with standard <img> */}
                           <img
                             src={item.image || "/placeholder.svg"}
                             alt={item.title}
@@ -470,6 +515,11 @@ export default function CheckoutPage() {
                               {item.variant.color && (
                                 <Badge variant="outline" className="text-xs">
                                   {item.variant.color}
+                                </Badge>
+                              )}
+                              {item.variant.size && (
+                                <Badge variant="outline" className="text-xs">
+                                  {item.variant.size}
                                 </Badge>
                               )}
                             </div>
@@ -498,40 +548,50 @@ export default function CheckoutPage() {
                       <span>Shipping</span>
                       <span className="text-green-600">Free</span>
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span>Tax (GST 18%)</span>
-                      <span>₹{tax.toLocaleString()}</span>
-                    </div>
+
                     <Separator />
                     <div className="flex justify-between font-medium text-lg">
                       <span>Total</span>
                       <span>₹{finalTotal.toLocaleString()}</span>
                     </div>
                   </div>
-
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    size="lg"
+                  <RazorpayPaymentButton
+                    amount={finalTotal * 100} // Razorpay expects amount in paisa
+                    receiptId={generateReceiptId(session.id)}
+                    companyName="MakeMoney24"
+                    description="Product Purchase"
+                    logoUrl="https://placehold.co/100x100/8B5CF6/FFFFFF?text=MM24"
+                    onPaymentSuccess={handlePaymentSuccess}
+                    onPaymentError={handlePaymentError}
+                    className="w-full bg-purple-600 hover:bg-purple-700"
                     disabled={isProcessing}
                   >
-                    {isProcessing ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Processing...
-                      </>
-                    ) : (
-                      <>
-                        <Lock className="mr-2 h-4 w-4 text-green-400" />
-                        Place Order
-                      </>
-                    )}
-                  </Button>
+                    <Button
+                      type="submit" // Changed to submit to trigger form validation
+                      className="w-full"
+                      size="lg"
+                      disabled={isProcessing}
+                    >
+                      {isProcessing ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <Lock className="mr-2 h-4 w-4 text-green-400" />
+                          Place Order
+                        </>
+                      )}
+                    </Button>
+                  </RazorpayPaymentButton>
 
                   <label className="flex items-start text-xs text-gray-500">
-                    <input type="checkbox" className="mr-2 mt-1" />
+                    <input type="checkbox" className="mr-2 mt-1" required />
                     <span>
-                      By placing your order, you agree to our <span className="underline">Terms of Service</span> and <span className="underline">Privacy Policy</span>.
+                      By placing your order, you agree to our{" "}
+                      <span className="underline">Terms of Service</span> and{" "}
+                      <span className="underline">Privacy Policy</span>.
                     </span>
                   </label>
                 </CardContent>

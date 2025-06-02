@@ -36,8 +36,34 @@ export const getAllTransactions = async (params = {}) => {
     const response = await apiClient.get("/", { params });
     return response.data;
   } catch (error) {
-    // It's good practice to centralize error handling or re-throw for upstream handling
     console.error("Error fetching transactions:", error);
-    throw error;
+    throw error; // Re-throw to allow component to handle
+  }
+};
+
+/**
+ * Creates a new transaction record in the backend.
+ *
+ * @param {object} transactionData - The data for the new transaction.
+ * @param {string} transactionData.userId - The ID of the user associated with the transaction.
+ * @param {string} transactionData.transactionType - The type of transaction (e.g., 'purchase', 'deposit').
+ * @param {number} transactionData.amount - The amount of the transaction.
+ * @param {string} [transactionData.orderId] - Optional: The ID of the associated order.
+ * @param {string} [transactionData.bookingId] - Optional: The ID of the associated booking.
+ * @param {string} [transactionData.description] - Optional: A description of the transaction.
+ * @param {string} [transactionData.status='success'] - Optional: The status of the transaction.
+ * @param {string} [transactionData.txnId] - Optional: An external transaction ID.
+ * @param {string} [transactionData.razorpayPaymentId] - Optional: Razorpay Payment ID.
+ * @param {string} [transactionData.razorpayOrderId] - Optional: Razorpay Order ID.
+ * @param {string} [transactionData.razorpaySignature] - Optional: Razorpay Signature.
+ * @returns {Promise<object>} A promise that resolves to the API response data of the created transaction.
+ */
+export const createTransaction = async (transactionData) => {
+  try {
+    const response = await apiClient.post("/", transactionData);
+    return response.data;
+  } catch (error) {
+    console.error("Error creating transaction:", error);
+    throw error; // Re-throw to allow component to handle (e.g., show toast)
   }
 };

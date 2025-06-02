@@ -1,17 +1,31 @@
-import React from "react"
-import { Link } from "react-router-dom"
-import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { ShoppingCart, Plus, Minus, Trash2 } from "lucide-react"
-import { useCart } from "../../context/CartContext"
+import React from "react";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { ShoppingCart, Plus, Minus, Trash2 } from "lucide-react";
+import { useCart } from "../../context/CartContext";
 
 export function CartSheet() {
-  const { items, updateQuantity, removeItem, getTotalItems, getTotalPrice, isOpen, setIsOpen } = useCart()
+  const {
+    items,
+    updateQuantity,
+    removeItem,
+    getTotalItems,
+    getTotalPrice,
+    isOpen,
+    setIsOpen,
+  } = useCart();
 
-  const totalItems = getTotalItems()
-  const totalPrice = getTotalPrice()
+  const totalItems = getTotalItems();
+  const totalPrice = getTotalPrice();
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -35,12 +49,17 @@ export function CartSheet() {
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
                 <ShoppingCart className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Your cart is empty</h3>
-                <p className="text-gray-500 mb-4">Add some products to get started</p>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  Your cart is empty
+                </h3>
+                <p className="text-gray-500 mb-4">
+                  Add some products to get started
+                </p>
                 <Link to="/browse">
-                  <Button onClick={() => setIsOpen(false)}>Continue Shopping</Button>
+                  <Button onClick={() => setIsOpen(false)}>
+                    Continue Shopping
+                  </Button>
                 </Link>
-                
               </div>
             </div>
           ) : (
@@ -48,7 +67,10 @@ export function CartSheet() {
               <div className="flex-1 overflow-y-auto py-4 mx-5">
                 <div className="space-y-4">
                   {items.map((item) => (
-                    <div key={`${item.id}-${item.variant?.color}-${item.variant?.size}`} className="flex gap-4">
+                    <div
+                      key={`${item.id}-${item.variant?.color}-${item.variant?.size}`}
+                      className="flex gap-4"
+                    >
                       <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-gray-100">
                         <img
                           src={item.image || "/placeholder.svg"}
@@ -57,8 +79,12 @@ export function CartSheet() {
                         />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-medium text-gray-900 line-clamp-2">{item.title}</h4>
-                        <p className="text-xs text-gray-500 mt-1">{item.vendor}</p>
+                        <h4 className="text-sm font-medium text-gray-900 line-clamp-2">
+                          {item.title}
+                        </h4>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {item.vendor}
+                        </p>
                         {item.variant && (
                           <div className="flex gap-2 mt-1">
                             {item.variant.color && (
@@ -80,24 +106,20 @@ export function CartSheet() {
                               size="icon"
                               className="h-6 w-6"
                               onClick={() =>
-                                updateQuantity(
-                                  `${item.id}-${item.variant?.color}-${item.variant?.size}`,
-                                  item.quantity - 1,
-                                )
+                                updateQuantity(`${item.id}`, item.quantity - 1)
                               }
                             >
                               <Minus className="h-3 w-3" />
                             </Button>
-                            <span className="text-sm font-medium w-8 text-center">{item.quantity}</span>
+                            <span className="text-sm font-medium w-8 text-center">
+                              {item.quantity}
+                            </span>
                             <Button
                               variant="outline"
                               size="icon"
                               className="h-6 w-6"
                               onClick={() =>
-                                updateQuantity(
-                                  `${item.id}-${item.variant?.color}-${item.variant?.size}`,
-                                  item.quantity + 1,
-                                )
+                                updateQuantity(`${item.id}`, item.quantity + 1)
                               }
                             >
                               <Plus className="h-3 w-3" />
@@ -107,9 +129,7 @@ export function CartSheet() {
                             variant="ghost"
                             size="icon"
                             className="h-6 w-6 text-red-500 hover:text-red-700"
-                            onClick={() =>
-                              removeItem(`${item.id}-${item.variant?.color}-${item.variant?.size}`)
-                            }
+                            onClick={() => removeItem(`${item.id}`)}
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>
@@ -118,11 +138,15 @@ export function CartSheet() {
                           <span className="text-sm font-bold">
                             ₹{(item.price * item.quantity).toLocaleString()}
                           </span>
-                          {item.originalPrice && item.originalPrice > item.price && (
-                            <span className="text-xs text-gray-500 line-through">
-                              ₹{(item.originalPrice * item.quantity).toLocaleString()}
-                            </span>
-                          )}
+                          {item.originalPrice &&
+                            item.originalPrice > item.price && (
+                              <span className="text-xs text-gray-500 line-through">
+                                ₹
+                                {(
+                                  item.originalPrice * item.quantity
+                                ).toLocaleString()}
+                              </span>
+                            )}
                         </div>
                       </div>
                     </div>
@@ -165,5 +189,5 @@ export function CartSheet() {
         </div>
       </SheetContent>
     </Sheet>
-  )
+  );
 }

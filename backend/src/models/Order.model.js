@@ -37,7 +37,7 @@ const orderSchema = new Schema(
       enum: ["placed", "confirmed", "in-progress", "delivered", "cancelled"],
       default: "placed",
     },
-
+    address: { type: Schema.Types.Mixed },
     placedAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
   },

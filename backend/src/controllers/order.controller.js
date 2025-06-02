@@ -18,7 +18,7 @@ const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
  */
 export const createOrder = async (req, res) => {
   try {
-    const { userId, vendorId, items } = req.body;
+    const { userId, vendorId, items, address } = req.body;
 
     // Basic validation for required fields
     if (
@@ -93,6 +93,7 @@ export const createOrder = async (req, res) => {
       vendorId,
       items: orderItems,
       totalAmount: calculatedTotalAmount,
+      address,
       // paymentStatus and orderStatus default to 'pending' and 'placed' respectively
     });
 
