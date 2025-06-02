@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -8,7 +8,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,505 +41,639 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
+import {
+  CreateFranchiseMilestone,
+  deleteFranchiseMilestone,
+  getFranchiseMilestone,
+  updateFranchiseMilestone,
+   getFranchiseMilestoneStats 
+} from "../../../../api/franchisemilestone";
+import { toast } from "react-hot-toast"; // Optional: For notifications
 
-const franchiseMilestonesData = [
-  {
-    id: "FR001",
-    milestone: "First Franchise Setup",
-    reward: "$500",
-    description: "Bonus for successfully setting up first franchise location",
-    status: "Active",
-    createdDate: "2024-01-15",
-    totalClaimed: 45,
-    threshold: "1 franchise",
-    category: "Setup",
-  },
-  {
-    id: "FR002",
-    milestone: "Revenue Milestone - Bronze",
-    reward: "$1,000",
-    description: "Achieve $50,000 in franchise revenue",
-    status: "Active",
-    createdDate: "2024-01-15",
-    totalClaimed: 78,
-    threshold: "$50K revenue",
-    category: "Revenue",
-  },
-  {
-    id: "FR003",
-    milestone: "Revenue Milestone - Silver",
-    reward: "$2,500",
-    description: "Achieve $100,000 in franchise revenue",
-    status: "Active",
-    createdDate: "2024-01-15",
-    totalClaimed: 34,
-    threshold: "$100K revenue",
-    category: "Revenue",
-  },
-  {
-    id: "FR004",
-    milestone: "Revenue Milestone - Gold",
-    reward: "$5,000",
-    description: "Achieve $250,000 in franchise revenue",
-    status: "Active",
-    createdDate: "2024-01-15",
-    totalClaimed: 12,
-    threshold: "$250K revenue",
-    category: "Revenue",
-  },
-  {
-    id: "FR005",
-    milestone: "Vendor Recruitment",
-    reward: "$750",
-    description: "Successfully recruit 10+ vendors to franchise",
-    status: "Active",
-    createdDate: "2024-01-15",
-    totalClaimed: 23,
-    threshold: "10 vendors",
-    category: "Growth",
-  },
-  {
-    id: "FR006",
-    milestone: "Multi-Location Bonus",
-    reward: "$3,000",
-    description: "Operate 3+ franchise locations successfully",
-    status: "Active",
-    createdDate: "2024-01-15",
-    totalClaimed: 8,
-    threshold: "3 locations",
-    category: "Expansion",
-  },
-  {
-    id: "FR007",
-    milestone: "Annual Excellence",
-    reward: "$10,000",
-    description: "Top performing franchise of the year",
-    status: "Inactive",
-    createdDate: "2023-12-01",
-    totalClaimed: 3,
-    threshold: "Annual top",
-    category: "Excellence",
-  },
-];
+
 
 export default function FranchiseMilestonesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [franchiseMilestones, setFranchiseMilestones] = useState([]);
   const [editingMilestone, setEditingMilestone] = useState(null);
-  const [newMilestone, setNewMilestone] = useState({
+  const [milestoneStats, setMilestoneStats] = useState(null);
+
+  
+  const [formData, setFormData] = useState({
+    name: "",
     milestone: "",
-    reward: "",
-    threshold: "",
-    category: "",
-    description: "",
+    status: "active",
+    rewardAmount: "",
+    timeLimitDays: "",
   });
 
-  const filteredMilestones = franchiseMilestonesData.filter(
-    (milestone) =>
-      milestone.milestone.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      milestone.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      milestone.category.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   const getStatusBadge = (status) => {
-    switch (status) {
-      case "Active":
+    switch (status.toLowerCase()) {
+      case "active":
         return <Badge className="bg-green-100 text-green-800">Active</Badge>;
-      case "Inactive":
+      case "inactive":
         return <Badge className="bg-red-100 text-red-800">Inactive</Badge>;
       default:
         return <Badge>{status}</Badge>;
     }
   };
 
-  const getCategoryBadge = (category) => {
-    const colors = {
-      Setup: "bg-blue-100 text-blue-800",
-      Revenue: "bg-green-100 text-green-800",
-      Growth: "bg-purple-100 text-purple-800",
-      Expansion: "bg-orange-100 text-orange-800",
-      Excellence: "bg-yellow-100 text-yellow-800",
-    };
-    return <Badge className={colors[colors]}>{category}</Badge>;
+  // Note: this was originally for categories, but your data has no "category" field.
+  // We'll remove its usage for timeLimitDays.
+  // const getCategoryBadge = (category) => { ... };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const payload = { ...formData };
+      const result = await CreateFranchiseMilestone(payload);
+      // console.log("consoling frontend response", result);
+      toast.success("Franchise Milestone created successfully");
+
+      // Clear form and close dialog
+      setFormData({
+        name: "",
+        milestone: "",
+        status: "active",
+        rewardAmount: "",
+        timeLimitDays: "",
+      });
+      setIsCreateDialogOpen(false);
+      // Optionally, refetch the list here:
+      getFranchiseMilestone()
+        .then((data) => {
+          const arr = data.data || [];
+          setFranchiseMilestones(arr);
+        })
+        .catch((err) => console.error(err));
+    } catch (err) {
+      console.error(err);
+      toast.error(err?.message || "Failed to create milestone");
+    }
   };
 
-  const handleCreateMilestone = () => {
-    console.log("Creating franchise milestone:", newMilestone);
-    setIsCreateDialogOpen(false);
-    setNewMilestone({
-      milestone: "",
-      reward: "",
-      threshold: "",
-      category: "",
-      description: "",
-    });
-  };
+  useEffect(() => {
+    getFranchiseMilestone()
+      .then((data) => {
+        const arr = data.data || [];
+        setFranchiseMilestones(arr);
+        // console.log("frontend data", arr);
+      })
+      .catch((err) =>
+        console.error("franchise milestone fetch error:", err.message)
+      );
+  }, []);
 
+  const filteredMilestones = Array.isArray(franchiseMilestones)
+    ? franchiseMilestones.filter((milestone) => {
+      const search = searchTerm.toLowerCase();
+      // milestone.milestone is a number => convert to string
+      const milestoneStr = milestone.milestone
+        ?.toString()
+        .toLowerCase() || "";
+      // If you had a name filter:
+      const nameStr = milestone.name?.toLowerCase() || "";
+      return (
+        milestoneStr.includes(search) ||
+        nameStr.includes(search)
+      );
+    })
+    : [];
+
+  // Calculate totalRewardsDistributed and totalClaims
+  const totalRewardsDistributed = filteredMilestones.reduce((sum, m) => {
+    const rewardAmt = m.rewardAmount || 0; // number already
+    const totalClaimed = m.totalClaimed || 0; // absent in your data, default 0
+    return sum + rewardAmt * totalClaimed;
+  }, 0);
+
+  const totalClaims = filteredMilestones.reduce((sum, m) => {
+    return sum + (m.totalClaimed || 0);
+  }, 0);
+
+  // const handleEditMilestone = (milestone) => {
+  //   setEditingMilestone(milestone);
+  // };
   const handleEditMilestone = (milestone) => {
+    // console.log("handleEditMilestone called with:", milestone);
     setEditingMilestone(milestone);
   };
+  
+// after fetching milestone list
 
-  const handleUpdateMilestone = () => {
-    console.log("Updating franchise milestone:", editingMilestone);
-    setEditingMilestone(null);
-  };
+  
 
-  const handleDeleteMilestone = (milestoneId) => {
-    console.log("Deleting franchise milestone:", milestoneId);
-  };
+   
+    // … other hooks …
 
-  const totalRewardsDistributed = filteredMilestones.reduce(
-    (sum, milestone) => {
-      const rewardAmount = Number.parseFloat(
-        milestone.reward.replace("$", "").replace(",", "")
-      );
-      return sum + rewardAmount * milestone.totalClaimed;
-    },
-    0
-  );
+    const handleUpdateMilestone = async () => {
+      // console.log("hello")
+      // console.log(editingMilestone)
+      if (!editingMilestone) return;
 
-  const totalClaims = filteredMilestones.reduce(
-    (sum, milestone) => sum + milestone.totalClaimed,
-    0
-  );
+      // Destructure fields you want to submit
+      const {
+        milestoneId,
+        name,
+        status,
+        milestone: targetValue,
+        rewardAmount,
+        timeLimitDays,
+      } = editingMilestone;
 
-  return (
-    <div>
-      <div className="flex-1 space-y-8 p-6 bg-gradient-to-br from-background to-muted/20">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-  <div>
-    <h2 className="text-xl sm:text-2xl font-bold tracking-tight">
-      Franchise Milestones
-    </h2>
-    <p className="text-muted-foreground text-sm sm:text-base">
-      Configure achievement rewards for franchise partners based on performance and growth
-    </p>
-  </div>
+      try {
+        // Build payload. Only include the five editable fields:
+        const payload = {
+          name,
+          status,
+          milestone: targetValue,
+          rewardAmount,
+          timeLimitDays,
+        };
 
-  <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-    <DialogTrigger asChild>
-      <Button className="w-full sm:w-auto bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800">
-        <Plus className="mr-2 h-4 w-4" />
-        Create Franchise Milestone
-      </Button>
-    </DialogTrigger>
+        // Call your API helper
+        const result = await updateFranchiseMilestone(milestoneId, payload);
 
-    <DialogContent className="max-w-2xl w-full">
-      <DialogHeader>
-        <DialogTitle>Create New Franchise Milestone</DialogTitle>
-        <DialogDescription>
-          Set up a new achievement milestone for franchise partners with specific targets and rewards.
-        </DialogDescription>
-      </DialogHeader>
+        if (result.success) {
+          toast.success("Milestone updated successfully");
 
-      <div className="grid gap-4 py-4">
-        {[
-          { id: "milestone", label: "Milestone Name", placeholder: "e.g., Platinum Revenue Achievement", value: newMilestone.milestone },
-          { id: "threshold", label: "Achievement Target", placeholder: "e.g., $500K revenue", value: newMilestone.threshold },
-          { id: "reward", label: "Reward Amount", placeholder: "e.g., $7,500", value: newMilestone.reward },
-          { id: "category", label: "Category", placeholder: "e.g., Revenue, Growth, Expansion", value: newMilestone.category },
-          { id: "description", label: "Description", placeholder: "Detailed description of the achievement", value: newMilestone.description },
-        ].map((field) => (
-          <div key={field.id} className="grid grid-cols-1 sm:grid-cols-4 items-center gap-4">
-            <Label htmlFor={field.id} className="sm:text-right">
-              {field.label}
-            </Label>
-            <Input
-              id={field.id}
-              value={field.value}
-              onChange={(e) =>
-                setNewMilestone((prev) => ({
-                  ...prev,
-                  [field.id]: e.target.value,
-                }))
-              }
-              className="sm:col-span-3"
-              placeholder={field.placeholder}
-            />
-          </div>
-        ))}
-      </div>
+          // Replace the updated item in local state so table re-renders
+          setFranchiseMilestones((prevArray) =>
+            prevArray.map((m) =>
+              m.milestoneId === milestoneId ? result.data : m
+            )
+          );
+        } else {
+          // In case your backend returns success: false
+          toast.error(result.message || "Failed to update milestone");
+        }
+      } catch (err) {
+        console.error("Update error:", err);
+        toast.error(err?.message || "Server error when updating milestone");
+      } finally {
+        // Close the edit dialog
+        setEditingMilestone(null);
+      }
+    };
 
-      <DialogFooter>
-        <Button onClick={handleCreateMilestone} className="w-full sm:w-auto">
-          Create Milestone
-        </Button>
-      </DialogFooter>
-    </DialogContent>
-  </Dialog>
-</div>
+    const handleDeleteMilestone = async (milestoneId) => {
+      try {
+        // console.log("Deleting franchise milestone:", milestoneId);
+        const result = await deleteFranchiseMilestone(milestoneId);
 
-        {/* Summary Cards */}
-        <div className="grid gap-6 md:grid-cols-4">
-          <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-orange-50 to-orange-100/50">
-            <div className="absolute top-0 right-0 w-20 h-20 bg-orange-500/10 rounded-full -mr-10 -mt-10" />
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-orange-900">
-                Total Milestones
-              </CardTitle>
-              <div className="p-2 bg-orange-500 rounded-lg">
-                <Building className="h-4 w-4 text-white" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-orange-900">
-                {filteredMilestones.length}
-              </div>
-              <p className="text-sm text-orange-700 mt-1">
-                {filteredMilestones.filter((m) => m.status === "Active").length}{" "}
-                active milestones
+        if (result.success) {
+          toast.success(result.message);
+          // Optionally, remove that one from your local state so the table updates immediately:
+          setFranchiseMilestones((prev) =>
+            prev.filter((m) => m.milestoneId !== milestoneId)
+          );
+        } else {
+          toast.error(result.message);
+        }
+      } catch (err) {
+        console.error("Delete error:", err);
+        toast.error(err?.message || "Failed to delete milestone");
+      }
+    };
+getFranchiseMilestoneStats()
+  .then((res) => {
+    setMilestoneStats(res.data);
+    console.log(res)
+  })
+  .catch((err) => {
+    console.error("Failed to fetch milestone stats:", err.message);
+  });
+    return (
+      <div>
+        <div className="flex-1 space-y-8 p-6 bg-gradient-to-br from-background to-muted/20">
+          {/* Header + Create Dialog */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h2 className="text-xl sm:text-2xl font-bold tracking-tight">
+                Franchise Milestones
+              </h2>
+              <p className="text-muted-foreground text-sm sm:text-base">
+                Configure achievement rewards for franchise partners based on
+                performance and growth
               </p>
-              <Progress value={85} className="mt-3 h-2" />
-            </CardContent>
-          </Card>
-
-          <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-green-50 to-green-100/50">
-            <div className="absolute top-0 right-0 w-20 h-20 bg-green-500/10 rounded-full -mr-10 -mt-10" />
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-green-900">
-                Achievements
-              </CardTitle>
-              <div className="p-2 bg-green-500 rounded-lg">
-                <Target className="h-4 w-4 text-white" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-green-900">
-                {totalClaims}
-              </div>
-              <p className="text-sm text-green-700 mt-1">Milestones achieved</p>
-              <Progress value={72} className="mt-3 h-2" />
-            </CardContent>
-          </Card>
-
-          <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-blue-50 to-blue-100/50">
-            <div className="absolute top-0 right-0 w-20 h-20 bg-blue-500/10 rounded-full -mr-10 -mt-10" />
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-blue-900">
-                Rewards Paid
-              </CardTitle>
-              <div className="p-2 bg-blue-500 rounded-lg">
-                <DollarSign className="h-4 w-4 text-white" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-blue-900">
-                ${totalRewardsDistributed.toLocaleString()}
-              </div>
-              <p className="text-sm text-blue-700 mt-1">
-                Total rewards distributed
-              </p>
-              <Progress value={78} className="mt-3 h-2" />
-            </CardContent>
-          </Card>
-
-          <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-purple-50 to-purple-100/50">
-            <div className="absolute top-0 right-0 w-20 h-20 bg-purple-500/10 rounded-full -mr-10 -mt-10" />
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-purple-900">
-                Avg. Reward
-              </CardTitle>
-              <div className="p-2 bg-purple-500 rounded-lg">
-                <TrendingUp className="h-4 w-4 text-white" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-purple-900">
-                $
-                {totalClaims > 0
-                  ? (totalRewardsDistributed / totalClaims).toFixed(0)
-                  : "0"}
-              </div>
-              <p className="text-sm text-purple-700 mt-1">Per achievement</p>
-              <Progress value={65} className="mt-3 h-2" />
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card className="border-0 shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-xl">All Franchise Milestones</CardTitle>
-            <CardDescription>
-              Manage franchise achievement milestones and track performance
-              rewards
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-4 mb-6">
-              <div className="relative flex-1 max-w-sm">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input
-                  placeholder="Search milestones..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
             </div>
 
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Milestone ID</TableHead>
-                    <TableHead>Achievement</TableHead>
-                    <TableHead>Target</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Reward</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Achieved</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredMilestones.map((milestone) => (
-                    <TableRow key={milestone.id}>
-                      <TableCell className="font-medium">
-                        {milestone.id}
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">
-                            {milestone.milestone}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            {milestone.description}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant="outline"
-                          className="bg-blue-50 text-blue-700"
+            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="w-full sm:w-auto bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create Franchise Milestone
+                </Button>
+              </DialogTrigger>
+
+              <DialogContent className="max-w-2xl w-full">
+                <DialogHeader>
+                  <DialogTitle>Create New Franchise Milestone</DialogTitle>
+                  <DialogDescription>
+                    Set up a new achievement milestone for franchise partners with
+                    specific targets and rewards.
+                  </DialogDescription>
+                </DialogHeader>
+
+                <form onSubmit={handleSubmit}>
+                  <div className="grid gap-4 py-2">
+                    <div className="grid gap-2">
+                      <Label htmlFor="name">Name</Label>
+                      <Input
+                        id="name"
+                        value={formData.name}
+                        onChange={(e) =>
+                          setFormData({ ...formData, name: e.target.value })
+                        }
+                        placeholder="Enter name"
+                        required
+                      />
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="milestone">Milestone</Label>
+                        <Input
+                          id="milestone"
+                          type="number"
+                          value={formData.milestone}
+                          onChange={(e) =>
+                            setFormData({ ...formData, milestone: e.target.value })
+                          }
+                          placeholder="e.g. 10"
+                          required
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="rewardAmount">Reward Amount</Label>
+                        <Input
+                          id="rewardAmount"
+                          type="number"
+                          value={formData.rewardAmount}
+                          onChange={(e) =>
+                            setFormData({ ...formData, rewardAmount: e.target.value })
+                          }
+                          placeholder="e.g. 1000"
+                          required
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 py-2">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="timeLimitDays">Time Limit Days</Label>
+                        <Input
+                          id="timeLimitDays"
+                          type="number"
+                          value={formData.timeLimitDays}
+                          onChange={(e) =>
+                            setFormData({ ...formData, timeLimitDays: e.target.value })
+                          }
+                          placeholder="e.g. 30"
+                          required
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="status">Status</Label>
+                        <select
+                          id="status"
+                          value={formData.status}
+                          onChange={(e) =>
+                            setFormData({ ...formData, status: e.target.value })
+                          }
                         >
-                          {milestone.threshold}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {getCategoryBadge(milestone.category)}
-                      </TableCell>
-                      <TableCell className="font-medium text-green-600">
-                        {milestone.reward}
-                      </TableCell>
-                      <TableCell>{getStatusBadge(milestone.status)}</TableCell>
-                      <TableCell className="font-medium">
-                        {milestone.totalClaimed}
-                      </TableCell>
-                      <TableCell>{milestone.createdDate}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEditMilestone(milestone)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteMilestone(milestone.id)}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
+                          <option value="active">Active</option>
+                          <option value="inactive">Inactive</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
 
-        {/* Edit Dialog */}
-        <Dialog
-          open={!!editingMilestone}
-          onOpenChange={() => setEditingMilestone(null)}
-        >
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Edit Franchise Milestone</DialogTitle>
-              <DialogDescription>
-                Update the milestone details and reward configuration.
-              </DialogDescription>
-            </DialogHeader>
-            {editingMilestone && (
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="edit-milestone" className="text-right">
-                    Milestone Name
-                  </Label>
-                  <Input
-                    id="edit-milestone"
-                    value={editingMilestone.milestone}
-                    onChange={(e) =>
-                      setEditingMilestone((prev) => ({
-                        ...prev,
-                        milestone: e.target.value,
-                      }))
-                    }
-                    className="col-span-3"
-                  />
+                  <DialogFooter className="w-full mt-4">
+                    <div className="flex w-full justify-between items-center">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setIsCreateDialogOpen(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button type="submit" className="bg-purple-700 hover:bg-purple-500">
+                        Create Milestone
+                      </Button>
+                    </div>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          {/* Summary Cards */}
+          <div className="grid gap-6 md:grid-cols-4">
+            <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-orange-50 to-orange-100/50">
+              <div className="absolute top-0 right-0 w-20 h-20 bg-orange-500/10 rounded-full -mr-10 -mt-10" />
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-orange-900">
+                  Total Milestones
+                </CardTitle>
+                <div className="p-2 bg-orange-500 rounded-lg">
+                  <Building className="h-4 w-4 text-white" />
                 </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="edit-threshold" className="text-right">
-                    Target
-                  </Label>
-                  <Input
-                    id="edit-threshold"
-                    value={editingMilestone.threshold}
-                    onChange={(e) =>
-                      setEditingMilestone((prev) => ({
-                        ...prev,
-                        threshold: e.target.value,
-                      }))
-                    }
-                    className="col-span-3"
-                  />
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-orange-900">
+                  {filteredMilestones.length}
                 </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="edit-reward" className="text-right">
-                    Reward
-                  </Label>
-                  <Input
-                    id="edit-reward"
-                    value={editingMilestone.reward}
-                    onChange={(e) =>
-                      setEditingMilestone((prev) => ({
-                        ...prev,
-                        reward: e.target.value,
-                      }))
-                    }
-                    className="col-span-3"
-                  />
+                <p className="text-sm text-orange-700 mt-1">
+                  {
+                    filteredMilestones.filter((m) => m.status.toLowerCase() === "active")
+                      .length
+                  }{" "}
+                  active milestones
+                </p>
+                <Progress value={85} className="mt-3 h-2" />
+              </CardContent>
+            </Card>
+
+            <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-green-50 to-green-100/50">
+              <div className="absolute top-0 right-0 w-20 h-20 bg-green-500/10 rounded-full -mr-10 -mt-10" />
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-green-900">
+                  Achievements
+                </CardTitle>
+                <div className="p-2 bg-green-500 rounded-lg">
+                  <Target className="h-4 w-4 text-white" />
                 </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="edit-category" className="text-right">
-                    Category
-                  </Label>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-green-900">
+                  {totalClaims}
+                </div>
+                <p className="text-sm text-green-700 mt-1">Milestones achieved</p>
+                <Progress value={72} className="mt-3 h-2" />
+              </CardContent>
+            </Card>
+
+            <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-blue-50 to-blue-100/50">
+  <div className="absolute top-0 right-0 w-20 h-20 bg-blue-500/10 rounded-full -mr-10 -mt-10" />
+  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+    <CardTitle className="text-sm font-medium text-blue-900">
+      Rewards Paid
+    </CardTitle>
+    <div className="p-2 bg-blue-500 rounded-lg">
+      <DollarSign className="h-4 w-4 text-white" />
+    </div>
+  </CardHeader>
+  <CardContent>
+    <div className="text-3xl font-bold text-blue-900">
+      ₹
+      {milestoneStats?.totalRewardPaid
+        ? milestoneStats.totalRewardPaid.toLocaleString(undefined, {
+            maximumFractionDigits: 0,
+          })
+        : 0}
+    </div>
+    <p className="text-sm text-blue-700 mt-1">Total rewards distributed</p>
+    <Progress value={78} className="mt-3 h-2" />
+  </CardContent>
+</Card>
+
+
+ <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-purple-50 to-purple-100/50">
+  <div className="absolute top-0 right-0 w-20 h-20 bg-purple-500/10 rounded-full -mr-10 -mt-10" />
+  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+    <CardTitle className="text-sm font-medium text-purple-900">
+      Avg. Reward
+    </CardTitle>
+    <div className="p-2 bg-purple-500 rounded-lg">
+      <TrendingUp className="h-4 w-4 text-white" />
+    </div>
+  </CardHeader>
+  <CardContent>
+    <div className="text-3xl font-bold text-purple-900">
+      ₹
+      {milestoneStats?.averageRewardPaidPerEntry
+        ? milestoneStats.averageRewardPaidPerEntry.toFixed(0)
+        : 0}
+    </div>
+    <p className="text-sm text-purple-700 mt-1">Per achievement</p>
+    <Progress value={65} className="mt-3 h-2" />
+  </CardContent>
+</Card>
+
+          </div>
+
+          {/* Table */}
+          <Card className="border-0 shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-xl">All Franchise Milestones</CardTitle>
+              <CardDescription>
+                Manage franchise achievement milestones and track performance
+                rewards
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {/* Search Input */}
+              <div className="flex items-center gap-4 mb-6">
+                <div className="relative flex-1 max-w-sm">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
-                    id="edit-category"
-                    value={editingMilestone.category}
-                    onChange={(e) =>
-                      setEditingMilestone((prev) => ({
-                        ...prev,
-                        category: e.target.value,
-                      }))
-                    }
-                    className="col-span-3"
+                    placeholder="Search milestones..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
                   />
                 </div>
               </div>
-            )}
-            <DialogFooter>
-              <Button onClick={handleUpdateMilestone}>Update Milestone</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Milestone ID</TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Target</TableHead>
+                      <TableHead>Reward Amount</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Time Limit Days</TableHead>
+                      <TableHead>Created At</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredMilestones.map((m) => (
+                      <TableRow key={m.milestoneId}>
+                        <TableCell className="font-medium">
+                          {m.milestoneId}
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">{m.name}</div>
+                            {/* If you had a description, show it here */}
+                            {/* <div className="text-sm text-muted-foreground">
+                            {m.description}
+                          </div> */}
+                          </div>
+                        </TableCell>
+                        <TableCell>{m.milestone}</TableCell>
+                        <TableCell>{m.rewardAmount}</TableCell>
+                        <TableCell>{getStatusBadge(m.status)}</TableCell>
+                        <TableCell>{m.timeLimitDays}</TableCell>
+                        <TableCell>{new Date(m.createdAt).toLocaleDateString()}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditMilestone(m)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteMilestone(m.milestoneId)}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Edit Dialog */}
+          <Dialog
+            open={!!editingMilestone}
+            onOpenChange={() => setEditingMilestone(null)}
+          >
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Edit Franchise Milestone</DialogTitle>
+                <DialogDescription>
+                  Update the milestone details and reward configuration.
+                </DialogDescription>
+              </DialogHeader>
+
+              {editingMilestone && (
+                <div className="grid gap-4 py-4">
+                  {/* Name */}
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="edit-name" className="text-right">
+                      Name
+                    </Label>
+                    <Input
+                      id="edit-name"
+                      value={editingMilestone.name}
+                      onChange={(e) =>
+                        setEditingMilestone((prev) => ({
+                          ...prev,
+                          name: e.target.value,
+                        }))
+                      }
+                      className="col-span-3"
+                      placeholder="Milestone Name"
+                    />
+                  </div>
+
+                  {/* Target (milestone) */}
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="edit-milestone" className="text-right">
+                      Target
+                    </Label>
+                    <Input
+                      id="edit-milestone"
+                      type="number"
+                      value={editingMilestone.milestone}
+                      onChange={(e) =>
+                        setEditingMilestone((prev) => ({
+                          ...prev,
+                          milestone: e.target.value,
+                        }))
+                      }
+                      className="col-span-3"
+                      placeholder="e.g. 100"
+                    />
+                  </div>
+
+                  {/* Reward Amount */}
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="edit-rewardAmount" className="text-right">
+                      Reward Amount
+                    </Label>
+                    <Input
+                      id="edit-rewardAmount"
+                      type="number"
+                      value={editingMilestone.rewardAmount}
+                      onChange={(e) =>
+                        setEditingMilestone((prev) => ({
+                          ...prev,
+                          rewardAmount: e.target.value,
+                        }))
+                      }
+                      className="col-span-3"
+                      placeholder="e.g. 1000"
+                    />
+                  </div>
+
+                  {/* Status */}
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="edit-status" className="text-right">
+                      Status
+                    </Label>
+                    <select
+                      id="edit-status"
+                      value={editingMilestone.status}
+                      onChange={(e) =>
+                        setEditingMilestone((prev) => ({
+                          ...prev,
+                          status: e.target.value,
+                        }))
+                      }
+                      className="col-span-3 border rounded px-2 py-1"
+                    >
+                      <option value="active">Active</option>
+                      <option value="inactive">Inactive</option>
+                    </select>
+                  </div>
+
+                  {/* Time Limit Days */}
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="edit-timeLimitDays" className="text-right">
+                      Time Limit Days
+                    </Label>
+                    <Input
+                      id="edit-timeLimitDays"
+                      type="number"
+                      value={editingMilestone.timeLimitDays}
+                      onChange={(e) =>
+                        setEditingMilestone((prev) => ({
+                          ...prev,
+                          timeLimitDays: e.target.value,
+                        }))
+                      }
+                      className="col-span-3"
+                      placeholder="e.g. 30"
+                    />
+                  </div>
+                </div>
+              )}
+
+              <DialogFooter>
+                <Button onClick={handleUpdateMilestone}>Update Milestone</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }

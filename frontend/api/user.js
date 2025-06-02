@@ -4,7 +4,7 @@ import { backendConfig } from "../constant/config";
 const backendOriginUrl = backendConfig.base;
 
 const apiClient = axios.create({
-  baseURL: `${backendOriginUrl}/users`, 
+  baseURL: `${backendOriginUrl}/users`,
   headers: {
     "Content-Type": "application/json",
   },
@@ -70,6 +70,49 @@ export const getAdminDashboard = async (page = 1, limit = 10, search = "") => {
   } catch (error) {
     console.error(
       "Error fetching admin dashboard data:",
+      error.response?.data || error.message
+    );
+    throw error; // Re-throw the error for the calling component to handle
+  }
+};
+
+/**
+ * @typedef {Object} UpgradeUserData
+ * @property {number} membershipAmount - The amount paid for the membership.
+ * @property {string} razorpayPaymentId - The Razorpay payment ID.
+ * @property {string} razorpayOrderId - The Razorpay order ID.
+ * @property {string} razorpaySignature - The Razorpay signature.
+ */
+
+/**
+ * @typedef {Object} UpgradeUserResponse
+ * @property {boolean} success - Indicates if the request was successful.
+ * @property {string} message - A success message.
+ * @property {Object} user - Details of the upgraded user.
+ * @property {string} user.id - The ID of the upgraded user.
+ * @property {string} user.name - The name of the upgraded user.
+ * @property {string} user.email - The email of the upgraded user.
+ * @property {boolean} user.isMember - The updated membership status of the user.
+ * @property {string} transactionId - The ID of the created transaction.
+ * @property {string} membershipId - The ID of the created membership record.
+ */
+
+/**
+ * Upgrades a user's status to member and records the membership and transaction.
+ * This function should typically be called after a successful payment confirmation.
+ *
+ * @param {string} userId - The ID of the user to upgrade.
+ * @param {UpgradeUserData} data - The data required for the upgrade, including membership amount and Razorpay details.
+ * @returns {Promise<UpgradeUserResponse>} A promise that resolves to the upgrade success response.
+ * @throws {Error} If the API request fails (e.g., user not found, invalid data, or payment issues).
+ */
+export const upgradeUser = async (userId, data) => {
+  try {
+    const response = await apiClient.post(`/upgrade/${userId}`, data);
+    return response.data;
+  } catch (error) {
+    console.error(
+      `Error upgrading user ${userId} to member:`,
       error.response?.data || error.message
     );
     throw error; // Re-throw the error for the calling component to handle

@@ -1,4 +1,6 @@
-import { useState } from "react";
+"use client";
+
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -28,12 +30,11 @@ import {
 import {
   Search,
   Plus,
-  Filter,
   MoreHorizontal,
   Eye,
   Edit,
   Trash2,
-  TrendingUp,
+  Loader2, // Added for loading state
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -41,94 +42,52 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
-const franchisesData = [
-  {
-    id: "F001",
-    name: "Digital Hub Franchise",
-    owner: "John Smith",
-    email: "john@digitalhub.com",
-    phone: "+1 234-567-8901",
-    location: "New York, NY",
-    status: "Active",
-    joinDate: "2023-06-15",
-    vendorsCount: 12,
-    totalBusiness: "$245,680",
-    commission: "$24,568",
-    growth: "+15.2%",
-  },
-  {
-    id: "F002",
-    name: "Style Central Franchise",
-    owner: "Sarah Johnson",
-    email: "sarah@stylecentral.com",
-    phone: "+1 234-567-8902",
-    location: "Los Angeles, CA",
-    status: "Active",
-    joinDate: "2023-08-20",
-    vendorsCount: 8,
-    totalBusiness: "$189,450",
-    commission: "$18,945",
-    growth: "+8.7%",
-  },
-  {
-    id: "F003",
-    name: "Lifestyle Franchise",
-    owner: "Mike Davis",
-    email: "mike@lifestyle.com",
-    phone: "+1 234-567-8903",
-    location: "Chicago, IL",
-    status: "Pending",
-    joinDate: "2024-01-10",
-    vendorsCount: 5,
-    totalBusiness: "$98,230",
-    commission: "$9,823",
-    growth: "+22.1%",
-  },
-  {
-    id: "F004",
-    name: "Fitness Pro Franchise",
-    owner: "Lisa Wilson",
-    email: "lisa@fitnesspro.com",
-    phone: "+1 234-567-8904",
-    location: "Miami, FL",
-    status: "Active",
-    joinDate: "2023-04-12",
-    vendorsCount: 15,
-    totalBusiness: "$356,890",
-    commission: "$35,689",
-    growth: "+12.4%",
-  },
-  {
-    id: "F005",
-    name: "Glamour Franchise",
-    owner: "Emma Brown",
-    email: "emma@glamour.com",
-    phone: "+1 234-567-8905",
-    location: "Seattle, WA",
-    status: "Inactive",
-    joinDate: "2023-02-28",
-    vendorsCount: 3,
-    totalBusiness: "$67,120",
-    commission: "$6,712",
-    growth: "-5.3%",
-  },
-];
+import { CreateFranchiseDialog } from "../../../components/Dashboad/SalesRep/CreateFranchiseDialog";
+import { getAllFranchise } from "../../../../api/Franchise"; // Correct import path
 
 export default function AdminFranchisePage() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  const filteredFranchises = franchisesData.filter((franchise) => {
+  // State for API data
+  const [franchises, setFranchises] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Fetch data on component mount
+  useEffect(() => {
+    const fetchFranchises = async () => {
+      setLoading(true);
+      setError(null); // Clear previous errors
+      try {
+        const data = await getAllFranchise();
+        setFranchises(data);
+      } catch (err) {
+        console.error("Error fetching franchises:", err);
+        setError("Failed to load franchises. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFranchises();
+  }, []); // Empty dependency array means this runs once on mount
+
+  // Filter franchises based on search term
+  const filteredFranchises = franchises.filter((franchise) => {
     const matchesSearch =
-      franchise.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      franchise.owner.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      franchise.location.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus =
-      statusFilter === "all" || franchise.status.toLowerCase() === statusFilter;
-    return matchesSearch && matchesStatus;
+      (franchise.franchiseName &&
+        franchise.franchiseName
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase())) ||
+      (franchise.ownerId?.name &&
+        franchise.ownerId.name
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase())) ||
+      (franchise.location &&
+        franchise.location.toLowerCase().includes(searchTerm.toLowerCase()));
+    return matchesSearch;
   });
 
   const totalPages = Math.ceil(filteredFranchises.length / itemsPerPage);
@@ -138,32 +97,36 @@ export default function AdminFranchisePage() {
     startIndex + itemsPerPage
   );
 
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case "Active":
-        return <Badge className="bg-green-100 text-green-800">Active</Badge>;
-      case "Pending":
-        return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
-      case "Inactive":
-        return <Badge className="bg-red-100 text-red-800">Inactive</Badge>;
-      default:
-        return <Badge>{status}</Badge>;
-    }
+  // Helper to format date (e.g., createdAt)
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString("en-IN", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
   };
 
-  const getGrowthBadge = (growth) => {
-    const isPositive = growth.startsWith("+");
+  // Render loading state
+  if (loading) {
     return (
-      <div
-        className={`flex items-center gap-1 ${
-          isPositive ? "text-green-600" : "text-red-600"
-        }`}
-      >
-        <TrendingUp className={`h-3 w-3 ${!isPositive ? "rotate-180" : ""}`} />
-        <span className="text-sm font-medium">{growth}</span>
+      <div className="flex justify-center items-center h-screen">
+        <Loader2 className="h-10 w-10 animate-spin text-gray-500" />
+        <span className="ml-3 text-xl text-gray-600">
+          Loading franchises...
+        </span>
       </div>
     );
-  };
+  }
+
+  // Render error state
+  if (error) {
+    return (
+      <div className="flex justify-center items-center h-screen text-red-600 text-lg">
+        {error}
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -172,21 +135,22 @@ export default function AdminFranchisePage() {
           <div>
             <h2 className="text-2xl font-bold tracking-tight">Franchises</h2>
             <p className="text-muted-foreground">
-              Manage all franchises and track their business performance
+              Manage all franchises registered on the platform
             </p>
           </div>
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            Create Franchise
-          </Button>
+          <CreateFranchiseDialog>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Create Franchise
+            </Button>
+          </CreateFranchiseDialog>
         </div>
 
         <Card>
           <CardHeader>
             <CardTitle>All Franchises</CardTitle>
             <CardDescription>
-              A comprehensive list of all franchises with their business metrics
-              and growth data
+              A comprehensive list of all franchises with their key details.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -194,103 +158,81 @@ export default function AdminFranchisePage() {
               <div className="relative flex-1 max-w-sm">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
-                  placeholder="Search franchises..."
+                  placeholder="Search franchises by name, owner, or location..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
                 />
               </div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[180px]">
-                  <Filter className="mr-2 h-4 w-4" />
-                  <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
+              {/* Removed status filter as it's not directly available in the API response */}
             </div>
 
-            <div className="rounded-md border">
+            <div className="rounded-md border overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Franchise ID</TableHead>
                     <TableHead>Name & Owner</TableHead>
-                    <TableHead>Contact</TableHead>
+                    <TableHead>Contact Info</TableHead>
                     <TableHead>Location</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Vendors</TableHead>
-                    <TableHead>Total Business</TableHead>
-                    <TableHead>Commission</TableHead>
-                    <TableHead>Growth</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>Sales Rep</TableHead> {/* Added Sales Rep */}
+                    <TableHead>Join Date</TableHead> {/* Using createdAt */}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedFranchises.map((franchise) => (
-                    <TableRow key={franchise.id}>
-                      <TableCell className="font-medium">
-                        {franchise.id}
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{franchise.name}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {franchise.owner}
+                  {paginatedFranchises.length > 0 ? (
+                    paginatedFranchises.map((franchise) => (
+                      <TableRow key={franchise._id}>
+                        <TableCell className="font-medium">
+                          {franchise._id} {/* Using MongoDB _id */}
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">
+                              {franchise.franchiseName}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {franchise.ownerId?.name || "N/A"}{" "}
+                              {/* Access owner name */}
+                            </div>
                           </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="text-sm">{franchise.email}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {franchise.phone}
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <div className="text-sm">
+                              {franchise.ownerId?.email || "N/A"}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {franchise.ownerId?.phone || "N/A"}
+                            </div>
                           </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>{franchise.location}</TableCell>
-                      <TableCell>{getStatusBadge(franchise.status)}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">
-                          {franchise.vendorsCount} vendors
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        {franchise.totalBusiness}
-                      </TableCell>
-                      <TableCell className="font-medium text-green-600">
-                        {franchise.commission}
-                      </TableCell>
-                      <TableCell>{getGrowthBadge(franchise.growth)}</TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem>
-                              <Eye className="mr-2 h-4 w-4" />
-                              View Details
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Edit className="mr-2 h-4 w-4" />
-                              Edit Franchise
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="text-red-600">
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Delete Franchise
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        </TableCell>
+                        <TableCell>{franchise.location}</TableCell>
+                        <TableCell>
+                          {franchise.salesRep?.name ? (
+                            <div>
+                              <div className="font-medium">
+                                {franchise.salesRep.name}
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                {franchise.salesRep.email}
+                              </div>
+                            </div>
+                          ) : (
+                            <Badge variant="outline">None</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>{formatDate(franchise.createdAt)}</TableCell>{" "}
+                        {/* Using createdAt */}
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={7} className="h-24 text-center">
+                        No franchises found.
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )}
                 </TableBody>
               </Table>
             </div>

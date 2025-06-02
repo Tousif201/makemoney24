@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -19,101 +19,65 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+// Removed Select components as status filter is no longer applicable based on schema
+// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Search,
   Plus,
-  Filter,
+  Filter, // Keeping Filter icon but removing its functionality without the select
   MoreHorizontal,
   Eye,
   Edit,
   Trash2,
+  Loader2, // Added for loading state
 } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-
-const vendorsData = [
-  {
-    id: "V001",
-    name: "TechMart Solutions",
-    email: "contact@techmart.com",
-    phone: "+1 234-567-8901",
-    franchise: "Digital Hub Franchise",
-    status: "Active",
-    joinDate: "2024-01-15",
-    totalSales: "$45,230",
-    commission: "$4,523",
-  },
-  {
-    id: "V002",
-    name: "Fashion Forward",
-    email: "info@fashionforward.com",
-    phone: "+1 234-567-8902",
-    franchise: "Style Central Franchise",
-    status: "Active",
-    joinDate: "2024-02-20",
-    totalSales: "$32,150",
-    commission: "$3,215",
-  },
-  {
-    id: "V003",
-    name: "Home Essentials",
-    email: "support@homeessentials.com",
-    phone: "+1 234-567-8903",
-    franchise: "Lifestyle Franchise",
-    status: "Pending",
-    joinDate: "2024-03-10",
-    totalSales: "$18,900",
-    commission: "$1,890",
-  },
-  {
-    id: "V004",
-    name: "Sports Galaxy",
-    email: "hello@sportsgalaxy.com",
-    phone: "+1 234-567-8904",
-    franchise: "Fitness Pro Franchise",
-    status: "Active",
-    joinDate: "2024-01-28",
-    totalSales: "$67,800",
-    commission: "$6,780",
-  },
-  {
-    id: "V005",
-    name: "Beauty Bliss",
-    email: "care@beautybliss.com",
-    phone: "+1 234-567-8905",
-    franchise: "Glamour Franchise",
-    status: "Inactive",
-    joinDate: "2023-12-05",
-    totalSales: "$12,450",
-    commission: "$1,245",
-  },
-];
+import { CreateVendorDialog } from "../../../components/Dashboad/SalesRep/CreateVendorDialog";
+import { getAllVendors } from "../../../../api/Vendors"; // Ensure this path is correct
 
 export default function AdminVendorsPage() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  // Removed statusFilter as it's not applicable based on the schema
+  // const [statusFilter, setStatusFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  const filteredVendors = vendorsData.filter((vendor) => {
+  // New states for API data, loading, and error
+  const [vendors, setVendors] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Fetch data on component mount
+  useEffect(() => {
+    const fetchVendors = async () => {
+      setLoading(true);
+      setError(null); // Clear previous errors
+      try {
+        const data = await getAllVendors();
+        setVendors(data);
+      } catch (err) {
+        console.error("Error fetching vendors:", err);
+        setError("Failed to load vendors. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchVendors();
+  }, []); // Empty dependency array means this runs once on mount
+
+  // Filter vendors based on search term (only name, email, pincode, owner name)
+  const filteredVendors = vendors.filter((vendor) => {
     const matchesSearch =
-      vendor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vendor.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vendor.franchise.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus =
-      statusFilter === "all" || vendor.status.toLowerCase() === statusFilter;
-    return matchesSearch && matchesStatus;
+      (vendor.name &&
+        vendor.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (vendor.userId?.email &&
+        vendor.userId.email.toLowerCase().includes(searchTerm.toLowerCase())) || // Search by owner email
+      (vendor.userId?.name &&
+        vendor.userId.name.toLowerCase().includes(searchTerm.toLowerCase())) || // Search by owner name
+      (vendor.pincode &&
+        vendor.pincode.toLowerCase().includes(searchTerm.toLowerCase()));
+    // Removed status filter logic
+    return matchesSearch;
   });
 
   const totalPages = Math.ceil(filteredVendors.length / itemsPerPage);
@@ -123,18 +87,34 @@ export default function AdminVendorsPage() {
     startIndex + itemsPerPage
   );
 
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case "Active":
-        return <Badge className="bg-green-100 text-green-800">Active</Badge>;
-      case "Pending":
-        return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
-      case "Inactive":
-        return <Badge className="bg-red-100 text-red-800">Inactive</Badge>;
-      default:
-        return <Badge>{status}</Badge>;
-    }
+  // Helper to format date (using createdAt from timestamps)
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString("en-IN", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
   };
+
+  // Render loading state
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Loader2 className="h-10 w-10 animate-spin text-gray-500" />
+        <span className="ml-3 text-xl text-gray-600">Loading vendors...</span>
+      </div>
+    );
+  }
+
+  // Render error state
+  if (error) {
+    return (
+      <div className="flex justify-center items-center h-screen text-red-600 text-lg">
+        {error}
+      </div>
+    );
+  }
 
   return (
     <div className="overflow-x-hidden px-4 md:px-6 py-6">
@@ -143,21 +123,22 @@ export default function AdminVendorsPage() {
           <div>
             <h2 className="text-2xl font-bold tracking-tight">Vendors</h2>
             <p className="text-muted-foreground">
-              Manage all vendors and their franchise relationships
+              Manage all vendors registered on the platform
             </p>
           </div>
-          <Button className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto">
-            <Plus className="mr-2 h-4 w-4" />
-            Create Vendor
-          </Button>
+          <CreateVendorDialog>
+            <Button className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto">
+              <Plus className="mr-2 h-4 w-4" />
+              Create Vendor
+            </Button>
+          </CreateVendorDialog>
         </div>
 
         <Card>
           <CardHeader>
             <CardTitle>All Vendors</CardTitle>
             <CardDescription>
-              A list of all vendors in your platform with their franchise
-              details
+              A list of all vendors with their contact and association details.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -165,24 +146,12 @@ export default function AdminVendorsPage() {
               <div className="relative w-full md:max-w-sm">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
-                  placeholder="Search vendors..."
+                  placeholder="Search vendors by name, email, or pincode..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
                 />
               </div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full md:w-[180px]">
-                  <Filter className="mr-2 h-4 w-4" />
-                  <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
 
             <div className="overflow-x-auto rounded-md border">
@@ -191,66 +160,74 @@ export default function AdminVendorsPage() {
                   <TableRow>
                     <TableHead>Vendor ID</TableHead>
                     <TableHead>Name</TableHead>
-                    <TableHead>Contact</TableHead>
-                    <TableHead>Franchise</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Join Date</TableHead>
-                    <TableHead>Total Sales</TableHead>
-                    <TableHead>Commission</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>Owner Contact</TableHead>{" "}
+                    {/* Renamed to Owner Contact */}
+                    <TableHead>Pincode</TableHead>
+                    <TableHead>Commission Rate</TableHead>
+                    <TableHead>Sales Rep</TableHead> {/* Added Sales Rep */}
+                    <TableHead>Join Date</TableHead> {/* Using createdAt */}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedVendors.map((vendor) => (
-                    <TableRow key={vendor.id}>
-                      <TableCell className="font-medium">{vendor.id}</TableCell>
-                      <TableCell className="max-w-[180px] truncate">
-                        <div className="font-medium truncate">{vendor.name}</div>
-                        <div className="text-sm text-muted-foreground truncate">
-                          {vendor.email}
-                        </div>
-                      </TableCell>
-                      <TableCell className="whitespace-nowrap">
-                        {vendor.phone}
-                      </TableCell>
-                      <TableCell className="whitespace-nowrap">
-                        {vendor.franchise}
-                      </TableCell>
-                      <TableCell>{getStatusBadge(vendor.status)}</TableCell>
-                      <TableCell className="whitespace-nowrap">
-                        {vendor.joinDate}
-                      </TableCell>
-                      <TableCell className="font-medium whitespace-nowrap">
-                        {vendor.totalSales}
-                      </TableCell>
-                      <TableCell className="font-medium text-green-600 whitespace-nowrap">
-                        {vendor.commission}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem>
-                              <Eye className="mr-2 h-4 w-4" />
-                              View Details
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Edit className="mr-2 h-4 w-4" />
-                              Edit Vendor
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="text-red-600">
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Delete Vendor
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                  {paginatedVendors.length > 0 ? (
+                    paginatedVendors.map((vendor) => (
+                      <TableRow key={vendor._id}>
+                        {" "}
+                        {/* Use _id from MongoDB */}
+                        <TableCell className="font-medium">
+                          {vendor._id}
+                        </TableCell>
+                        <TableCell className="max-w-[180px] truncate">
+                          <div className="font-medium truncate">
+                            {vendor.name}
+                          </div>
+                          {/* Displaying owner name under vendor name */}
+                          <div className="text-sm text-muted-foreground truncate">
+                            Owner: {vendor.userId?.name || "N/A"}
+                          </div>
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          <div>{vendor.userId?.email || "N/A"}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {vendor.userId?.phone || "N/A"}
+                          </div>
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          {vendor.pincode}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          <Badge variant="outline">
+                            {vendor.commissionRate}%
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          {vendor.salesRep?.name ? (
+                            <div>
+                              <div className="font-medium">
+                                {vendor.salesRep.name}
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                {vendor.salesRep.email || "N/A"}
+                              </div>
+                            </div>
+                          ) : (
+                            <Badge variant="secondary">None</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          {formatDate(vendor.createdAt)}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={8} className="h-24 text-center">
+                        {" "}
+                        {/* Adjusted colspan */}
+                        No vendor data available.
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )}
                 </TableBody>
               </Table>
             </div>
@@ -265,7 +242,9 @@ export default function AdminVendorsPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.max(prev - 1, 1))
+                  }
                   disabled={currentPage === 1}
                 >
                   Previous

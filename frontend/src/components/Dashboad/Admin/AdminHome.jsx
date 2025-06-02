@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react"; // Import useState and useEffect
 import {
   Card,
   CardContent,
@@ -36,99 +37,150 @@ import {
   ShoppingBag,
   UserPlus,
   Target,
+  Loader2, // Added for loading state
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-
-const salesData = [
-  { month: "Jan", sales: 45000, orders: 120, profit: 12000 },
-  { month: "Feb", sales: 52000, orders: 145, profit: 15600 },
-  { month: "Mar", sales: 48000, orders: 135, profit: 13200 },
-  { month: "Apr", sales: 61000, orders: 180, profit: 18300 },
-  { month: "May", sales: 55000, orders: 165, profit: 16500 },
-  { month: "Jun", sales: 67000, orders: 195, profit: 20100 },
-];
-
-const membershipData = [
-  { name: "Bronze", value: 45, color: "#CD7F32", count: 2250 },
-  { name: "Silver", value: 30, color: "#C0C0C0", count: 1500 },
-  { name: "Gold", value: 20, color: "#FFD700", count: 1000 },
-  { name: "Platinum", value: 5, color: "#E5E4E2", count: 250 },
-];
-
-const recentActivity = [
-  {
-    type: "sale",
-    message: "New order #ORD-2024-195 placed",
-    amount: "$245.50",
-    time: "2 min ago",
-  },
-  {
-    type: "user",
-    message: "New user registration",
-    amount: "+1",
-    time: "5 min ago",
-  },
-  {
-    type: "payout",
-    message: "Commission payout processed",
-    amount: "$1,250.00",
-    time: "12 min ago",
-  },
-  {
-    type: "milestone",
-    message: "Gold milestone achieved",
-    amount: "+$100",
-    time: "18 min ago",
-  },
-  {
-    type: "sale",
-    message: "Order #ORD-2024-194 delivered",
-    amount: "$189.99",
-    time: "25 min ago",
-  },
-];
-
-const topVendors = [
-  {
-    name: "TechMart Solutions",
-    sales: "$67,800",
-    growth: "+15.2%",
-    orders: 195,
-  },
-  { name: "Fashion Forward", sales: "$45,230", growth: "+12.8%", orders: 142 },
-  { name: "Sports Galaxy", sales: "$32,150", growth: "+8.9%", orders: 98 },
-  { name: "Home Essentials", sales: "$28,900", growth: "+6.4%", orders: 87 },
-];
-
-const monthlyGrowth = [
-  { month: "Jan", users: 1200, vendors: 45, franchises: 8 },
-  { month: "Feb", users: 1350, vendors: 52, franchises: 9 },
-  { month: "Mar", users: 1480, vendors: 58, franchises: 11 },
-  { month: "Apr", users: 1620, vendors: 65, franchises: 12 },
-  { month: "May", users: 1780, vendors: 71, franchises: 14 },
-  { month: "Jun", users: 1950, vendors: 78, franchises: 15 },
-];
+import { getAdminDashboardAnalytics } from "../../../../api/analytics"; // Correct import path
 
 export default function AdminHome() {
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await getAdminDashboardAnalytics();
+        setDashboardData(data);
+      } catch (err) {
+        console.error("Error fetching admin dashboard analytics:", err);
+        setError("Failed to load dashboard data. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAnalytics();
+  }, []); // Empty dependency array means this runs once on mount
+
+  // Helper function to determine trend arrow and color
+  const getTrendIndicator = (increment) => {
+    const value = parseFloat(increment);
+    if (isNaN(value))
+      return { icon: null, color: "text-muted-foreground", text: "N/A" };
+    if (value > 0) {
+      return {
+        icon: ArrowUpRight,
+        color: "text-green-600",
+        text: `+${value}%`,
+      };
+    } else if (value < 0) {
+      return { icon: ArrowDownRight, color: "text-red-600", text: `${value}%` };
+    } else {
+      return { icon: null, color: "text-muted-foreground", text: "0%" };
+    }
+  };
+
+  // Render loading state
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-background to-muted/20">
+        <Loader2 className="h-16 w-16 animate-spin text-purple-600" />
+        <p className="mt-4 text-xl text-gray-700">Loading dashboard data...</p>
+      </div>
+    );
+  }
+
+  // Render error state
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-background to-muted/20 text-red-600 text-lg p-4">
+        <p>{error}</p>
+        <p className="mt-2 text-sm text-gray-500">
+          Please check your network connection or try refreshing the page.
+        </p>
+      </div>
+    );
+  }
+
+  // Fallback for when data is null after loading (shouldn't happen with error handling)
+  if (!dashboardData) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-background to-muted/20">
+        <p className="text-lg text-gray-700">No dashboard data available.</p>
+      </div>
+    );
+  }
+
+  // Destructure data for easier access
+  const {
+    totalRevenue,
+    memberShipUser,
+    totalOrders,
+    rewardsDistributed,
+    salesOverviewData,
+    membershipData, // This will be the actual pie chart data
+    growthMatrices, // This will have users, vendors, franchises arrays
+    topPerformingVendors,
+    recentActivity, // This will be the actual recent activity data
+  } = dashboardData;
+
+  // Prepare membership data for PieChart (mock data had value and count, API has just numbers)
+  // We need to calculate percentages and assign colors.
+  const totalUsers =
+    (membershipData[0]?.value || 0) + (membershipData[1]?.value || 0);
+  const formattedMembershipData = [
+    {
+      name: membershipData[0]?.name || "Members",
+      value:
+        totalUsers > 0
+          ? parseFloat(
+              ((membershipData[0]?.value || 0) / totalUsers) * 100
+            ).toFixed(2)
+          : 0,
+      count: membershipData[0]?.value || 0,
+      color: "#4CAF50", // Green for members
+    },
+    {
+      name: membershipData[1]?.name || "Non-Members",
+      value:
+        totalUsers > 0
+          ? parseFloat(
+              ((membershipData[1]?.value || 0) / totalUsers) * 100
+            ).toFixed(2)
+          : 0,
+      count: membershipData[1]?.value || 0,
+      color: "#FF9800", // Orange for non-members
+    },
+  ];
+
+  // Colors for Growth Metrics lines
+  const growthConfig = {
+    users: { label: "Users", color: "hsl(217, 91%, 60%)" }, // Blue
+    vendors: { label: "Vendors", color: "hsl(142, 76%, 36%)" }, // Green
+    franchises: { label: "Franchises", color: "hsl(38, 92%, 50%)" }, // Orange
+  };
+
   return (
     <div>
       <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between h-auto sm:h-16 px-4 py-3 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-  <div>
-    <h1 className="text-lg font-semibold">Dashboard Overview</h1>
-    <p className="text-sm text-muted-foreground">
-      Welcome back! Here's what's happening with your business today.
-    </p>
-  </div>
-  <Badge
-    variant="outline"
-    className="bg-green-50 text-green-700 border-green-200 w-fit text-sm"
-  >
-    <Activity className="w-3 h-3 mr-1" />
-    All Systems Operational
-  </Badge>
-</header>
-
+        <div>
+          <h1 className="text-lg font-semibold">Dashboard Overview</h1>
+          <p className="text-sm text-muted-foreground">
+            Welcome back! Here's what's happening with your business today.
+          </p>
+        </div>
+        <Badge
+          variant="outline"
+          className="bg-green-50 text-green-700 border-green-200 w-fit text-sm"
+        >
+          <Activity className="w-3 h-3 mr-1" />
+          All Systems Operational
+        </Badge>
+      </header>
 
       <div className="flex-1 space-y-8 p-6 bg-gradient-to-br from-background to-muted/20">
         {/* Key Metrics */}
@@ -144,17 +196,44 @@ export default function AdminHome() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-blue-900">$328,000</div>
-              <div className="flex items-center gap-1 mt-2">
-                <ArrowUpRight className="h-3 w-3 text-green-600" />
-                <span className="text-sm font-medium text-green-600">
-                  +12.5%
-                </span>
-                <span className="text-sm text-muted-foreground">
-                  from last month
-                </span>
+              <div className="text-3xl font-bold text-blue-900">
+                ${parseFloat(totalRevenue.amt).toLocaleString()}
               </div>
-              <Progress value={75} className="mt-3 h-2" />
+              <div className="flex items-center gap-1 mt-2">
+                {(() => {
+                  // Destructure the icon, color, and text from a single call to getTrendIndicator
+                  const {
+                    icon: RevenueTrendIcon,
+                    color: revenueTrendColor,
+                    text: revenueTrendText,
+                  } = getTrendIndicator(totalRevenue.incrementFromLastMonth);
+                  return (
+                    <>
+                      {RevenueTrendIcon && ( // Render the icon component if it exists
+                        <RevenueTrendIcon
+                          className={`h-3 w-3 ${revenueTrendColor}`}
+                        />
+                      )}
+                      <span
+                        className={`text-sm font-medium ${revenueTrendColor}`}
+                      >
+                        {revenueTrendText}
+                      </span>
+                      <span className="text-sm text-muted-foreground">
+                        from last month
+                      </span>
+                    </>
+                  );
+                })()}
+              </div>
+              {/* Progress bar logic could be more dynamic, e.g., based on target or previous period's performance */}
+              <Progress
+                value={Math.min(
+                  100,
+                  parseFloat(totalRevenue.incrementFromLastMonth) + 100
+                )}
+                className="mt-3 h-2"
+              />
             </CardContent>
           </Card>
 
@@ -162,24 +241,49 @@ export default function AdminHome() {
             <div className="absolute top-0 right-0 w-20 h-20 bg-green-500/10 rounded-full -mr-10 -mt-10" />
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-green-900">
-                Active Users
+                Membership Users
               </CardTitle>
               <div className="p-2 bg-green-500 rounded-lg">
                 <Users className="h-4 w-4 text-white" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-green-900">12,543</div>
-              <div className="flex items-center gap-1 mt-2">
-                <ArrowUpRight className="h-3 w-3 text-green-600" />
-                <span className="text-sm font-medium text-green-600">
-                  +8.2%
-                </span>
-                <span className="text-sm text-muted-foreground">
-                  from last month
-                </span>
+              <div className="text-3xl font-bold text-green-900">
+                {memberShipUser.amount.toLocaleString()}
               </div>
-              <Progress value={82} className="mt-3 h-2" />
+              <div className="flex items-center gap-1 mt-2">
+                {(() => {
+                  const {
+                    icon: MembershipTrendIcon,
+                    color: membershipTrendColor,
+                    text: membershipTrendText,
+                  } = getTrendIndicator(memberShipUser.incrementFromLastMonth);
+                  return (
+                    <>
+                      {MembershipTrendIcon && (
+                        <MembershipTrendIcon
+                          className={`h-3 w-3 ${membershipTrendColor}`}
+                        />
+                      )}
+                      <span
+                        className={`text-sm font-medium ${membershipTrendColor}`}
+                      >
+                        {membershipTrendText}
+                      </span>
+                      <span className="text-sm text-muted-foreground">
+                        from last month
+                      </span>
+                    </>
+                  );
+                })()}
+              </div>
+              <Progress
+                value={Math.min(
+                  100,
+                  parseFloat(memberShipUser.incrementFromLastMonth) + 100
+                )}
+                className="mt-3 h-2"
+              />
             </CardContent>
           </Card>
 
@@ -194,15 +298,43 @@ export default function AdminHome() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-purple-900">1,940</div>
-              <div className="flex items-center gap-1 mt-2">
-                <ArrowDownRight className="h-3 w-3 text-red-600" />
-                <span className="text-sm font-medium text-red-600">-2.1%</span>
-                <span className="text-sm text-muted-foreground">
-                  from last month
-                </span>
+              <div className="text-3xl font-bold text-purple-900">
+                {totalOrders.amt.toLocaleString()}
               </div>
-              <Progress value={68} className="mt-3 h-2" />
+              <div className="flex items-center gap-1 mt-2">
+                {(() => {
+                  // Using an immediately invoked function expression (IIFE)
+                  const TrendIcon = getTrendIndicator(
+                    totalOrders.incrementFromLastMonth
+                  ).icon;
+                  const trendData = getTrendIndicator(
+                    totalOrders.incrementFromLastMonth
+                  );
+                  return (
+                    <>
+                      {TrendIcon && (
+                        <TrendIcon className={`h-3 w-3 ${trendData.color}`} />
+                      )}
+                      <span
+                        className={`text-sm font-medium ${trendData.color}`}
+                      >
+                        {trendData.text}
+                      </span>
+                      <span className="text-sm text-muted-foreground">
+                        from last month
+                      </span>
+                    </>
+                  );
+                })()}
+              </div>
+
+              <Progress
+                value={Math.min(
+                  100,
+                  parseFloat(totalOrders.incrementFromLastMonth) + 100
+                )}
+                className="mt-3 h-2"
+              />
             </CardContent>
           </Card>
 
@@ -217,17 +349,44 @@ export default function AdminHome() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-orange-900">$45,230</div>
-              <div className="flex items-center gap-1 mt-2">
-                <ArrowUpRight className="h-3 w-3 text-green-600" />
-                <span className="text-sm font-medium text-green-600">
-                  +15.3%
-                </span>
-                <span className="text-sm text-muted-foreground">
-                  from last month
-                </span>
+              <div className="text-3xl font-bold text-orange-900">
+                ${parseFloat(rewardsDistributed.amt).toLocaleString()}
               </div>
-              <Progress value={91} className="mt-3 h-2" />
+              <div className="flex items-center gap-1 mt-2">
+                {(() => {
+                  const {
+                    icon: RewardsTrendIcon,
+                    color: rewardsTrendColor,
+                    text: rewardsTrendText,
+                  } = getTrendIndicator(
+                    rewardsDistributed.incrementFromLastMonth
+                  );
+                  return (
+                    <>
+                      {RewardsTrendIcon && (
+                        <RewardsTrendIcon
+                          className={`h-3 w-3 ${rewardsTrendColor}`}
+                        />
+                      )}
+                      <span
+                        className={`text-sm font-medium ${rewardsTrendColor}`}
+                      >
+                        {rewardsTrendText}
+                      </span>
+                      <span className="text-sm text-muted-foreground">
+                        from last month
+                      </span>
+                    </>
+                  );
+                })()}
+              </div>
+              <Progress
+                value={Math.min(
+                  100,
+                  parseFloat(rewardsDistributed.incrementFromLastMonth) + 100
+                )}
+                className="mt-3 h-2"
+              />
             </CardContent>
           </Card>
         </div>
@@ -246,32 +405,31 @@ export default function AdminHome() {
                 </div>
                 <Badge variant="secondary" className="bg-blue-50 text-blue-700">
                   <TrendingUp className="w-3 h-3 mr-1" />
-                  +12.5% Growth
+                  {
+                    getTrendIndicator(totalRevenue.incrementFromLastMonth).text
+                  }{" "}
+                  Growth
                 </Badge>
               </div>
             </CardHeader>
             <CardContent>
               <ChartContainer
                 config={{
-                  sales: {
-                    label: "Sales",
+                  revenue: {
+                    label: "Revenue",
                     color: "hsl(217, 91%, 60%)",
-                  },
-                  profit: {
-                    label: "Profit",
-                    color: "hsl(142, 76%, 36%)",
                   },
                 }}
                 className="aspect-[4/3] min-h-[200px] w-full"
               >
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart
-                    data={salesData}
+                    data={salesOverviewData}
                     margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                   >
                     <defs>
                       <linearGradient
-                        id="salesGradient"
+                        id="revenueGradient"
                         x1="0"
                         y1="0"
                         x2="0"
@@ -285,24 +443,6 @@ export default function AdminHome() {
                         <stop
                           offset="95%"
                           stopColor="hsl(217, 91%, 60%)"
-                          stopOpacity={0}
-                        />
-                      </linearGradient>
-                      <linearGradient
-                        id="profitGradient"
-                        x1="0"
-                        y1="0"
-                        x2="0"
-                        y2="1"
-                      >
-                        <stop
-                          offset="5%"
-                          stopColor="hsl(142, 76%, 36%)"
-                          stopOpacity={0.3}
-                        />
-                        <stop
-                          offset="95%"
-                          stopColor="hsl(142, 76%, 36%)"
                           stopOpacity={0}
                         />
                       </linearGradient>
@@ -318,7 +458,9 @@ export default function AdminHome() {
                       axisLine={false}
                       tickLine={false}
                       tick={{ fontSize: 12, fill: "#666" }}
-                      tickFormatter={(value) => `$${value / 1000}k`}
+                      tickFormatter={(value) =>
+                        `$${(value / 1000).toFixed(1)}k`
+                      }
                     />
                     <ChartTooltip
                       content={<ChartTooltipContent />}
@@ -331,16 +473,9 @@ export default function AdminHome() {
                     />
                     <Area
                       type="monotone"
-                      dataKey="sales"
+                      dataKey="revenue"
                       stroke="hsl(217, 91%, 60%)"
-                      fill="url(#salesGradient)"
-                      strokeWidth={3}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="profit"
-                      stroke="hsl(142, 76%, 36%)"
-                      fill="url(#profitGradient)"
+                      fill="url(#revenueGradient)"
                       strokeWidth={3}
                     />
                   </AreaChart>
@@ -360,25 +495,29 @@ export default function AdminHome() {
             <CardContent>
               <ChartContainer
                 config={{
-                  bronze: { label: "Bronze", color: "#CD7F32" },
-                  silver: { label: "Silver", color: "#C0C0C0" },
-                  gold: { label: "Gold", color: "#FFD700" },
-                  platinum: { label: "Platinum", color: "#E5E4E2" },
+                  // Dynamically build config based on formattedMembershipData names
+                  ...formattedMembershipData.reduce((acc, item) => {
+                    acc[item.name.toLowerCase().replace(/\s/g, "")] = {
+                      label: item.name,
+                      color: item.color,
+                    };
+                    return acc;
+                  }, {}),
                 }}
                 className="aspect-[4/3] min-h-[200px] w-full"
               >
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={membershipData}
+                      data={formattedMembershipData}
                       cx="50%"
                       cy="50%"
                       innerRadius={60}
                       outerRadius={100}
                       paddingAngle={2}
-                      dataKey="value"
+                      dataKey="count" // Use count for the pie chart value
                     >
-                      {membershipData.map((entry, index) => (
+                      {formattedMembershipData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
@@ -402,7 +541,7 @@ export default function AdminHome() {
                 </ResponsiveContainer>
               </ChartContainer>
               <div className="mt-4 space-y-2">
-                {membershipData.map((item) => (
+                {formattedMembershipData.map((item) => (
                   <div
                     key={item.name}
                     className="flex items-center justify-between text-sm"
@@ -429,30 +568,28 @@ export default function AdminHome() {
 
         {/* Bottom Section */}
         <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-
-
           {/* Growth Metrics */}
           <Card className="border-0 shadow-lg">
             <CardHeader>
               <CardTitle className="text-xl">Growth Metrics</CardTitle>
               <CardDescription>
-                Monthly growth across key metrics
+                Monthly growth across key entities
               </CardDescription>
             </CardHeader>
             <CardContent>
               <ChartContainer
-                config={{
-                  users: { label: "Users", color: "hsl(217, 91%, 60%)" },
-                  vendors: { label: "Vendors", color: "hsl(142, 76%, 36%)" },
-                  franchises: {
-                    label: "Franchises",
-                    color: "hsl(38, 92%, 50%)",
-                  },
-                }}
+                config={growthConfig}
                 className="aspect-[4/3] min-h-[200px] w-full"
               >
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={monthlyGrowth}>
+                  <LineChart
+                    data={growthMatrices.users.map((u, i) => ({
+                      month: u.month,
+                      users: u.count,
+                      vendors: growthMatrices.vendors[i]?.count || 0,
+                      franchises: growthMatrices.franchises[i]?.count || 0,
+                    }))}
+                  >
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                     <XAxis
                       dataKey="month"
@@ -469,23 +606,35 @@ export default function AdminHome() {
                     <Line
                       type="monotone"
                       dataKey="users"
-                      stroke="hsl(217, 91%, 60%)"
+                      stroke={growthConfig.users.color}
                       strokeWidth={2}
-                      dot={{ fill: "hsl(217, 91%, 60%)", strokeWidth: 2, r: 4 }}
+                      dot={{
+                        fill: growthConfig.users.color,
+                        strokeWidth: 2,
+                        r: 4,
+                      }}
                     />
                     <Line
                       type="monotone"
                       dataKey="vendors"
-                      stroke="hsl(142, 76%, 36%)"
+                      stroke={growthConfig.vendors.color}
                       strokeWidth={2}
-                      dot={{ fill: "hsl(142, 76%, 36%)", strokeWidth: 2, r: 4 }}
+                      dot={{
+                        fill: growthConfig.vendors.color,
+                        strokeWidth: 2,
+                        r: 4,
+                      }}
                     />
                     <Line
                       type="monotone"
                       dataKey="franchises"
-                      stroke="hsl(38, 92%, 50%)"
+                      stroke={growthConfig.franchises.color}
                       strokeWidth={2}
-                      dot={{ fill: "hsl(38, 92%, 50%)", strokeWidth: 2, r: 4 }}
+                      dot={{
+                        fill: growthConfig.franchises.color,
+                        strokeWidth: 2,
+                        r: 4,
+                      }}
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -503,30 +652,40 @@ export default function AdminHome() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {topVendors.map((vendor, index) => (
-                  <div
-                    key={vendor.name}
-                    className="flex items-center justify-between p-3 rounded-lg bg-muted/30"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-medium">
-                        {index + 1}
+                {topPerformingVendors.length > 0 ? (
+                  topPerformingVendors.map((vendor, index) => (
+                    <div
+                      key={vendor.vendorName || index} // Use vendorName or index as key
+                      className="flex items-center justify-between p-3 rounded-lg bg-muted/30"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-medium">
+                          {index + 1}
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm">
+                            {vendor.vendorName}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {vendor.noOfOrders} orders
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium text-sm">{vendor.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {vendor.orders} orders
+                      <div className="text-right">
+                        <p className="font-semibold text-sm">
+                          ${parseFloat(vendor.revenue.amt).toLocaleString()}
+                        </p>
+                        <p className="text-xs text-green-600 font-medium">
+                          {getTrendIndicator(vendor.revenue.rateofGrowth).text}
                         </p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-sm">{vendor.sales}</p>
-                      <p className="text-xs text-green-600 font-medium">
-                        {vendor.growth}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <p className="text-center text-muted-foreground">
+                    No top performing vendors this month.
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -541,43 +700,56 @@ export default function AdminHome() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {recentActivity.map((activity, index) => (
-                  <div
-                    key={index}
-                    className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted/30 transition-colors"
-                  >
+                {recentActivity.length > 0 ? (
+                  recentActivity.map((activity, index) => (
                     <div
-                      className={`p-2 rounded-full ${
-                        activity.type === "sale"
-                          ? "bg-green-100 text-green-600"
-                          : activity.type === "user"
-                          ? "bg-blue-100 text-blue-600"
-                          : activity.type === "payout"
-                          ? "bg-purple-100 text-purple-600"
-                          : "bg-orange-100 text-orange-600"
-                      }`}
+                      key={activity._id || index} // Use activity ID or index as key
+                      className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted/30 transition-colors"
                     >
-                      {activity.type === "sale" ? (
-                        <ShoppingBag className="w-3 h-3" />
-                      ) : activity.type === "user" ? (
-                        <UserPlus className="w-3 h-3" />
-                      ) : activity.type === "payout" ? (
-                        <DollarSign className="w-3 h-3" />
-                      ) : (
-                        <Target className="w-3 h-3" />
-                      )}
+                      <div
+                        className={`p-2 rounded-full ${
+                          activity.activityType.includes("Order")
+                            ? "bg-green-100 text-green-600"
+                            : activity.activityType.includes("User")
+                            ? "bg-blue-100 text-blue-600"
+                            : activity.activityType.includes("Vendor")
+                            ? "bg-purple-100 text-purple-600"
+                            : activity.activityType.includes("Franchise")
+                            ? "bg-orange-100 text-orange-600"
+                            : "bg-gray-100 text-gray-600"
+                        }`}
+                      >
+                        {activity.activityType.includes("Order") ? (
+                          <ShoppingBag className="w-3 h-3" />
+                        ) : activity.activityType.includes("User") ? (
+                          <UserPlus className="w-3 h-3" />
+                        ) : activity.activityType.includes("Vendor") ? (
+                          <Target className="w-3 h-3" />
+                        ) : activity.activityType.includes("Franchise") ? (
+                          <DollarSign className="w-3 h-3" /> // Using dollar sign for franchise creation (can change icon)
+                        ) : (
+                          <Activity className="w-3 h-3" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium">
+                          {activity.details}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {activity.activityDate}
+                        </p>
+                      </div>
+                      {/* You might want to display amount for orders/rewards here */}
+                      {/* <div className="text-sm font-semibold text-green-600">
+                        {activity.amount}
+                      </div> */}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium">{activity.message}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {activity.time}
-                      </p>
-                    </div>
-                    <div className="text-sm font-semibold text-green-600">
-                      {activity.amount}
-                    </div>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <p className="text-center text-muted-foreground">
+                    No recent activity.
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>
