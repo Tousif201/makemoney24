@@ -9,7 +9,7 @@ import {
   Truck,
   Users,
 } from "lucide-react";
-
+import about from "../assets/about.jpg"
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -24,26 +24,33 @@ export default function About() {
   return (
     <div className="min-h-screen bg-white  mx-0 lg:mx-40  ">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-r from-purple-800 to-pink-400 text-white flex items-center ">
-        <div className="absolute inset-0 opacity-20 bg-[url('/placeholder.svg?height=600&width=1200')] bg-cover bg-center" />
-        <div className="container relative mx-auto px-4 py-24 md:py-32">
-          <div className="max-w-3xl">
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">
-              About Shree Laabh Enterprises
-            </h1>
-            <p className="text-xl md:text-2xl opacity-90 mb-8">
-              A dynamic and diversified company integrating multiple independent
-              brands and businesses under one platform.
-            </p>
-            <Button
-              size="lg"
-              className="bg-white text-purple-700 hover:bg-gray-100"
-            >
-              Contact Us <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </div>
+      <section className="bg-gradient-to-r from-purple-800 to-pink-500 text-white py-20">
+      <div className="container mx-auto px-4 flex flex-col md:flex-row items-center">
+        {/* Left Content */}
+        <div className="md:w-1/2 mb-10 md:mb-0">
+          <h1 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">
+            About Shree Laabh Enterprises
+          </h1>
+          <p className="text-lg md:text-xl opacity-90 mb-8">
+            A dynamic and diversified company integrating multiple independent
+            brands and businesses under one unified platform, driving innovation
+            and value across industries.
+          </p>
+          <Button size="lg" className="bg-white text-purple-700 hover:bg-gray-100">
+            Contact Us <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
         </div>
-      </section>
+
+        {/* Right Image */}
+        <div className="md:w-1/2">
+          <img
+            src={about}
+            alt="About Shree Laabh Enterprises"
+            className="rounded-2xl shadow-lg w-full h-auto max-h-[500px] object-cover"
+          />
+        </div>
+      </div>
+    </section>
 
       {/* Company Overview */}
       <section className="container mx-auto px-4 py-16 md:py-24">

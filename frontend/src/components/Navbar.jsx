@@ -33,9 +33,15 @@ export default function Navbar() {
         <nav className="hidden sm:flex items-center space-x-6">
           <Link
             to="/browse"
-            className="hover:underline font-medium text-gray-700"
+            className="hover:text-amber-500 font-medium text-gray-700"
           >
             Browse
+          </Link>
+          <Link
+            to="/about"
+            className="hover:text-amber-500 font-medium text-gray-700"
+          >
+            About
           </Link>
         </nav>
         {/* Auth Buttons / User */}

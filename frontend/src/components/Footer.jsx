@@ -52,7 +52,7 @@ const Footer = () => {
               <li><a href="/pdfs/adm ppt.pdf" target="_blank" rel="noopener noreferrer">Rewards</a></li>
               <li><a href="/pdfs/Certificates.pdf" target="_blank" rel="noopener noreferrer">Compliance Documents</a></li>
               <li><Link to="#">Benefits of working</Link></li>
-              <li><Link to="/about~">About Us</Link></li>
+              <li><Link to="/about">About Us</Link></li>
             </ul>
           </div>
 
