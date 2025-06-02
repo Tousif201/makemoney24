@@ -1,8 +1,7 @@
 // components/ProductList.jsx
-import React, { useEffect, useState } from "react"; // Import useEffect and useState
+import React, { useEffect, useState } from "react";
 import ProductCard from "./ProductCard";
-// Make sure this path is correct based on where you saved productService.js
-import { getProductServices } from "../../api/productService";
+import { getProductServices } from "../../api/productService"; // Make sure this path is correct
 
 const ProductList = () => {
   const [products, setProducts] = useState([]);
@@ -15,20 +14,32 @@ const ProductList = () => {
         setLoading(true);
         setError(null); // Clear any previous errors
 
-        // Fetch products and services. You can add filters if needed, e.g., { type: "product" }
-        // For now, let's fetch all and limit to 6.
-        const response = await getProductServices();
-        
-        // Ensure response.data is an array before setting
-        if (response && Array.isArray(response)) {
-          setProducts(response);
+        // Fetch products and services.
+        // We can now send parameters for sorting or limiting,
+        // for example, to get the latest 6 products ordered by creation date.
+        const params = {
+          limit: 6, // Request only 6 items
+          sortBy: "createdAt", // Sort by creation date
+          order: "desc", // Get the newest first
+          page: 1, // Ensure we get the first page
+        };
+
+        const response = await getProductServices(params);
+
+        // *** Crucial Update: Access response.data instead of response directly ***
+        if (response && response.data && Array.isArray(response.data)) {
+          setProducts(response.data);
         } else {
-          console.warn("API response is not an array:", response);
-          setProducts([]);
+          // Log a warning if the data structure is unexpected
+          console.warn("API response data is not an array or is missing 'data' property:", response);
+          setProducts([]); // Ensure products is an empty array if data is malformed
+          // You might set an error here if this is a critical issue
+          // setError("Unexpected data format from the server.");
         }
       } catch (err) {
         console.error("Error fetching products:", err);
-        setError("Failed to load products. Please try again later.");
+        // Access nested error message if available, otherwise use a generic message
+        setError(err.response?.data?.message || "Failed to load products. Please try again later.");
       } finally {
         setLoading(false);
       }
@@ -40,7 +51,7 @@ const ProductList = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-48">
-        <p>Loading products...</p> {/* You can replace this with a spinner */}
+        <p>Loading products...</p> {/* Consider using a more visually engaging spinner */}
       </div>
     );
   }
@@ -67,8 +78,9 @@ const ProductList = () => {
     <div className="max-w-7xl mx-auto px-4 py-10">
       <h2 className="text-3xl font-bold text-center mb-10">Latest Products</h2>
       <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-        {/* Map over the fetched products and slice to get only the first 6 */}
-        {products.slice(0, 6).map((product) => (
+        {/* Map over the fetched products directly; no need for .slice(0, 6)
+            because the backend is already limiting the results to 6. */}
+        {products.map((product) => (
           <ProductCard
             key={product._id} // Use product._id from MongoDB for unique key
             product={{
@@ -80,7 +92,7 @@ const ProductList = () => {
               // Assuming portfolio items have a 'url' property for the image
               image: product.portfolio && product.portfolio.length > 0
                      ? product.portfolio[0].url
-                     : "https://via.placeholder.com/400x300?text=No+Image", // Placeholder if no image
+                     : "https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png", // Placeholder if no image
             }}
           />
         ))}
