@@ -281,7 +281,7 @@ export const getProductServiceById = async (req, res) => {
     const reviews = await Review.find({
       itemId: productService._id,
       itemType: productService.type, // Assuming 'type' (product/service) is on your ProductService model
-    }).populate("userId", "username avatar"); // Populate user details for each review (e.g., username, avatar)
+    }).populate("userId", "name avatar"); // Populate user details for each review (e.g., username, avatar)
     // Adjust 'username' and 'avatar' to match your User model fields.
 
     // 3. Combine the product/service data with its reviews
