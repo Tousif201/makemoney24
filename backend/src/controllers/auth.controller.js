@@ -120,13 +120,23 @@ export const loginUser = async (req, res) => {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    // 2. Compare passwords
+    // 2. Check user account status
+    // If the accountStatus is 'suspended', reject the login attempt.
+    if (user.accountStatus === "suspended") {
+      return res
+        .status(401)
+        .json({
+          message: "Your account has been suspended. Please contact support.",
+        });
+    }
+
+    // 3. Compare passwords
     const isMatch = await getComparePassword(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    // 3. Generate JWT token and set as cookie
+    // 4. Generate JWT token and set as cookie
     const authToken = await generateAuthToken(
       res,
       user._id,
@@ -142,6 +152,7 @@ export const loginUser = async (req, res) => {
         name: user.name,
         email: user.email,
         roles: user.roles,
+        accountStatus: user.accountStatus, // Include accountStatus in the response
       },
     });
   } catch (error) {
@@ -339,6 +350,7 @@ export const getUserProfile = async (req, res) => {
         referralCode: user.referralCode,
         referredByCode: user.referredByCode,
         roles: user.roles,
+        accountStatus: user.accountStatus,
       });
     } else {
       res.status(404).json({ message: "User not found" });
@@ -361,7 +373,9 @@ export const getUserTodayReferralPerformance = async (req, res) => {
     // Find the main user
     const user = await User.findById(userId);
     if (!user || !user.referralCode) {
-      return res.status(404).json({ message: "User not found or does not have a referral code." });
+      return res
+        .status(404)
+        .json({ message: "User not found or does not have a referral code." });
     }
 
     const referralCode = user.referralCode;
@@ -373,14 +387,16 @@ export const getUserTodayReferralPerformance = async (req, res) => {
 
     for (const referredUser of referredUsers) {
       // Check if the referred user joined today
-      const joinedToday = referredUser.joinedAt >= startOfDay && referredUser.joinedAt <= endOfDay;
+      const joinedToday =
+        referredUser.joinedAt >= startOfDay &&
+        referredUser.joinedAt <= endOfDay;
 
       if (joinedToday) {
         // Find if the referred user purchased a membership today
         const membershipToday = await Membership.findOne({
           userId: referredUser._id,
           purchasedAt: { $gte: startOfDay, $lte: endOfDay },
-        }).populate('transactionId');
+        }).populate("transactionId");
 
         todayReferrals.push({
           referredUser: {
@@ -390,11 +406,13 @@ export const getUserTodayReferralPerformance = async (req, res) => {
             phone: referredUser.phone,
             joinedAt: referredUser.joinedAt,
           },
-          membership: membershipToday ? {
-            amountPaid: membershipToday.amountPaid,
-            purchasedAt: membershipToday.purchasedAt,
-            transactionId: membershipToday.transactionId?._id || null,
-          } : null,
+          membership: membershipToday
+            ? {
+                amountPaid: membershipToday.amountPaid,
+                purchasedAt: membershipToday.purchasedAt,
+                transactionId: membershipToday.transactionId?._id || null,
+              }
+            : null,
         });
       }
     }
@@ -405,19 +423,14 @@ export const getUserTodayReferralPerformance = async (req, res) => {
       referralsCount: todayReferrals.length,
       referrals: todayReferrals,
     });
-
   } catch (error) {
     console.error("Error fetching user's today referral performance:", error);
-    res.status(500).json({ message: "Failed to fetch user's today referral performance", error: error.message });
+    res.status(500).json({
+      message: "Failed to fetch user's today referral performance",
+      error: error.message,
+    });
   }
 };
-
-
-// ============================
-// File: controllers/user.controller.js
-// ============================
-
-import { User } from "../models/User.model.js";
 
 export const getUserDetails = async (req, res) => {
   try {
@@ -429,10 +442,13 @@ export const getUserDetails = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const totalEarnings = (user.withdrawableWallet || 0) + (user.purchaseWallet || 0);
+    const totalEarnings =
+      (user.withdrawableWallet || 0) + (user.purchaseWallet || 0);
 
     // Get the total number of referrals
-    const totalReferralsCount = await User.countDocuments({ referredByCode: user.referralCode });
+    const totalReferralsCount = await User.countDocuments({
+      referredByCode: user.referralCode,
+    });
 
     // Get the number of active referrals (those who are members)
     const activeReferralsCount = await User.countDocuments({
@@ -451,9 +467,10 @@ export const getUserDetails = async (req, res) => {
     };
 
     res.status(200).json({ success: true, data: userDetails });
-
   } catch (error) {
     console.error("Error fetching user details:", error);
-    res.status(500).json({ message: "Failed to fetch user details", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Failed to fetch user details", error: error.message });
   }
 };

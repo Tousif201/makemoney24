@@ -80,7 +80,9 @@ export const getAdminDashboardData = async (req, res) => {
 
     // Fetch users based on search, with pagination
     const users = await User.find(userQuery)
-      .select("name email phone isMember referralCode joinedAt _id")
+      .select(
+        "name email phone isMember referralCode joinedAt _id accountStatus"
+      )
       .sort({ joinedAt: -1 }) // Sort by join date, newest first
       .skip(skip)
       .limit(parseInt(limit))
@@ -137,6 +139,7 @@ export const getAdminDashboardData = async (req, res) => {
           totalReferralEarnings: userReferralEarnings,
           joiningDate: user.joinedAt,
           totalSpent: totalSpent,
+          accountStatus: user?.accountStatus,
         };
       })
     );
@@ -279,4 +282,60 @@ export const upgradeUser = async (req, res) => {
   }
 };
 
+/**
+ * @desc Updates a user's account status to a specified value ("active" or "suspended").
+ * @route PUT /api/users/update-status/:userId
+ * @access Private (Admin only)
+ * @param {string} req.params.userId - The ID of the user to update.
+ * @param {object} req.body - The request body.
+ * @param {string} req.body.status - The desired account status ("active" or "suspended").
+ */
+export const updateAccountStatus = async (req, res) => {
+  const { userId } = req.params;
+  const { status } = req.body; // Extract status from request body
 
+  if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Invalid user ID provided." });
+  }
+
+  // Validate the provided status
+  if (!status || !["active", "suspended"].includes(status)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid status provided. Must be 'active' or 'suspended'.",
+    });
+  }
+
+  try {
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found." });
+    }
+
+    // Update the account status directly
+    user.accountStatus = status;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: `User account status updated to ${user.accountStatus}.`,
+      user: {
+        id: user._id,
+        email: user.email,
+        accountStatus: user.accountStatus,
+      },
+    });
+  } catch (error) {
+    console.error("Error updating user account status:", error);
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while updating account status.",
+      error: error.message,
+    });
+  }
+};

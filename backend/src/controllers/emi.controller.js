@@ -3,7 +3,7 @@
 // ============================
 
 import { User } from "../models/User.model.js";
-import Emi from "../models/emi.model.js";
+import {Emi} from "../models/emi.model.js";
 
 export const getUserEmiHistory = async (req, res) => {
   try {
