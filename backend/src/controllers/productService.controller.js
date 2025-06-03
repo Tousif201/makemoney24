@@ -225,6 +225,7 @@ export const getProductServices = async (req, res) => {
       .sort(sort)
       .skip(skip)
       .limit(limitNum);
+      
 
     res.status(200).json({
       data: productServices,

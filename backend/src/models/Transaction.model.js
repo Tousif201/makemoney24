@@ -18,6 +18,7 @@ const transactionSchema = new Schema(
         "cashback",
         "purchase",
         "return",
+        "emi",
       ],
       required: true,
     },
