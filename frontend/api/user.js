@@ -118,3 +118,37 @@ export const upgradeUser = async (userId, data) => {
     throw error; // Re-throw the error for the calling component to handle
   }
 };
+
+/**
+ * @typedef {Object} UpdateAccountStatusResponse
+ * @property {boolean} success - Indicates if the request was successful.
+ * @property {string} message - A success message indicating the new status.
+ * @property {Object} user - Details of the user whose status was updated.
+ * @property {string} user.id - The ID of the user.
+ * @property {string} user.email - The email of the user.
+ * @property {string} user.accountStatus - The new account status ("active" or "suspended").
+ */
+
+/**
+ * Updates a user's account status to a specified value ("active" or "suspended").
+ * This function is typically used by administrators.
+ *
+ * @param {string} userId - The ID of the user whose account status is to be updated.
+ * @param {string} status - The desired account status ("active" or "suspended").
+ * @returns {Promise<UpdateAccountStatusResponse>} A promise that resolves to the update status response.
+ * @throws {Error} If the API request fails (e.g., user not found, invalid user ID, invalid status).
+ */
+export const updateAccountStatus = async (userId, status) => {
+  try {
+    const response = await apiClient.put(`/update-status/${userId}`, {
+      status,
+    });
+    return response.data;
+  } catch (error) {
+    console.error(
+      `Error updating account status for user ${userId}:`,
+      error.response?.data || error.message
+    );
+    throw error; // Re-throw the error for the calling component to handle
+  }
+};

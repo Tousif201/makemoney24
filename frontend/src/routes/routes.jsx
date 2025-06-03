@@ -46,6 +46,7 @@ import ProductDetailPage from "../pages/ProductDetailPage";
 import { Toaster } from "sonner";
 import CashbackCard from "../components/CashbackCard";
 import UsersDetailsPageAdmin from "../pages/Dashboard/Admin/UsersDetailsPageAdmin";
+import EmiSchedule from "../pages/Dashboard/Users/EmiSchedule";
 
 const routes = [
   {
@@ -403,7 +404,14 @@ const routes = [
       </DashboardLayout>
     ),
   },
-
+  {
+    path: "/dashboard/emi-schedule",
+    element: (
+      <DashboardLayout>
+        <EmiSchedule />
+      </DashboardLayout>
+    ),
+  },
   {
     path: "*",
     element: <h1>404 - Page Not Found</h1>,

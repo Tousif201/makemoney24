@@ -1,3 +1,5 @@
+"use client";
+
 import { Calendar, Check, CreditCard, Shield, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,6 +14,12 @@ import { useSession } from "../../../context/SessionContext";
 import RazorpayPaymentButton from "../../../components/RazorpayPaymentButton"; // Ensure this path is correct
 import { upgradeUser } from "../../../../api/user";
 import { Link } from "react-router-dom";
+
+// Import the image assets directly into MembershipPage
+import frontImg from "../../../assets/cashback/card11.png";
+import backImg from "../../../assets/cashback/card12.png";
+import logo from "../../../assets/makemoney.png";
+
 export default function MembershipPage() {
   const { loading, session, user, refreshSession } = useSession();
   const membershipAmountInPaise = 1200 * 100; // ₹1200 converted to paise for Razorpay
@@ -88,6 +96,15 @@ export default function MembershipPage() {
       }`
     );
   };
+
+  // Default values for card details (as they are not in user object)
+  const defaultCardNumber = "0987 6543 2109 1234";
+  const defaultValidFrom = "05/25";
+  const defaultExpiryDate = "05/26";
+  const defaultNotes = [
+    "This card is only valid for people who are registered as members",
+    "This membership card can be used in all regions",
+  ];
 
   if (!isMember) {
     return (
@@ -205,6 +222,92 @@ export default function MembershipPage() {
           </CardContent>
         </Card>
       </div>
+      {/* Conditionally render the virtual cards directly if user is a member */}
+      {isMember && (
+        <div className="flex flex-col items-center justify-center gap-10 p-4 sm:p-6">
+          <h2 className="text-3xl font-bold text-purple-900 mt-8">
+            Your Virtual Membership Cards
+          </h2>
+          <div className="flex md:flex-row flex-col gap-10">
+            {/* Front of the Card */}
+            <Card className="relative max-w-[500px] w-full aspect-[10/7] sm:aspect-[10/7] rounded-2xl overflow-hidden shadow-xl bg-amber-600 text-white font-semibold">
+              <img
+                src={frontImg}
+                alt="Card Front Background"
+                className="absolute inset-0 w-full h-full object-cover z-0 "
+              />
+              <div className="relative z-10 w-full h-full flex flex-col justify-between p-4 sm:p-8 bottom-3">
+                <div>
+                  <img
+                    src={logo}
+                    alt="Logo"
+                    className="h-12 w-12 sm:h-16 sm:w-16 relative bottom-6"
+                  />
+                </div>
+                <div>
+                  <h2 className="text-2xl sm:text-3xl font-bold mb-2 sm:mb-4">
+                    CASHBACK CARD
+                  </h2>
+                  <p className="text-lg sm:text-2xl tracking-widest mb-4 sm:mb-6">
+                    {defaultCardNumber}
+                  </p>
+                  <p className="text-base sm:text-lg">
+                    {user?.name || "Member"}
+                  </p>
+                </div>
+                <div className="flex gap-6 text-xs sm:text-sm">
+                  <div>
+                    <p className="text-gray-200">VALID FROM</p>
+                    <p>{defaultValidFrom}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-200">EXPIRY DATE</p>
+                    <p>{defaultExpiryDate}</p>
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            {/* Back of the Card */}
+            <Card className="relative max-w-[500px] w-full aspect-[10/7] sm:aspect-[10/7] rounded-2xl overflow-hidden shadow-xl bg-amber-600 text-white font-semibold">
+              <img
+                src={backImg}
+                alt="Card Back Background"
+                className="absolute inset-0 w-full h-full object-cover z-0"
+              />
+              <div className="relative z-10 w-full h-full flex flex-col justify-between p-4 sm:p-8 bottom-2">
+                <div>
+                  <img
+                    src={logo}
+                    alt="Logo"
+                    className="h-12 sm:h-15 mb-3 sm:mb-4 "
+                  />
+                  <h2 className="text-xl sm:text-2xl font-bold">
+                    PRODUCT EMI CARD
+                  </h2>
+                </div>
+
+                <div className="text-sm sm:text-base">
+                  <p className="flex items-center gap-2">
+                    📞 {user?.phone || "N/A"}
+                  </p>
+                  <p className="flex items-center gap-2">
+                    📧 {user?.email || "N/A"}
+                  </p>
+                </div>
+
+                <div className="text-xs sm:text-sm mt-2 sm:mt-4 space-y-1 text-gray-100">
+                  {defaultNotes.map((note, index) => (
+                    <p key={index}>
+                      {index + 1}. {note}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            </Card>
+          </div>
+        </div>
+      )}
       <Link to="/dashboard/referrals">
         <Button
           className="mt-10 bg-purple-600 hover:bg-purple-700 text-white text-lg px-8 py-6 rounded-full shadow-lg transform transition-transform duration-300 hover:scale-105"

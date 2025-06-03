@@ -67,9 +67,9 @@ export default function ProductsPage() {
     setError(null);
     try {
       const fetchedProducts = await getProductServices({ vendorId });
-      setProducts(fetchedProducts);
+      setProducts(fetchedProducts.data);
     } catch (err) {
-      console.error("Failed to fetch products:", err);
+      console.error("Failed to fetch products:", err.message);
       setError("Failed to load products. Please try again.");
     } finally {
       setLoading(false);
