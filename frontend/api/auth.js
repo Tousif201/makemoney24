@@ -25,7 +25,7 @@ apiClient.interceptors.request.use((config) => {
 export const loginUser = async (payload) => {
   try {
     const response = await apiClient.post("/login", payload);
-    console.log(response);
+    // console.log(response);
     return response.data;
   } catch (error) {
     console.error(error)

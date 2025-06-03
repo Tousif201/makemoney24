@@ -27,6 +27,7 @@ import {
   Crown,
   DollarSign,
   Loader2,
+  IndianRupee,
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { adminMembershipReport } from "../../../../api/membership"; // Adjust path as needed
@@ -179,11 +180,11 @@ export default function MembershipReportsPage() {
                 {totalMembershipsAmount}
               </div>
               <p className="text-xs sm:text-sm text-purple-700 mt-1">
-                {activeMembershipsCount} current memberships
+                {allMemberships.length} current memberships
               </p>
               <Progress value={85} className="mt-2 sm:mt-3 h-1.5 sm:h-2" />
               <p className="text-xs text-muted-foreground mt-1">
-                <DollarSign className="inline h-3 w-3 text-green-500" />
+                <IndianRupee className="inline h-3 w-3 text-green-500" />
                 {totalMembershipsRate} from last month
               </p>
             </CardContent>
@@ -212,7 +213,7 @@ export default function MembershipReportsPage() {
               </p>
               <Progress value={72} className="mt-2 sm:mt-3 h-1.5 sm:h-2" />
               <p className="text-xs text-muted-foreground mt-1">
-                <DollarSign className="inline h-3 w-3 text-green-500" />
+                <IndianRupee className="inline h-3 w-3 text-green-500" />
                 {totalReferralRate} from last month
               </p>
             </CardContent>
@@ -237,7 +238,7 @@ export default function MembershipReportsPage() {
               </p>
               <Progress value={78} className="mt-2 sm:mt-3 h-1.5 sm:h-2" />
               <p className="text-xs text-muted-foreground mt-1">
-                <DollarSign className="inline h-3 w-3 text-green-500" />
+                <IndianRupee className="inline h-3 w-3 text-green-500" />
                 {membershipRevenueRate} from last month
               </p>
             </CardContent>
@@ -250,7 +251,7 @@ export default function MembershipReportsPage() {
                 Referral Earnings
               </CardTitle>
               <div className="p-1.5 sm:p-2 bg-orange-500 rounded-lg">
-                <DollarSign className="h-3 sm:h-4 w-3 sm:w-4 text-white" />
+                <IndianRupee className="h-3 sm:h-4 w-3 sm:w-4 text-white" />
               </div>
             </CardHeader>
             <CardContent>
@@ -262,7 +263,7 @@ export default function MembershipReportsPage() {
               </p>
               <Progress value={65} className="mt-2 sm:mt-3 h-1.5 sm:h-2" />
               <p className="text-xs text-muted-foreground mt-1">
-                <DollarSign className="inline h-3 w-3 text-green-500" />
+                <IndianRupee className="inline h-3 w-3 text-green-500" />
                 {referralEarningRate} from last month
               </p>
             </CardContent>

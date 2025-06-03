@@ -26,7 +26,14 @@ import {
 export function CreateFranchiseDialog({ children }) {
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
-   
+   franchiseName: "",
+        location: "",
+        ownerName: "",
+        ownerEmail: "",
+        ownerPhone: "",
+        ownerPassword: "",
+        ownerPincode: "",
+        referredByCode: ""
   });
 
   const { session } = useSession();
@@ -116,20 +123,22 @@ export function CreateFranchiseDialog({ children }) {
               </div>
             </div>
 
-            <div className="grid gap-2">
-              <Label htmlFor="franchise-location">Location</Label>
-              <Input
-                id="franchise-location"
-                value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                placeholder="City, State"
-                required
-              />
-            </div>
+          
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="grid gap-2 w-full">
-                <Label htmlFor="franchise-status">Status</Label>
+            <div className="grid gap-2">
+              <Label htmlFor="ownerpassword">OwnerPassword</Label>
+              <input type="password"
+                id="ownerPassword"
+                value={formData.ownerPassword}
+                onChange={(e) => setFormData({ ...formData, ownerPassword: e.target.value })}
+                placeholder="password"
+                className="border rounded-sm"
+              
+              />
+            </div>
+              {/* <div className="grid gap-2 w-full">
+                <Label htmlFor="franchise-status">Status</Label> */}
                 {/* <Select
                   value={formData.status}
                   onValueChange={(value) => setFormData({ ...formData, status: value })}
@@ -143,28 +152,28 @@ export function CreateFranchiseDialog({ children }) {
                     <SelectItem value="under-review">Under Review</SelectItem>
                   </SelectContent>
                 </Select> */}
-              </div>
+              {/* </div> */}
               <div className="grid gap-2">
                 <Label htmlFor="ownerPincode">OwnerPincode</Label>
                 <Input
                   id="investment"
                   value={formData.ownerPincode}
                   onChange={(e) => setFormData({ ...formData, ownerPincode: e.target.value })}
-                  placeholder="$50,000"
+                  placeholder=""
                 />
               </div>
             </div>
-
             <div className="grid gap-2">
-              <Label htmlFor="ownerpassword">OwnerPassword</Label>
-              <input type="password"
-                id="ownerPassword"
-                value={formData.ownerPassword}
-                onChange={(e) => setFormData({ ...formData, ownerPassword: e.target.value })}
-                placeholder="Brief description of the franchise..."
-              
+              <Label htmlFor="franchise-location">Location</Label>
+              <Input
+                id="franchise-location"
+                value={formData.location}
+                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                placeholder="City, State"
+                required
               />
             </div>
+           
           </div>
 
           <DialogFooter className="w-full px-0">

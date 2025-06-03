@@ -34,6 +34,8 @@ const apiClient = axios.create({
 export const getAllTransactions = async (params = {}) => {
   try {
     const response = await apiClient.get("/", { params });
+    console.log("console log api transaction response",response);
+    console.log("console log api transaction response.data",response.data);
     return response.data;
   } catch (error) {
     console.error("Error fetching transactions:", error);

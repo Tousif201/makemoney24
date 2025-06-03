@@ -14,7 +14,7 @@ const chartConfig = {
 
 export function OrdersTrendChart({ chartData }) {
   return (
-    <div className=" w-full">
+    <div className="">
       <ChartContainer config={chartConfig}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart

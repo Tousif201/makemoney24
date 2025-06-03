@@ -27,6 +27,7 @@ import {
   CreditCard,
   TrendingUp,
   DollarSign,
+  IndianRupee,
 } from "lucide-react";
 import {
   Dialog,
@@ -395,12 +396,12 @@ const handleUpdateMilestone = async () => {
                 Rewards Distributed
               </CardTitle>
               <div className="p-2 bg-purple-500 rounded-lg">
-                <DollarSign className="h-4 w-4 text-white" />
+                <IndianRupee className="h-4 w-4 text-white" />
               </div>
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-purple-900">
-                ${totalRewardsDistributed.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              ₹{totalRewardsDistributed.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </div>
               <p className="text-sm text-purple-700 mt-1">
                 Total cashback paid
@@ -421,7 +422,7 @@ const handleUpdateMilestone = async () => {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-orange-900">
-                $
+              ₹
                 {totalClaims > 0
                   ? (totalRewardsDistributed / totalClaims).toFixed(2)
                   : "0.00"}
@@ -493,14 +494,14 @@ const handleUpdateMilestone = async () => {
                         </Badge>
                       </TableCell>
                       <TableCell className="font-medium text-green-600">
-                        ${milestone.rewardAmount?.toFixed(2)} 
+                      ₹{milestone.rewardAmount?.toFixed(2)} 
                       </TableCell>
                       <TableCell>
                         <Badge
                           variant="outline"
                           className="bg-purple-50 text-purple-700"
                         >
-                          ${milestone.purchaseValue?.toFixed(2)}
+                          ₹{milestone.purchaseValue?.toFixed(2)}
                         </Badge>
                       </TableCell>
                       <TableCell>

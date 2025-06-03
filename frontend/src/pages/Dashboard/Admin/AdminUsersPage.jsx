@@ -20,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { Search, Users, UserPlus, DollarSign } from "lucide-react"; // Removed Filter, Ban
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getAdminDashboard } from "../../../../api/user"; // Adjust this path if necessary
+import { Link } from "react-router-dom";
 
 export default function UsersPage() {
   const [dashboardData, setDashboardData] = useState(null);
@@ -105,7 +106,7 @@ export default function UsersPage() {
 
   const totalFilteredUsers = pagination.totalResults;
   const totalPages = pagination.totalPages;
-
+  console.log(users);
   return (
     <div>
       <div className="flex-1 space-y-6 p-6">
@@ -214,28 +215,30 @@ export default function UsersPage() {
                   ) : (
                     users.map((user) => (
                       <TableRow key={user.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <Avatar className="h-8 w-8">
-                              <AvatarImage src="/placeholder.svg" />{" "}
-                              {/* Consider using actual user profile images if available */}
-                              <AvatarFallback>
-                                {user.name
-                                  .split(" ")
-                                  .map((n) => n[0])
-                                  .join("")
-                                  .toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <div className="font-medium">{user.name}</div>
-                              <div className="text-sm text-muted-foreground">
-                                {user.referralCode}
-                              </div>{" "}
-                              {/* Display referralCode here */}
+                        <Link to={`/dashboard/admin/users/${user.id}`}>
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-8 w-8">
+                                <AvatarImage src="/placeholder.svg" />{" "}
+                                {/* Consider using actual user profile images if available */}
+                                <AvatarFallback>
+                                  {user.name
+                                    .split(" ")
+                                    .map((n) => n[0])
+                                    .join("")
+                                    .toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <div className="font-medium">{user.name}</div>
+                                <div className="text-sm text-muted-foreground">
+                                  {user.referralCode}
+                                </div>{" "}
+                                {/* Display referralCode here */}
+                              </div>
                             </div>
-                          </div>
-                        </TableCell>
+                          </TableCell>
+                        </Link>
                         <TableCell>
                           <div>
                             <div className="text-sm">{user.email}</div>

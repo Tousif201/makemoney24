@@ -13,6 +13,7 @@ import {
   Users,
   TrendingUp,
   DollarSign,
+  IndianRupee,
   Plus,
   Eye,
 } from "lucide-react";
@@ -51,9 +52,9 @@ export default function SalesRepHome() {
           },
           {
             title: "Monthly Revenue",
-            value: `$${data.monthlyRevenue?.toLocaleString() || "0"}`,
+            value: `₹${data.monthlyRevenue?.toLocaleString() || "0"}`,
             change: `+${data.revenueChange?.toFixed(1) || 0}%`,
-            icon: DollarSign,
+            icon: IndianRupee,
             color: "text-blue-600",
           },
           {

@@ -18,6 +18,7 @@ const apiClient = axios.create({
 export const adminMembershipReport = async () => {
   try {
     const response = await apiClient.get("/adminMembershipReport");
+    console.log(response);
     return response.data;
   } catch (error) {
     console.error("Error fetching admin membership report:", error);

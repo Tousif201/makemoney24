@@ -15,6 +15,7 @@ import {
   TrendingUp,
   Package,
   RocketIcon,
+  IndianRupee,
 } from "lucide-react";
 import { useSession } from "../../../context/SessionContext";
 import { getVendorDashboardAnalytics } from "../../../../api/analytics";
@@ -78,12 +79,12 @@ export default function VendorHome() {
         },
         {
           title: "Revenue",
-          value: `$${analyticsData.revenue.amount.toLocaleString(undefined, {
+          value: `₹${analyticsData.revenue.amount.toLocaleString(undefined, {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
           })}`,
           change: analyticsData.revenue.incrementFromLastMonth,
-          icon: DollarSign,
+          icon: IndianRupee,
           trend:
             parseFloat(analyticsData.revenue.incrementFromLastMonth) >= 0
               ? "up"
@@ -92,7 +93,7 @@ export default function VendorHome() {
         {
           title: "Commission Earned",
           // Calculate commission (e.g., 10% of revenue based on the example in the prompt)
-          value: `$${(analyticsData.revenue.amount * 0.1).toLocaleString(
+          value: `₹${(analyticsData.revenue.amount * 0.1).toLocaleString(
             undefined,
             { minimumFractionDigits: 2, maximumFractionDigits: 2 }
           )}`,
@@ -126,7 +127,7 @@ export default function VendorHome() {
           order.items && order.items.length > 0
             ? order.items[0].name
             : "Various Products",
-        amount: `$${order.orderAmount.toLocaleString(undefined, {
+        amount: `₹${order.orderAmount.toLocaleString(undefined, {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
         })}`,
@@ -264,7 +265,7 @@ export default function VendorHome() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="w-full h-64">
+              <div className="w-full h-full">
                 {" "}
                 {/* Set a fixed height for the chart container */}
                 {ordersTrendChartData.length > 0 ? (
