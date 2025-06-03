@@ -1,248 +1,321 @@
-// ============================
-// File: controllers/checkout.controller.js
-// ============================
-
+// Import necessary models and the internal verification function
 import mongoose from "mongoose";
-import { Order } from "../models/Order.model.js";
-import { Transaction } from "../models/Transaction.model.js";
-import { Emi } from "../models/emi.model.js";
-/**
- * handleCheckout - Controller to handle the checkout process.
- * This version assumes the user has already completed payment via Razorpay
- * and receives the payment confirmation details in the request body.
- *
- * @param {Object} req - The request object.
- * @param {Object} res - The response object.
- */
-export const handleCheckout = async (req, res) => {
-  // 1. Validate Request Body
+import { Order } from "../models/Order.model.js"; // Adjust path
+import { Transaction } from "../models/Transaction.model.js"; // Adjust path
+import { Emi } from "../models/emi.model.js"; // Adjust path
+import { User } from "../models/User.model.js"; // Adjust path
+// internalCashfreePaymentVerification (defined above or imported)
+
+// --- Standard Online Payment Checkout ---
+export const handleOnlinePaymentCheckout = async (req, res) => {
   const {
     userId,
     vendorId,
     items,
-    totalAmount, // This is the full order amount, regardless of EMI
+    totalAmount,
     address,
-    isEmi, // Boolean flag to indicate EMI payment
+    cashfreeOrderId, // This is the order_id from Cashfree, passed back by your frontend
+  } = req.body;
+
+  // 1. Basic mandatory fields validation
+  if (!userId || !vendorId || !Array.isArray(items) || items.length === 0 || !totalAmount || !address) {
+    return res.status(400).json({
+      success: false,
+      message: "Missing required fields: userId, vendorId, items, totalAmount, and address are mandatory.",
+    });
+  }
+  if (!cashfreeOrderId) {
+    return res.status(400).json({ success: false, message: "Missing Cashfree Order ID." });
+  }
+
+  // 2. Basic validation for items array and totalAmount (similar to original)
+  for (const item of items) {
+    if (!item.productServiceId || typeof item.quantity !== "number" || item.quantity < 1 || typeof item.price !== "number" || item.price < 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Each item must have a valid productServiceId, quantity (min 1), and price (min 0).",
+      });
+    }
+  }
+  if (typeof totalAmount !== "number" || totalAmount <= 0) {
+    return res.status(400).json({ success: false, message: "totalAmount must be a positive number." });
+  }
+
+  // 3. Verify Cashfree Payment INTERNALLY
+  const paymentVerification = await internalCashfreePaymentVerification(cashfreeOrderId);
+  if (!paymentVerification.success) {
+    return res.status(400).json({
+      success: false,
+      message: paymentVerification.message || "Cashfree payment verification failed.",
+      details: paymentVerification.data || paymentVerification.errorDetails,
+    });
+  }
+  // Ensure the amount matches (optional but recommended safety check)
+  if (parseFloat(paymentVerification.data.amount) !== parseFloat(totalAmount)) {
+       console.warn(`Amount mismatch for Cashfree Order ID ${cashfreeOrderId}. Expected: ${totalAmount}, Got: ${paymentVerification.data.amount}`);
+       // Decide if this is a critical failure. For now, we'll log and proceed if payment was successful.
+       // return res.status(400).json({ success: false, message: "Payment amount mismatch." });
+  }
+
+
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  try {
+    // 4. Create the Order
+    // The pre-save hook on Transaction will update Order's paymentStatus if transaction is successful
+    const newOrder = new Order({
+      userId,
+      vendorId,
+      items,
+      totalAmount,
+      address,
+      paymentStatus: "pending", // Will be updated by Transaction pre-save hook if payment is successful
+      orderStatus: "placed",
+    });
+    const savedOrder = await newOrder.save({ session });
+
+    // 5. Create the Transaction
+    const newTransaction = new Transaction({
+      userId,
+      orderId: savedOrder._id,
+      transactionType: "purchase",
+      amount: totalAmount, // Amount verified from Cashfree
+      description: `Payment for Order ID: ${savedOrder._id}`,
+      status: "success", // Since paymentVerification.success is true
+      cashfreeOrderId: paymentVerification.data.orderId, // Store Cashfree's order_id
+      cashfreePaymentId: paymentVerification.data.cfPaymentId, // Store Cashfree's payment_id
+      paymentGatewayResponse: paymentVerification.data.paymentGatewayResponse,
+    });
+    const savedTransaction = await newTransaction.save({ session });
+
+    // 6. Update Order with transactionId (already done by pre-save hook if successful)
+    // If not using the hook, or for explicitness:
+    savedOrder.transactionId = savedTransaction._id;
+    if (savedTransaction.status === "success") {
+        savedOrder.paymentStatus = "completed";
+    }
+    await savedOrder.save({ session });
+
+
+    await session.commitTransaction();
+
+    res.status(201).json({
+      success: true,
+      message: "Online payment checkout successful. Order and transaction created.",
+      order: savedOrder,
+      transaction: savedTransaction,
+    });
+  } catch (error) {
+    await session.abortTransaction();
+    console.error("Error during online payment checkout:", error);
+    res.status(500).json({
+      success: false,
+      message: "An error occurred during the online payment checkout process.",
+      error: error.message,
+    });
+  } finally {
+    session.endSession();
+  }
+};
+
+// --- EMI Checkout ---
+export const handleEmiCheckout = async (req, res) => {
+  const {
+    userId,
+    vendorId,
+    items,
+    totalAmount, // Full order amount for the goods
+    address,
+    // EMI specific fields
     downPayment,
     processingFee,
     billingCycleInDays,
     totalInstallments,
     installmentAmount,
-    // Razorpay payment confirmation details
-    razorpayPaymentId,
-    razorpayOrderId,
-    razorpaySignature,
+    // Cashfree payment confirmation details
+    cashfreeOrderId, // This is the order_id from Cashfree for the (downpayment + processing fee) transaction
   } = req.body;
 
-  // Basic mandatory fields validation
+  const initialPaymentAmount = downPayment + processingFee; // This is what should have been paid via Cashfree
+
+  // 1. Basic mandatory fields validation
+  if (!userId || !vendorId || !Array.isArray(items) || items.length === 0 || !totalAmount || !address) {
+    return res.status(400).json({ success: false, message: "Missing common required fields." });
+  }
+  if (!cashfreeOrderId) {
+    return res.status(400).json({ success: false, message: "Missing Cashfree Order ID for EMI initial payment." });
+  }
+
+  // 2. Basic validation for items array and totalAmount
+  for (const item of items) {
+    if (!item.productServiceId || typeof item.quantity !== "number" || item.quantity < 1 || typeof item.price !== "number" || item.price < 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Each item must have a valid productServiceId, quantity (min 1), and price (min 0).",
+      });
+    }
+  }
+  if (typeof totalAmount !== "number" || totalAmount <= 0) {
+    return res.status(400).json({ success: false, message: "Order totalAmount must be a positive number." });
+  }
+
+  // 3. Validate EMI specific fields
   if (
-    !userId ||
-    !vendorId ||
-    !Array.isArray(items) ||
-    items.length === 0 ||
-    !totalAmount ||
-    !address
+    typeof downPayment !== "number" || downPayment < 0 ||
+    typeof processingFee !== "number" || processingFee < 0 ||
+    typeof billingCycleInDays !== "number" || billingCycleInDays < 1 ||
+    typeof totalInstallments !== "number" || totalInstallments < 1 ||
+    typeof installmentAmount !== "number" || installmentAmount <= 0
   ) {
     return res.status(400).json({
       success: false,
-      message:
-        "Missing required fields: userId, vendorId, items, totalAmount, and address are mandatory.",
+      message: "For EMI: downPayment, processingFee, billingCycleInDays, totalInstallments, and installmentAmount are mandatory and must be valid.",
     });
   }
 
-  // Validate Razorpay payment details as payment is assumed to be complete
-  if (!razorpayPaymentId || !razorpayOrderId || !razorpaySignature) {
+  // 4. EMI consistency check (totalAmount of goods vs EMI plan)
+   const calculatedEmiTotalValue = downPayment + (totalInstallments * installmentAmount);
+   const expectedTotalValueIncludingProcessing = totalAmount + processingFee;
+   const epsilon = 0.01;
+
+   if (Math.abs(calculatedEmiTotalValue - expectedTotalValueIncludingProcessing) > epsilon) {
+     return res.status(400).json({
+       success: false,
+       message: `EMI payment breakdown (Downpayment: ${downPayment} + Installments: ${totalInstallments}*${installmentAmount}=${totalInstallments*installmentAmount}) sums to ${calculatedEmiTotalValue}. This should cover Total Order Amount (${totalAmount}) + Processing Fee (${processingFee}) = ${expectedTotalValueIncludingProcessing}. Difference is ${Math.abs(calculatedEmiTotalValue - expectedTotalValueIncludingProcessing)}. Please check terms.`,
+     });
+   }
+
+  // 5. User EMI Eligibility Check (same as before)
+  try {
+    const user = await User.findById(userId).populate({ path: 'emiHistory', model: 'Emi' }); // Ensure Emi model is registered for populate
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found." });
+    }
+    if (!user.isMember) {
+      return res.status(403).json({ success: false, message: "User is not a member. EMI facility not available." });
+    }
+
+    const nonDefaultedEmis = user.emiHistory.filter(emi => emi.status !== "defaulted");
+    const existingActiveOrDefaultedEmis = user.emiHistory.filter(emi => emi.status === "ongoing" || emi.status === "defaulted");
+
+
+    if (existingActiveOrDefaultedEmis.some(emi => emi.status === "defaulted")) {
+        return res.status(403).json({ success: false, message: "User has a defaulted EMI. New EMI facility is blocked." });
+    }
+
+    const currentEmiAttemptNumber = nonDefaultedEmis.length + 1;
+    const allowedTotalOrderAmount = currentEmiAttemptNumber * 1000;
+
+    if (totalAmount > allowedTotalOrderAmount) {
+      return res.status(403).json({
+        success: false,
+        message: `Order total ${totalAmount} exceeds the allowed limit of ${allowedTotalOrderAmount} for your ${currentEmiAttemptNumber}(st/nd/rd/th) EMI.`,
+      });
+    }
+  } catch (error) {
+    console.error("Error during EMI eligibility check:", error);
+    return res.status(500).json({ success: false, message: "Error checking EMI eligibility.", error: error.message });
+  }
+
+
+  // 6. Verify Cashfree Payment for the initial EMI amount (downpayment + processingFee)
+  const paymentVerification = await internalCashfreePaymentVerification(cashfreeOrderId);
+  if (!paymentVerification.success) {
     return res.status(400).json({
       success: false,
-      message:
-        "Missing Razorpay payment details: razorpayPaymentId, razorpayOrderId, and razorpaySignature are mandatory after successful payment.",
+      message: paymentVerification.message || "Cashfree payment verification for EMI initial amount failed.",
+      details: paymentVerification.data || paymentVerification.errorDetails,
     });
   }
 
-  // Basic validation for items array
-  for (const item of items) {
-    if (
-      !item.productServiceId ||
-      typeof item.quantity !== "number" ||
-      item.quantity < 1 ||
-      typeof item.price !== "number" ||
-      item.price < 0
-    ) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Each item must have a valid productServiceId, quantity (min 1), and price (min 0).",
-      });
-    }
-  }
-
-  // Ensure totalAmount is a valid positive number
-  if (typeof totalAmount !== "number" || totalAmount <= 0) {
+  // Ensure the amount paid matches initialPaymentAmount
+  if (parseFloat(paymentVerification.data.amount) !== parseFloat(initialPaymentAmount)) {
+    console.warn(`EMI Initial Amount mismatch for Cashfree Order ID ${cashfreeOrderId}. Expected: ${initialPaymentAmount}, Got: ${paymentVerification.data.amount}`);
     return res.status(400).json({
-      success: false,
-      message: "totalAmount must be a positive number.",
+        success: false,
+        message: `EMI initial payment amount mismatch. Expected ${initialPaymentAmount} but paid ${paymentVerification.data.amount}.`
     });
   }
 
-  // Validate EMI specific fields if isEmi is true
-  if (isEmi) {
-    if (
-      typeof downPayment !== "number" ||
-      downPayment < 0 ||
-      typeof processingFee !== "number" ||
-      processingFee < 0 ||
-      typeof billingCycleInDays !== "number" ||
-      billingCycleInDays < 1 ||
-      typeof totalInstallments !== "number" ||
-      totalInstallments < 1 ||
-      typeof installmentAmount !== "number" ||
-      installmentAmount <= 0
-    ) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "For EMI: downPayment, processingFee, billingCycleInDays, totalInstallments, and installmentAmount are mandatory and must be valid numbers.",
-      });
-    }
-
-    // Basic consistency check for EMI total
-    const calculatedEmiTotal = downPayment + totalInstallments * installmentAmount;
-    const expectedEmiTotal = totalAmount + processingFee;
-
-    const epsilon = 0.01; // For floating point comparison
-    if (Math.abs(calculatedEmiTotal - expectedEmiTotal) > epsilon) {
-      return res.status(400).json({
-        success: false,
-        message: `EMI payment breakdown (downPayment: ${downPayment}, totalInstallments: ${totalInstallments}, installmentAmount: ${installmentAmount}) does not sum up to total order amount (${totalAmount}) plus processing fee (${processingFee}). Calculated: ${calculatedEmiTotal}, Expected: ${expectedEmiTotal}`,
-      });
-    }
-  }
-
-  // Start a Mongoose session for atomicity
   const session = await mongoose.startSession();
   session.startTransaction();
-
-  let savedTransaction;
-  let savedEmi; // To store the EMI document if created
-
   try {
-    // 2. Create the Order
+    // 7. Create the Order
     const newOrder = new Order({
       userId,
       vendorId,
       items,
-      totalAmount, // This is the full price of the order
+      totalAmount, // Full order amount for goods
       address,
-      paymentStatus: "paid", // Set to 'paid' as payment is confirmed
-      orderStatus: "placed", // Initial status
+      paymentStatus: "pending", // Will be 'completed' after successful initial transaction
+      orderStatus: "placed",
     });
-
     const savedOrder = await newOrder.save({ session });
 
-    // 3. Prepare and create the initial Transaction
-    let transactionAmount;
-    let transactionDescription;
-    let transactionType;
+    // 8. Create the EMI document
+    const nextDueDate = new Date();
+    nextDueDate.setDate(nextDueDate.getDate() + billingCycleInDays);
 
-    if (isEmi) {
-      // For EMI, the initial transaction covers the down payment and processing fee
-      transactionAmount = downPayment + processingFee;
-      transactionDescription = `EMI Initial Payment (Down Payment + Processing Fee) for Order ID: ${savedOrder._id}`;
-      transactionType = "emi_initial_payment";
+    const newEmi = new Emi({
+      userId,
+      orderId: savedOrder._id,
+      totalAmount: totalAmount, // Total value of goods being financed via EMI (excluding downpayment for loan part)
+      downPayment,
+      processingFee,
+      billingCycleInDays,
+      totalInstallments,
+      installmentAmount,
+      paidInstallments: 0, // Downpayment is not an "installment"
+      nextDueDate,
+      status: "ongoing",
+    });
+    const savedEmi = await newEmi.save({ session });
 
-      // Calculate nextDueDate for the first installment
-      const nextDueDate = new Date();
-      // Add billingCycleInDays to the current date to get the first due date
-      nextDueDate.setDate(nextDueDate.getDate() + billingCycleInDays);
-
-      // Create the EMI document
-      const newEmi = new Emi({
-        userId,
-        orderId: savedOrder._id,
-        totalAmount: totalAmount, // This is the full order amount for EMI tracking
-        downPayment,
-        processingFee,
-        billingCycleInDays,
-        totalInstallments,
-        installmentAmount,
-        paidInstallments: 0, // Starts with 0 paid installments
-        nextDueDate,
-        status: "ongoing", // Initial EMI status
-      });
-      savedEmi = await newEmi.save({ session });
-
-    } else {
-      // For standard payment, the transaction covers the full order amount
-      transactionAmount = totalAmount;
-      transactionDescription = `Payment for Order ID: ${savedOrder._id}`;
-      transactionType = "purchase";
-    }
-
+    // 9. Create the initial Transaction (for downpayment + processing fee)
     const newTransaction = new Transaction({
       userId,
       orderId: savedOrder._id,
-      transactionType,
-      amount: transactionAmount,
-      description: transactionDescription,
-      status: "completed", // Set to 'completed' as payment is confirmed
-      ...(isEmi && { emiId: savedEmi._id }), // Link transaction to EMI if an EMI plan was created
-      // Store Razorpay payment details
-      razorpayPaymentId,
-      razorpayOrderId,
-      razorpaySignature,
+      emiId: savedEmi._id,
+      transactionType: "emi_initial_payment",
+      amount: initialPaymentAmount, // Verified amount from Cashfree
+      description: `EMI Initial Payment (Down Payment + Processing Fee) for Order ID: ${savedOrder._id}`,
+      status: "success",
+      cashfreeOrderId: paymentVerification.data.orderId,
+      cashfreePaymentId: paymentVerification.data.cfPaymentId,
+      paymentGatewayResponse: paymentVerification.data.paymentGatewayResponse,
     });
+    const savedTransaction = await newTransaction.save({ session });
 
-    savedTransaction = await newTransaction.save({ session });
-
-    // 4. Update the Order with the initial transactionId
+    // 10. Update Order with transactionId and paymentStatus
     savedOrder.transactionId = savedTransaction._id;
+    if (savedTransaction.status === "success") {
+        savedOrder.paymentStatus = "completed"; // Mark order as paid (initial part)
+    }
     await savedOrder.save({ session });
 
-    // 5. Commit the transaction
+
+    // 11. Update User's EMI History
+    await User.findByIdAndUpdate(userId, { $push: { emiHistory: savedEmi._id } }, { session, new: true });
+
     await session.commitTransaction();
-    session.endSession();
 
-    // IMPORTANT SECURITY NOTE:
-    // In a production environment, you MUST verify the razorpaySignature
-    // using your Razorpay secret key before saving the transaction as 'completed'.
-    // This step ensures the callback is legitimate and not tampered with.
-    // Example (requires Razorpay SDK and secret key):
-    // const { validateWebhookSignature } = require('razorpay/dist/utils/razorpay-utils');
-    // const generatedSignature = validateWebhookSignature(
-    //   JSON.stringify({ order_id: razorpayOrderId, payment_id: razorpayPaymentId }),
-    //   razorpaySignature,
-    //   RAZORPAY_WEBHOOK_SECRET
-    // );
-    // if (!generatedSignature) {
-    //   // Handle invalid signature - potentially fraudulent attempt
-    //   return res.status(400).json({ success: false, message: "Invalid Razorpay signature." });
-    // }
-
-
-    // 6. Respond with success
-    const responsePayload = {
+    res.status(201).json({
       success: true,
-      message: isEmi ? "Checkout successful. Order, initial EMI transaction, and EMI plan created." : "Checkout successful. Order and pending transaction created.",
+      message: "EMI checkout successful. Order, initial transaction, and EMI plan created.",
       order: savedOrder,
       transaction: savedTransaction,
-      // No redirectUrl needed as payment is already complete
-    };
+      emi: savedEmi,
+    });
 
-    if (isEmi) {
-      responsePayload.emi = savedEmi; // Include the EMI document in the response
-    }
-
-    res.status(201).json(responsePayload);
   } catch (error) {
-    // Abort transaction on any error
     await session.abortTransaction();
-    session.endSession();
-
-    console.error("Error during checkout:", error);
+    console.error("Error during EMI checkout:", error);
     res.status(500).json({
       success: false,
-      message: "An error occurred during the checkout process.",
+      message: "An error occurred during the EMI checkout process.",
       error: error.message,
     });
+  } finally {
+    session.endSession();
   }
 };

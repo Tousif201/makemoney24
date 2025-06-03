@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   CreditCard,
   DollarSign,
@@ -11,6 +11,7 @@ import {
   Eye,
   Search,
   Download,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -48,152 +49,8 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
-
-// Mock data based on the models
-const userData = {
-  _id: "user123",
-  name: "Priyanshu Sahu",
-  email: "priyanshu@example.com",
-  phone: "+91 98765 43210",
-  purchaseWallet: 5000,
-  withdrawableWallet: 2500,
-  profileScore: 85,
-  isMember: true,
-};
-
-const mockEmiData = [
-  {
-    _id: "emi001",
-    userId: "user123",
-    orderId: "order001",
-    totalAmount: 50000,
-    downPayment: 10000,
-    processingFee: 500,
-    billingCycleInDays: 30,
-    totalInstallments: 12,
-    installmentAmount: 3500,
-    paidInstallments: 4,
-    nextDueDate: "2024-02-15",
-    status: "ongoing",
-    penalty: 0,
-    createdAt: "2023-10-15",
-    paymentHistory: [
-      {
-        _id: "pay001",
-        transactionId: "txn001",
-        date: "2023-11-15",
-        amount: 3500,
-        status: "paid",
-        remarks: "On-time payment",
-      },
-      {
-        _id: "pay002",
-        transactionId: "txn002",
-        date: "2023-12-15",
-        amount: 3500,
-        status: "paid",
-        remarks: "On-time payment",
-      },
-      {
-        _id: "pay003",
-        transactionId: "txn003",
-        date: "2024-01-15",
-        amount: 3500,
-        status: "paid",
-        remarks: "On-time payment",
-      },
-      {
-        _id: "pay004",
-        transactionId: "txn004",
-        date: "2024-01-20",
-        amount: 3500,
-        status: "paid",
-        remarks: "Late payment - 5 days",
-      },
-    ],
-    orderDetails: {
-      items: [{ productName: "Premium Laptop", quantity: 1, price: 50000 }],
-      vendorName: "TechStore",
-    },
-  },
-  {
-    _id: "emi002",
-    userId: "user123",
-    orderId: "order002",
-    totalAmount: 25000,
-    downPayment: 5000,
-    processingFee: 250,
-    billingCycleInDays: 15,
-    totalInstallments: 8,
-    installmentAmount: 2500,
-    paidInstallments: 8,
-    nextDueDate: null,
-    status: "completed",
-    penalty: 0,
-    createdAt: "2023-08-01",
-    paymentHistory: [
-      {
-        _id: "pay005",
-        transactionId: "txn005",
-        date: "2023-08-15",
-        amount: 2500,
-        status: "paid",
-        remarks: "On-time payment",
-      },
-      {
-        _id: "pay006",
-        transactionId: "txn006",
-        date: "2023-09-01",
-        amount: 2500,
-        status: "paid",
-        remarks: "On-time payment",
-      },
-      // ... more payment history
-    ],
-    orderDetails: {
-      items: [{ productName: "Smartphone", quantity: 1, price: 25000 }],
-      vendorName: "MobileHub",
-    },
-  },
-  {
-    _id: "emi003",
-    userId: "user123",
-    orderId: "order003",
-    totalAmount: 75000,
-    downPayment: 15000,
-    processingFee: 750,
-    billingCycleInDays: 30,
-    totalInstallments: 18,
-    installmentAmount: 3500,
-    paidInstallments: 2,
-    nextDueDate: "2024-01-10",
-    status: "ongoing",
-    penalty: 500,
-    createdAt: "2023-11-01",
-    paymentHistory: [
-      {
-        _id: "pay007",
-        transactionId: "txn007",
-        date: "2023-12-01",
-        amount: 3500,
-        status: "paid",
-        remarks: "On-time payment",
-      },
-      {
-        _id: "pay008",
-        transactionId: "txn008",
-        date: "2024-01-01",
-        amount: 3500,
-        status: "paid",
-        remarks: "On-time payment",
-      },
-    ],
-    orderDetails: {
-      items: [{ productName: "Home Appliance Set", quantity: 1, price: 75000 }],
-      vendorName: "HomeStore",
-    },
-  },
-];
+import { useSession } from "../../../context/SessionContext";
+import { fetchUserEmiDetailsByUser } from "../../../../api/emi";
 
 function EmiSchedule() {
   const [selectedEmi, setSelectedEmi] = useState(null);
@@ -202,6 +59,33 @@ function EmiSchedule() {
   const [paymentRemarks, setPaymentRemarks] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
+  // Initialize emiData as null or empty array to handle loading state
+  const [emiData, setEmiData] = useState(null);
+  const { session, loading: sessionLoading, user } = useSession(); // Renamed loading to sessionLoading to avoid conflict
+
+  /**
+   * Fetches EMI details for the current user from the backend.
+   * @param {string} userId - The ID of the user.
+   */
+  async function fetchData(userId) {
+    try {
+      const res = await fetchUserEmiDetailsByUser(userId);
+      console.log("Fetched EMI Data:", res);
+      // Set the emiDetails array from the response
+      setEmiData(res.data); // Store the entire data object
+    } catch (error) {
+      console.error("Error fetching EMI data:", error);
+      // Handle error, e.g., show an alert to the user
+      setEmiData({ emiDetails: [], overdueAmount: 0, totalRemainingAmount: 0 }); // Set to empty on error
+    }
+  }
+
+  useEffect(() => {
+    // Fetch data only if session is loaded and a user ID is available
+    if (!sessionLoading && session?.id) {
+      fetchData(session.id);
+    }
+  }, [sessionLoading, session]); // Depend on sessionLoading and session changes
 
   const getStatusBadge = (status) => {
     const statusConfig = {
@@ -276,12 +160,13 @@ function EmiSchedule() {
     setSelectedEmi(null);
 
     // In real app, you would make API call here
-    alert("Payment processed successfully!");
+    alert("Payment processed successfully!"); // Consider replacing alert with a custom dialog/toast
   };
 
-  const filteredEmis = mockEmiData.filter((emi) => {
+  // Use emiData.emiDetails for filtering, ensuring it's an array
+  const filteredEmis = (emiData?.emiDetails || []).filter((emi) => {
     const matchesSearch =
-      emi.orderDetails.items[0].productName
+      emi.orderDetails.items[0].productName // Assuming orderDetails and items[0] always exist
         .toLowerCase()
         .includes(searchTerm.toLowerCase()) ||
       emi.orderDetails.vendorName
@@ -291,20 +176,38 @@ function EmiSchedule() {
     return matchesSearch && matchesStatus;
   });
 
-  const totalActiveEmis = mockEmiData.filter(
+  // Calculate summary statistics from emiData
+  const totalActiveEmis = (emiData?.emiDetails || []).filter(
     (emi) => emi.status === "ongoing"
   ).length;
-  const totalOverdueEmis = mockEmiData.filter(
-    (emi) => emi.status === "ongoing" && isOverdue(emi.nextDueDate)
-  ).length;
-  const totalOutstanding = mockEmiData
-    .filter((emi) => emi.status === "ongoing")
-    .reduce(
-      (sum, emi) =>
-        sum +
-        (emi.totalInstallments - emi.paidInstallments) * emi.installmentAmount,
-      0
+  // Use overdueAmount directly from API response
+  const totalOverdueAmount = emiData?.overdueAmount || 0;
+  // Use totalRemainingAmount directly from API response
+  const totalOutstanding = emiData?.totalRemainingAmount || 0;
+
+  // Show loading spinner if session is loading or EMI data is not yet fetched
+  if (sessionLoading || emiData === null) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Loader2 className="h-10 w-10 animate-spin text-purple-500" />
+        <p className="ml-4 text-lg text-gray-600">Loading EMI data...</p>
+      </div>
     );
+  }
+
+  // Display an error or login prompt if the session is not authenticated or user ID is missing
+  if (!session?.id) {
+    return (
+      <div className="flex flex-col justify-center items-center h-screen text-center p-4">
+        <Alert variant="destructive">
+          <AlertTitle>Authentication Required!</AlertTitle>
+          <AlertDescription>
+            Please log in to view your EMI schedule.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
@@ -339,10 +242,10 @@ function EmiSchedule() {
             <CardContent className="p-4">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="w-5 h-5 text-red-600" />
-                <span className="text-sm text-red-600">Overdue</span>
+                <span className="text-sm text-red-600">Overdue Amount</span>
               </div>
               <p className="text-2xl font-bold text-red-700">
-                {totalOverdueEmis}
+                ₹{totalOverdueAmount.toLocaleString()}
               </p>
             </CardContent>
           </Card>
@@ -366,7 +269,7 @@ function EmiSchedule() {
                 <span className="text-sm text-green-600">Wallet Balance</span>
               </div>
               <p className="text-2xl font-bold text-green-700">
-                ₹{userData.purchaseWallet.toLocaleString()}
+                ₹{user.purchaseWallet.toLocaleString()}
               </p>
             </CardContent>
           </Card>
@@ -415,322 +318,342 @@ function EmiSchedule() {
 
             {/* EMI Cards */}
             <div className="space-y-4">
-              {filteredEmis.map((emi) => {
-                const progress =
-                  (emi.paidInstallments / emi.totalInstallments) * 100;
-                const daysUntilDue = getDaysUntilDue(emi.nextDueDate);
-                const overdue = isOverdue(emi.nextDueDate);
+              {filteredEmis.length > 0 ? (
+                filteredEmis.map((emi) => {
+                  const progress =
+                    (emi.paidInstallments / emi.totalInstallments) * 100;
+                  const daysUntilDue = getDaysUntilDue(emi.nextDueDate);
+                  const overdue = isOverdue(emi.nextDueDate);
 
-                return (
-                  <Card
-                    key={emi._id}
-                    className={`border-l-4 ${
-                      overdue
-                        ? "border-l-red-500"
-                        : emi.status === "completed"
-                        ? "border-l-green-500"
-                        : "border-l-blue-500"
-                    }`}
-                  >
-                    <CardContent className="p-6">
-                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        {/* EMI Details */}
-                        <div className="lg:col-span-2">
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-                            <div>
-                              <h3 className="text-lg font-semibold text-gray-900">
-                                {emi.orderDetails.items[0].productName}
-                              </h3>
-                              <p className="text-sm text-gray-600">
-                                Vendor: {emi.orderDetails.vendorName} • EMI ID:{" "}
-                                {emi._id}
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {getStatusBadge(emi.status)}
-                              {overdue && (
-                                <Badge
-                                  variant="destructive"
-                                  className="flex items-center gap-1"
-                                >
-                                  <AlertTriangle className="w-3 h-3" />
-                                  Overdue
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                            <div>
-                              <p className="text-xs text-gray-500">
-                                Total Amount
-                              </p>
-                              <p className="font-semibold">
-                                ₹{emi.totalAmount.toLocaleString()}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-gray-500">
-                                Monthly EMI
-                              </p>
-                              <p className="font-semibold">
-                                ₹{emi.installmentAmount.toLocaleString()}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-gray-500">
-                                Paid/Total
-                              </p>
-                              <p className="font-semibold">
-                                {emi.paidInstallments}/{emi.totalInstallments}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-gray-500">Next Due</p>
-                              <p
-                                className={`font-semibold ${
-                                  overdue ? "text-red-600" : ""
-                                }`}
-                              >
-                                {emi.nextDueDate
-                                  ? new Date(
-                                      emi.nextDueDate
-                                    ).toLocaleDateString()
-                                  : "Completed"}
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="mb-4">
-                            <div className="flex justify-between items-center mb-2">
-                              <span className="text-sm text-gray-600">
-                                Progress
-                              </span>
-                              <span className="text-sm font-medium">
-                                {Math.round(progress)}%
-                              </span>
-                            </div>
-                            <Progress value={progress} className="h-2" />
-                          </div>
-
-                          {emi.penalty > 0 && (
-                            <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                  return (
+                    <Card
+                      key={emi._id}
+                      className={`border-l-4 ${
+                        overdue
+                          ? "border-l-red-500"
+                          : emi.status === "completed"
+                          ? "border-l-green-500"
+                          : "border-l-blue-500"
+                      }`}
+                    >
+                      <CardContent className="p-6">
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                          {/* EMI Details */}
+                          <div className="lg:col-span-2">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                              <div>
+                                <h3 className="text-lg font-semibold text-gray-900">
+                                  {emi.orderDetails?.items?.[0]?.productName ||
+                                    "N/A Product"}
+                                </h3>
+                                <p className="text-sm text-gray-600">
+                                  Vendor:{" "}
+                                  {emi.orderDetails?.vendorName || "N/A"} • EMI
+                                  ID: {emi._id}
+                                </p>
+                              </div>
                               <div className="flex items-center gap-2">
-                                <AlertTriangle className="w-4 h-4 text-red-600" />
-                                <span className="text-sm font-medium text-red-800">
-                                  Penalty: ₹{emi.penalty.toLocaleString()}
-                                </span>
+                                {getStatusBadge(emi.status)}
+                                {overdue && (
+                                  <Badge
+                                    variant="destructive"
+                                    className="flex items-center gap-1"
+                                  >
+                                    <AlertTriangle className="w-3 h-3" />
+                                    Overdue
+                                  </Badge>
+                                )}
                               </div>
                             </div>
-                          )}
-                        </div>
 
-                        {/* Actions */}
-                        <div className="flex flex-col gap-3">
-                          {emi.status === "ongoing" && (
-                            <Dialog
-                              open={
-                                paymentDialog && selectedEmi?._id === emi._id
-                              }
-                              onOpenChange={setPaymentDialog}
-                            >
-                              <DialogTrigger asChild>
-                                <Button
-                                  className="w-full"
-                                  onClick={() => {
-                                    setSelectedEmi(emi);
-                                    setPaymentAmount(
-                                      emi.installmentAmount.toString()
-                                    );
-                                  }}
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                              <div>
+                                <p className="text-xs text-gray-500">
+                                  Total Amount
+                                </p>
+                                <p className="font-semibold">
+                                  ₹{emi.totalAmount.toLocaleString()}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-500">
+                                  Monthly EMI
+                                </p>
+                                <p className="font-semibold">
+                                  ₹{emi.installmentAmount.toLocaleString()}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-500">
+                                  Paid/Total
+                                </p>
+                                <p className="font-semibold">
+                                  {emi.paidInstallments}/{emi.totalInstallments}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-500">
+                                  Next Due
+                                </p>
+                                <p
+                                  className={`font-semibold ${
+                                    overdue ? "text-red-600" : ""
+                                  }`}
                                 >
-                                  <CreditCard className="w-4 h-4 mr-2" />
-                                  Make Payment
+                                  {emi.nextDueDate
+                                    ? new Date(
+                                        emi.nextDueDate
+                                      ).toLocaleDateString()
+                                    : "Completed"}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="mb-4">
+                              <div className="flex justify-between items-center mb-2">
+                                <span className="text-sm text-gray-600">
+                                  Progress
+                                </span>
+                                <span className="text-sm font-medium">
+                                  {Math.round(progress)}%
+                                </span>
+                              </div>
+                              <Progress value={progress} className="h-2" />
+                            </div>
+
+                            {emi.penalty > 0 && (
+                              <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                                <div className="flex items-center gap-2">
+                                  <AlertTriangle className="w-4 h-4 text-red-600" />
+                                  <span className="text-sm font-medium text-red-800">
+                                    Penalty: ₹{emi.penalty.toLocaleString()}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Actions */}
+                          <div className="flex flex-col gap-3">
+                            {emi.status === "ongoing" && (
+                              <Dialog
+                                open={
+                                  paymentDialog && selectedEmi?._id === emi._id
+                                }
+                                onOpenChange={setPaymentDialog}
+                              >
+                                <DialogTrigger asChild>
+                                  <Button
+                                    className="w-full"
+                                    onClick={() => {
+                                      setSelectedEmi(emi);
+                                      setPaymentAmount(
+                                        emi.installmentAmount.toString()
+                                      );
+                                    }}
+                                  >
+                                    <CreditCard className="w-4 h-4 mr-2" />
+                                    Make Payment
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-md">
+                                  <DialogHeader>
+                                    <DialogTitle>Make EMI Payment</DialogTitle>
+                                    <DialogDescription>
+                                      Pay your EMI installment for{" "}
+                                      {emi.orderDetails?.items?.[0]
+                                        ?.productName || "this EMI"}
+                                    </DialogDescription>
+                                  </DialogHeader>
+
+                                  <div className="space-y-4">
+                                    <div className="bg-gray-50 p-4 rounded-lg">
+                                      <div className="grid grid-cols-2 gap-4 text-sm">
+                                        <div>
+                                          <p className="text-gray-600">
+                                            EMI Amount
+                                          </p>
+                                          <p className="font-semibold">
+                                            ₹
+                                            {emi.installmentAmount.toLocaleString()}
+                                          </p>
+                                        </div>
+                                        <div>
+                                          <p className="text-gray-600">
+                                            Due Date
+                                          </p>
+                                          <p className="font-semibold">
+                                            {emi.nextDueDate
+                                              ? new Date(
+                                                  emi.nextDueDate
+                                                ).toLocaleDateString()
+                                              : "N/A"}
+                                          </p>
+                                        </div>
+                                        {emi.penalty > 0 && (
+                                          <>
+                                            <div>
+                                              <p className="text-gray-600">
+                                                Penalty
+                                              </p>
+                                              <p className="font-semibold text-red-600">
+                                                ₹{emi.penalty.toLocaleString()}
+                                              </p>
+                                            </div>
+                                            <div>
+                                              <p className="text-gray-600">
+                                                Total Due
+                                              </p>
+                                              <p className="font-semibold">
+                                                ₹
+                                                {(
+                                                  emi.installmentAmount +
+                                                  emi.penalty
+                                                ).toLocaleString()}
+                                              </p>
+                                            </div>
+                                          </>
+                                        )}
+                                      </div>
+                                    </div>
+
+                                    <div>
+                                      <Label htmlFor="amount">
+                                        Payment Amount
+                                      </Label>
+                                      <Input
+                                        id="amount"
+                                        type="number"
+                                        value={paymentAmount}
+                                        onChange={(e) =>
+                                          setPaymentAmount(e.target.value)
+                                        }
+                                        placeholder="Enter amount"
+                                      />
+                                    </div>
+
+                                    <div>
+                                      <Label htmlFor="remarks">
+                                        Remarks (Optional)
+                                      </Label>
+                                      <Textarea
+                                        id="remarks"
+                                        value={paymentRemarks}
+                                        onChange={(e) =>
+                                          setPaymentRemarks(e.target.value)
+                                        }
+                                        placeholder="Add any remarks..."
+                                        rows={3}
+                                      />
+                                    </div>
+
+                                    <div className="bg-blue-50 p-3 rounded-lg">
+                                      <p className="text-sm text-blue-800">
+                                        <strong>Available Balance:</strong> ₹
+                                        {user.purchaseWallet.toLocaleString()}
+                                      </p>
+                                    </div>
+
+                                    <div className="flex gap-3">
+                                      <Button
+                                        variant="outline"
+                                        onClick={() => setPaymentDialog(false)}
+                                        className="flex-1"
+                                      >
+                                        Cancel
+                                      </Button>
+                                      <Button
+                                        onClick={handlePayment}
+                                        className="flex-1"
+                                      >
+                                        Pay Now
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
+                            )}
+
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button variant="outline" className="w-full">
+                                  <Eye className="w-4 h-4 mr-2" />
+                                  View History
                                 </Button>
                               </DialogTrigger>
-                              <DialogContent className="sm:max-w-md">
+                              <DialogContent className="sm:max-w-4xl">
                                 <DialogHeader>
-                                  <DialogTitle>Make EMI Payment</DialogTitle>
+                                  <DialogTitle>Payment History</DialogTitle>
                                   <DialogDescription>
-                                    Pay your EMI installment for{" "}
-                                    {emi.orderDetails.items[0].productName}
+                                    Payment history for{" "}
+                                    {emi.orderDetails?.items?.[0]
+                                      ?.productName || "this EMI"}
                                   </DialogDescription>
                                 </DialogHeader>
 
-                                <div className="space-y-4">
-                                  <div className="bg-gray-50 p-4 rounded-lg">
-                                    <div className="grid grid-cols-2 gap-4 text-sm">
-                                      <div>
-                                        <p className="text-gray-600">
-                                          EMI Amount
-                                        </p>
-                                        <p className="font-semibold">
-                                          ₹
-                                          {emi.installmentAmount.toLocaleString()}
-                                        </p>
-                                      </div>
-                                      <div>
-                                        <p className="text-gray-600">
-                                          Due Date
-                                        </p>
-                                        <p className="font-semibold">
-                                          {new Date(
-                                            emi.nextDueDate
-                                          ).toLocaleDateString()}
-                                        </p>
-                                      </div>
-                                      {emi.penalty > 0 && (
-                                        <>
-                                          <div>
-                                            <p className="text-gray-600">
-                                              Penalty
-                                            </p>
-                                            <p className="font-semibold text-red-600">
-                                              ₹{emi.penalty.toLocaleString()}
-                                            </p>
-                                          </div>
-                                          <div>
-                                            <p className="text-gray-600">
-                                              Total Due
-                                            </p>
-                                            <p className="font-semibold">
-                                              ₹
-                                              {(
-                                                emi.installmentAmount +
-                                                emi.penalty
-                                              ).toLocaleString()}
-                                            </p>
-                                          </div>
-                                        </>
+                                <div className="max-h-96 overflow-y-auto">
+                                  <Table>
+                                    <TableHeader>
+                                      <TableRow>
+                                        <TableHead>Date</TableHead>
+                                        <TableHead>Amount</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead>Remarks</TableHead>
+                                      </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                      {emi.paymentHistory &&
+                                      emi.paymentHistory.length > 0 ? (
+                                        emi.paymentHistory.map((payment) => (
+                                          <TableRow key={payment._id}>
+                                            <TableCell>
+                                              {new Date(
+                                                payment.date
+                                              ).toLocaleDateString()}
+                                            </TableCell>
+                                            <TableCell>
+                                              ₹{payment.amount.toLocaleString()}
+                                            </TableCell>
+                                            <TableCell>
+                                              {getPaymentStatusBadge(
+                                                payment.status
+                                              )}
+                                            </TableCell>
+                                            <TableCell className="text-sm text-gray-600">
+                                              {payment.remarks}
+                                            </TableCell>
+                                          </TableRow>
+                                        ))
+                                      ) : (
+                                        <TableRow>
+                                          <TableCell
+                                            colSpan={4}
+                                            className="text-center text-gray-500"
+                                          >
+                                            No payment history available.
+                                          </TableCell>
+                                        </TableRow>
                                       )}
-                                    </div>
-                                  </div>
-
-                                  <div>
-                                    <Label htmlFor="amount">
-                                      Payment Amount
-                                    </Label>
-                                    <Input
-                                      id="amount"
-                                      type="number"
-                                      value={paymentAmount}
-                                      onChange={(e) =>
-                                        setPaymentAmount(e.target.value)
-                                      }
-                                      placeholder="Enter amount"
-                                    />
-                                  </div>
-
-                                  <div>
-                                    <Label htmlFor="remarks">
-                                      Remarks (Optional)
-                                    </Label>
-                                    <Textarea
-                                      id="remarks"
-                                      value={paymentRemarks}
-                                      onChange={(e) =>
-                                        setPaymentRemarks(e.target.value)
-                                      }
-                                      placeholder="Add any remarks..."
-                                      rows={3}
-                                    />
-                                  </div>
-
-                                  <div className="bg-blue-50 p-3 rounded-lg">
-                                    <p className="text-sm text-blue-800">
-                                      <strong>Available Balance:</strong> ₹
-                                      {userData.purchaseWallet.toLocaleString()}
-                                    </p>
-                                  </div>
-
-                                  <div className="flex gap-3">
-                                    <Button
-                                      variant="outline"
-                                      onClick={() => setPaymentDialog(false)}
-                                      className="flex-1"
-                                    >
-                                      Cancel
-                                    </Button>
-                                    <Button
-                                      onClick={handlePayment}
-                                      className="flex-1"
-                                    >
-                                      Pay Now
-                                    </Button>
-                                  </div>
+                                    </TableBody>
+                                  </Table>
                                 </div>
                               </DialogContent>
                             </Dialog>
-                          )}
-
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button variant="outline" className="w-full">
-                                <Eye className="w-4 h-4 mr-2" />
-                                View History
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className="sm:max-w-4xl">
-                              <DialogHeader>
-                                <DialogTitle>Payment History</DialogTitle>
-                                <DialogDescription>
-                                  Payment history for{" "}
-                                  {emi.orderDetails.items[0].productName}
-                                </DialogDescription>
-                              </DialogHeader>
-
-                              <div className="max-h-96 overflow-y-auto">
-                                <Table>
-                                  <TableHeader>
-                                    <TableRow>
-                                      <TableHead>Date</TableHead>
-                                      <TableHead>Amount</TableHead>
-                                      <TableHead>Status</TableHead>
-                                      <TableHead>Remarks</TableHead>
-                                    </TableRow>
-                                  </TableHeader>
-                                  <TableBody>
-                                    {emi.paymentHistory.map((payment) => (
-                                      <TableRow key={payment._id}>
-                                        <TableCell>
-                                          {new Date(
-                                            payment.date
-                                          ).toLocaleDateString()}
-                                        </TableCell>
-                                        <TableCell>
-                                          ₹{payment.amount.toLocaleString()}
-                                        </TableCell>
-                                        <TableCell>
-                                          {getPaymentStatusBadge(
-                                            payment.status
-                                          )}
-                                        </TableCell>
-                                        <TableCell className="text-sm text-gray-600">
-                                          {payment.remarks}
-                                        </TableCell>
-                                      </TableRow>
-                                    ))}
-                                  </TableBody>
-                                </Table>
-                              </div>
-                            </DialogContent>
-                          </Dialog>
+                          </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+                      </CardContent>
+                    </Card>
+                  );
+                })
+              ) : (
+                <div className="text-center py-12">
+                  <CreditCard className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600">
+                    No EMIs found matching your criteria.
+                  </p>
+                </div>
+              )}
             </div>
-
-            {filteredEmis.length === 0 && (
-              <div className="text-center py-12">
-                <CreditCard className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">
-                  No EMIs found matching your criteria.
-                </p>
-              </div>
-            )}
           </CardContent>
         </Card>
       </div>
