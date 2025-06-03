@@ -85,4 +85,46 @@ export const getUserProfile = async (userId) => {
     throw error.response?.data || { message: "Failed to fetch profile" };
   }
 };
+export const fetchUserDetails = async (userId) => {
+  try {
+    const token = localStorage.getItem("authToken");
+    if (!token) throw new Error("Token not found");
 
+    const response = await apiClient.get(`/admin-dashboard/user/${userId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`, // Optional if you're not using protect middleware
+        },
+      }
+    );
+    console.log("fetch api call", response);
+    return response.data;
+  } catch (error) {
+    console.error(error)
+    throw error.response?.data || { message: "Failed to fetch profile" };
+  }
+};
+
+// Function to fetch user's referral performance (requires admin role)
+export const fetchUserReferralPerformance = async (userId, date) => {
+  try {
+
+    const token = localStorage.getItem("authToken");
+    if (!token) throw new Error("Token not found");
+    const response = await apiClient.get(`/admin-dashboard/user/referral-performance/${userId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      data: {
+        date: date, // Send date as a query parameter if provided
+      },
+    });
+    return response.data;
+  } catch (error) {
+
+    console.error('Error fetching user referral performance:', error);
+    throw error;
+  }
+};
+
+// Alternatively, to send the date in the body for referral performanc

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
+import html2pdf from "html2pdf.js";
 import {
   Calendar,
   ChevronLeft,
@@ -50,114 +51,21 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useParams } from "react-router-dom";
-
-// Mock data for demonstration
-const userData = {
-  id: "USR001",
-  name: "John Doe",
-  email: "john.doe@example.com",
-  phone: "+91 98765 43210",
-  joinDate: "2023-01-15",
-  profileScore: 85,
-  totalReferrals: 45,
-  activeReferrals: 32,
-  totalEarnings: 154200,
-};
-
-const mockReferralData = [
-  {
-    id: "REF001",
-    name: "Alice Johnson",
-    email: "alice@example.com",
-    joinDate: "2024-01-15",
-    membershipStatus: "active",
-    membershipType: "Premium",
-    amountPaid: 2999,
-    paymentDate: "2024-01-15",
-  },
-  {
-    id: "REF002",
-    name: "Bob Smith",
-    email: "bob@example.com",
-    joinDate: "2024-01-15",
-    membershipStatus: "inactive",
-    membershipType: "Basic",
-    amountPaid: 999,
-    paymentDate: "2024-01-15",
-  },
-  {
-    id: "REF003",
-    name: "Carol Wilson",
-    email: "carol@example.com",
-    joinDate: "2024-01-15",
-    membershipStatus: "active",
-    membershipType: "Premium",
-    amountPaid: 2999,
-    paymentDate: "2024-01-15",
-  },
-  {
-    id: "REF004",
-    name: "David Brown",
-    email: "david@example.com",
-    joinDate: "2024-01-15",
-    membershipStatus: "active",
-    membershipType: "Gold",
-    amountPaid: 4999,
-    paymentDate: "2024-01-15",
-  },
-];
-
-const mockEmiData = [
-  {
-    id: "EMI001",
-    orderType: "Premium Membership",
-    totalAmount: 12000,
-    paidAmount: 6000,
-    remainingAmount: 6000,
-    monthlyEmi: 2000,
-    nextPaymentDate: "2024-02-15",
-    dueDate: "2024-02-20",
-    status: "active",
-    paymentsCompleted: 3,
-    totalPayments: 6,
-    lastPaymentDate: "2024-01-15",
-  },
-  {
-    id: "EMI002",
-    orderType: "Course Bundle",
-    totalAmount: 8000,
-    paidAmount: 8000,
-    remainingAmount: 0,
-    monthlyEmi: 2000,
-    nextPaymentDate: null,
-    dueDate: null,
-    status: "completed",
-    paymentsCompleted: 4,
-    totalPayments: 4,
-    lastPaymentDate: "2023-12-15",
-  },
-  {
-    id: "EMI003",
-    orderType: "Advanced Course",
-    totalAmount: 15000,
-    paidAmount: 3000,
-    remainingAmount: 12000,
-    monthlyEmi: 3000,
-    nextPaymentDate: "2024-01-25",
-    dueDate: "2024-01-30",
-    status: "overdue",
-    paymentsCompleted: 1,
-    totalPayments: 5,
-    lastPaymentDate: "2023-12-25",
-  },
-];
+import CashbackCardFront from "../../../components/CashbackCardFront";
+import CashbackCardBack from "../../../components/CashbackCardBack";
+import { fetchUserDetails, fetchUserReferralPerformance } from "../../../../api/auth"; // Adjust the import path for your API functions
+import axios from "axios";
 
 function UsersDetailsPageAdmin() {
+  const pdfRef = useRef();
+  const [userData, setUserData] = useState(null);
+  const [referralData, setReferralData] = useState(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const params = useParams();
   const { id } = params;
+  const authToken = localStorage.getItem("authToken"); // Assuming you store the token in localStorage
   const formatDate = (date) => {
     return date.toLocaleDateString("en-US", {
       year: "numeric",
@@ -166,6 +74,40 @@ function UsersDetailsPageAdmin() {
     });
   };
 
+  useEffect(() => {
+    const fetchUser = async () => {
+      if (id) {
+        try {
+          const data = await fetchUserDetails(id);
+          console.log(data, "User Dettails Data");
+          setUserData(data.data);
+        } catch (error) {
+          console.error("Error fetching user data:", error);
+          // Handle error (e.g., redirect to error page)
+        }
+      }
+    };
+
+    fetchUser();
+  }, [id]);
+
+  useEffect(() => {
+    const fetchReferrals = async () => {
+      if (id) {
+        try {
+          const formattedDate = selectedDate ? selectedDate.toISOString().split('T')[0] : null;
+          const data = await fetchUserReferralPerformance(id, authToken, formattedDate);
+          setReferralData(data.referrals);
+        } catch (error) {
+          console.error("Error fetching referral data:", error);
+          // Handle error
+        }
+      }
+    };
+
+    fetchReferrals();
+  }, [id, selectedDate]);
+  console.log(referralData, userData);
   const getStatusBadge = (status) => {
     const statusConfig = {
       active: {
@@ -225,36 +167,37 @@ function UsersDetailsPageAdmin() {
     return "text-red-600";
   };
 
-  const handleDownloadCard = (cardType) => {
-    // Create a dummy file download
-    const element = document.createElement("a");
-    const file = new Blob(
-      [
-        `${cardType} - User: ${
-          userData.name
-        }\nGenerated on: ${new Date().toLocaleString()}`,
-      ],
-      {
-        type: "text/plain",
-      }
-    );
-    element.href = URL.createObjectURL(file);
-    element.download = `${cardType
-      .toLowerCase()
-      .replace(" ", "_")}_${userData.name.toLowerCase().replace(" ", "_")}.txt`;
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
-  };
-
-  const filteredReferrals = mockReferralData.filter((referral) => {
+  const filteredReferrals = (referralData || []).filter((referral) => {
     const matchesSearch =
-      referral.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      referral.email.toLowerCase().includes(searchTerm.toLowerCase());
+      referral.referredUser.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      referral.referredUser.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus =
-      statusFilter === "all" || referral.membershipStatus === statusFilter;
+      statusFilter === "all" || (referral.membership && referral.membership.amountPaid ? "active" : "inactive") === statusFilter; // Adjust status logic based on your actual data
     return matchesSearch && matchesStatus;
   });
+
+  const handleExportPDF = () => {
+    const element = pdfRef.current;
+    console.log("handle export console", element)
+
+    const opt = {
+      margin: 0.3,
+      filename: "cashback_cards.pdf",
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: "in", format: "letter", orientation: "portrait" },
+    };
+
+    html2pdf().from(element).set(opt).save();
+  };
+
+  if (!userData) {
+    return <div>Loading user data...</div>;
+  }
+
+  if (!referralData) {
+    return <div>Loading referral performance...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
@@ -267,7 +210,7 @@ function UsersDetailsPageAdmin() {
                 User Details
               </h1>
               <p className="text-gray-600">
-                Manage user performance and EMI details -{id}
+                Manage user performance and EMI details -{userData.name}
               </p>
             </div>
           </div>
@@ -297,7 +240,7 @@ function UsersDetailsPageAdmin() {
               </div>
               <div>
                 <p className="text-sm text-gray-600">Join Date</p>
-                <p className="font-semibold">{userData.joinDate}</p>
+                <p className="font-semibold">{new Date(userData.joiningDate).toLocaleDateString()}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-600">Profile Score</p>
@@ -342,7 +285,7 @@ function UsersDetailsPageAdmin() {
                   </span>
                 </div>
                 <p className="text-2xl font-bold text-purple-700">
-                  ₹{userData.totalEarnings.toLocaleString()}
+                  ₹{userData.totalEarnings?.toLocaleString()}
                 </p>
               </div>
             </div>
@@ -350,62 +293,26 @@ function UsersDetailsPageAdmin() {
         </Card>
 
         {/* Download Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="w-full md:w-auto flex justify-end mb-4">
+          <button
+            onClick={handleExportPDF}
+            className="flex items-center gap-2 bg-blue-100 text-black border rounded-sm py-1 px-3 cursor-pointer"
+          >
+            Export
+            <Download className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
           <Card className="border-2 border-dashed border-blue-200 hover:border-blue-400 transition-colors">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 bg-blue-100 rounded-lg">
-                    <CreditCard className="w-6 h-6 text-blue-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">
-                      Membership Card
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      Download user membership details
-                    </p>
-                  </div>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleDownloadCard("Membership Card")}
-                  className="shrink-0"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Download
-                </Button>
-              </div>
+            <CardContent ref={pdfRef} className="p-6">
+              <CashbackCardFront />
             </CardContent>
           </Card>
 
           <Card className="border-2 border-dashed border-green-200 hover:border-green-400 transition-colors">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 bg-green-100 rounded-lg">
-                    <FileText className="w-6 h-6 text-green-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">
-                      Performance Report
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      Download detailed performance report
-                    </p>
-                  </div>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleDownloadCard("Performance Report")}
-                  className="shrink-0"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Download
-                </Button>
-              </div>
+              <CashbackCardBack />
             </CardContent>
           </Card>
         </div>
@@ -491,22 +398,23 @@ function UsersDetailsPageAdmin() {
                     </TableHeader>
                     <TableBody>
                       {filteredReferrals.map((referral) => (
-                        <TableRow key={referral.id}>
+                        <TableRow key={referral.referredUser._id}>
                           <TableCell className="font-medium">
-                            {referral.name}
+                            {referral.referredUser.name}
                           </TableCell>
                           <TableCell className="text-gray-600">
-                            {referral.email}
+                            {referral.referredUser.email}
                           </TableCell>
                           <TableCell>
                             {getMembershipStatusBadge(
-                              referral.membershipStatus
+                              referral.membership ? "active" : "inactive", // Adjust based on your actual data structure
+                              referral.membership?.amountPaid ? "Premium" : "Basic" // Adjust based on your actual data
                             )}
                           </TableCell>
                           <TableCell className="font-semibold">
-                            ₹{referral.amountPaid.toLocaleString()}
+                            ₹{referral.membership?.amountPaid?.toLocaleString() || '-'}
                           </TableCell>
-                          <TableCell>{referral.paymentDate}</TableCell>
+                          <TableCell>{referral.membership?.purchasedAt ? new Date(referral.membership.purchasedAt).toLocaleDateString() : '-'}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -554,22 +462,23 @@ function UsersDetailsPageAdmin() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {mockEmiData.map((emi) => (
-                        <TableRow key={emi.id}>
+                      {/* Replace mockEmiData with actual EMI data fetched from your backend */}
+                      {Array.isArray(userData?.emiHistory) ? userData.emiHistory.map((emi) => (
+                        <TableRow key={emi._id}>
                           <TableCell className="font-medium">
-                            {emi.orderType}
+                            {emi.orderId ? 'Order ID: ' + emi.orderId : 'N/A'} {/* Adjust based on your actual data */}
                           </TableCell>
                           <TableCell className="font-semibold">
-                            ₹{emi.totalAmount.toLocaleString()}
+                            ₹{emi.totalAmount?.toLocaleString()}
                           </TableCell>
                           <TableCell className="text-green-600">
-                            ₹{emi.paidAmount.toLocaleString()}
+                            ₹{emi.paidInstallments * emi.installmentAmount?.toLocaleString()}
                           </TableCell>
                           <TableCell className="text-red-600">
-                            ₹{emi.remainingAmount.toLocaleString()}
+                            ₹{(emi.totalAmount - (emi.paidInstallments * emi.installmentAmount))?.toLocaleString()}
                           </TableCell>
                           <TableCell>
-                            ₹{emi.monthlyEmi.toLocaleString()}
+                            ₹{emi.installmentAmount?.toLocaleString()}
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
@@ -577,28 +486,28 @@ function UsersDetailsPageAdmin() {
                                 <div
                                   className="bg-blue-600 h-2 rounded-full"
                                   style={{
-                                    width: `${
-                                      (emi.paymentsCompleted /
-                                        emi.totalPayments) *
+                                    width: `${(emi.paidInstallments /
+                                      emi.totalInstallments) *
                                       100
-                                    }%`,
+                                      }%`,
                                   }}
                                 ></div>
                               </div>
                               <span className="text-sm text-gray-600">
-                                {emi.paymentsCompleted}/{emi.totalPayments}
+                                {emi.paidInstallments}/{emi.totalInstallments}
                               </span>
                             </div>
                           </TableCell>
                           <TableCell>
-                            {emi.nextPaymentDate ? (
+                            {emi.nextDueDate ? (
                               <div className="text-sm">
                                 <p className="font-medium">
-                                  {emi.nextPaymentDate}
+                                  {new Date(emi.nextDueDate).toLocaleDateString()}
                                 </p>
-                                <p className="text-gray-500">
-                                  Due: {emi.dueDate}
-                                </p>
+                                {/* You might have a separate dueDate field */}
+                                {/* <p className="text-gray-500">
+                                                                    Due: {emi.dueDate}
+                                                                </p> */}
                               </div>
                             ) : (
                               <span className="text-gray-400">Completed</span>
@@ -606,7 +515,11 @@ function UsersDetailsPageAdmin() {
                           </TableCell>
                           <TableCell>{getStatusBadge(emi.status)}</TableCell>
                         </TableRow>
-                      ))}
+                      )) : (
+                        <TableRow>
+                          <TableCell colSpan={9} className="text-center py-4">No EMI data available</TableCell>
+                        </TableRow>
+                      )}
                     </TableBody>
                   </Table>
                 </div>
@@ -619,10 +532,7 @@ function UsersDetailsPageAdmin() {
                       <span className="text-sm text-blue-600">Active EMIs</span>
                     </div>
                     <p className="text-2xl font-bold text-blue-700">
-                      {
-                        mockEmiData.filter((emi) => emi.status === "active")
-                          .length
-                      }
+                      {userData?.emiHistory?.filter((emi) => emi.status === "ongoing").length || 0}
                     </p>
                   </div>
                   <div className="bg-red-50 p-4 rounded-lg">
@@ -631,10 +541,7 @@ function UsersDetailsPageAdmin() {
                       <span className="text-sm text-red-600">Overdue</span>
                     </div>
                     <p className="text-2xl font-bold text-red-700">
-                      {
-                        mockEmiData.filter((emi) => emi.status === "overdue")
-                          .length
-                      }
+                      {userData?.emiHistory?.filter((emi) => emi.status === "defaulted").length || 0}
                     </p>
                   </div>
                   <div className="bg-green-50 p-4 rounded-lg">
@@ -646,9 +553,9 @@ function UsersDetailsPageAdmin() {
                     </div>
                     <p className="text-2xl font-bold text-green-700">
                       ₹
-                      {mockEmiData
-                        .reduce((sum, emi) => sum + emi.remainingAmount, 0)
-                        .toLocaleString()}
+                      {userData?.emiHistory
+                        ?.reduce((sum, emi) => sum + (emi.totalAmount - (emi.paidInstallments * emi.installmentAmount)), 0)
+                        ?.toLocaleString() || '0'}
                     </p>
                   </div>
                 </div>

@@ -44,7 +44,6 @@ import CheckoutPage from "../components/Checkout/CheckoutPage";
 import BrowsePage from "../components/Products/Browse";
 import ProductDetailPage from "../pages/ProductDetailPage";
 import { Toaster } from "sonner";
-import CashbackCard from "../components/CashbackCard";
 import UsersDetailsPageAdmin from "../pages/Dashboard/Admin/UsersDetailsPageAdmin";
 import EmiSchedule from "../pages/Dashboard/Users/EmiSchedule";
 
@@ -66,14 +65,14 @@ const routes = [
     ),
   },
 
-  {
-    path: "/cashbackcard",
-    element: (
-      <MainLayout>
-        <CashbackCard />
-      </MainLayout>
-    ),
-  },
+  // {
+  //   path: "/cashbackcard",
+  //   element: (
+  //     <MainLayout>
+  //       <CashbackCard />
+  //     </MainLayout>
+  //   ),
+  // },
   {
     path: "/checkout",
     element: (
