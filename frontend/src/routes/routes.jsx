@@ -44,6 +44,7 @@ import CheckoutPage from "../components/Checkout/CheckoutPage";
 import BrowsePage from "../components/Products/Browse";
 import ProductDetailPage from "../pages/ProductDetailPage";
 import { Toaster } from "sonner";
+import CashbackCard from "../components/CashbackCard";
 
 const routes = [
   {
@@ -63,6 +64,14 @@ const routes = [
     ),
   },
 
+  {
+    path: "/cashbackcard",
+    element: (
+      <MainLayout>
+        <CashbackCard />
+      </MainLayout>
+    ),
+  },
   {
     path: "/checkout",
     element: (
