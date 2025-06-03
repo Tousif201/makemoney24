@@ -46,6 +46,9 @@ const userSchema = new Schema({
     expiresAt: { type: Date }, // Expiry time for OTP
     verified: { type: Boolean, default: false }, // Whether OTP is verified
     lastSentAt: { type: Date }, // When OTP was last sent
+  },accountStatus:{
+    type:String,
+    enum:["active","suspended"]
   },
   emiHistory:[{
 type:mongoose.Schema.Types.ObjectId,

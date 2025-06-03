@@ -348,3 +348,112 @@ export const getUserProfile = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+export const getUserTodayReferralPerformance = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const searchDate = req.body.date ? new Date(req.body.date) : new Date();
+    const startOfDay = new Date(searchDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(searchDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // Find the main user
+    const user = await User.findById(userId);
+    if (!user || !user.referralCode) {
+      return res.status(404).json({ message: "User not found or does not have a referral code." });
+    }
+
+    const referralCode = user.referralCode;
+
+    // Find all users referred by this user
+    const referredUsers = await User.find({ referredByCode: referralCode });
+
+    const todayReferrals = [];
+
+    for (const referredUser of referredUsers) {
+      // Check if the referred user joined today
+      const joinedToday = referredUser.joinedAt >= startOfDay && referredUser.joinedAt <= endOfDay;
+
+      if (joinedToday) {
+        // Find if the referred user purchased a membership today
+        const membershipToday = await Membership.findOne({
+          userId: referredUser._id,
+          purchasedAt: { $gte: startOfDay, $lte: endOfDay },
+        }).populate('transactionId');
+
+        todayReferrals.push({
+          referredUser: {
+            _id: referredUser._id,
+            name: referredUser.name,
+            email: referredUser.email,
+            phone: referredUser.phone,
+            joinedAt: referredUser.joinedAt,
+          },
+          membership: membershipToday ? {
+            amountPaid: membershipToday.amountPaid,
+            purchasedAt: membershipToday.purchasedAt,
+            transactionId: membershipToday.transactionId?._id || null,
+          } : null,
+        });
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      date: searchDate,
+      referralsCount: todayReferrals.length,
+      referrals: todayReferrals,
+    });
+
+  } catch (error) {
+    console.error("Error fetching user's today referral performance:", error);
+    res.status(500).json({ message: "Failed to fetch user's today referral performance", error: error.message });
+  }
+};
+
+
+// ============================
+// File: controllers/user.controller.js
+// ============================
+
+import { User } from "../models/User.model.js";
+
+export const getUserDetails = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Find the user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const totalEarnings = (user.withdrawableWallet || 0) + (user.purchaseWallet || 0);
+
+    // Get the total number of referrals
+    const totalReferralsCount = await User.countDocuments({ referredByCode: user.referralCode });
+
+    // Get the number of active referrals (those who are members)
+    const activeReferralsCount = await User.countDocuments({
+      referredByCode: user.referralCode,
+      isMember: true,
+    });
+
+    const userDetails = {
+      email: user.email,
+      phone: user.phone,
+      joiningDate: user.createdAt,
+      profileScore: user.profileScore,
+      totalReferrals: totalReferralsCount,
+      activeReferrals: activeReferralsCount,
+      totalEarnings: totalEarnings,
+    };
+
+    res.status(200).json({ success: true, data: userDetails });
+
+  } catch (error) {
+    console.error("Error fetching user details:", error);
+    res.status(500).json({ message: "Failed to fetch user details", error: error.message });
+  }
+};

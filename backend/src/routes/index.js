@@ -23,6 +23,7 @@ import walletRoutes from "./wallet.routes.js";
 import referralRouter from "./referral.routes.js";
 import razorpayRouter from "./razorpay.routes.js";
 import checkoutRouter from "./checkout.route.js";
+import emiRouter from "./emi.routes.js";
 const router = express.Router();
 
 // Mount the routers
@@ -50,4 +51,5 @@ router.use("/wallet", walletRoutes);
 router.use("/referral", referralRouter);
 router.use("/razorpay", razorpayRouter);
 router.use("/checkout", checkoutRouter);
+router.use("/emi", emiRouter);
 export default router;
