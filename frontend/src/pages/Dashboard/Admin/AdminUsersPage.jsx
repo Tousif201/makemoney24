@@ -22,6 +22,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getAdminDashboard } from "../../../../api/user"; // Adjust this path if necessary
 import { Link } from "react-router-dom";
 import UpdateUserStatusDialog from "../../../components/Dashboad/Admin/UpdateUserStatusDialog";
+import UpgradeUserDialog from "../../../components/Dashboad/Admin/UpgradeUserDialog";
 
 export default function UsersPage() {
   const [dashboardData, setDashboardData] = useState(null);
@@ -289,6 +290,12 @@ export default function UsersPage() {
                             fetchDashboardData={fetchDashboardData}
                             key={user.id}
                             currentStatus={user.accountStatus}
+                          />
+                          {/* this is an temp feature  */}
+                          <UpgradeUserDialog
+                            name={user.name}
+                            userId={user.id}
+                            onUpgradeSuccess={fetchDashboardData}
                           />
                         </TableCell>
                       </TableRow>
