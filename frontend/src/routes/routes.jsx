@@ -45,6 +45,7 @@ import BrowsePage from "../components/Products/Browse";
 import ProductDetailPage from "../pages/ProductDetailPage";
 import { Toaster } from "sonner";
 import CashbackCard from "../components/CashbackCard";
+import UsersDetailsPageAdmin from "../pages/Dashboard/Admin/UsersDetailsPageAdmin";
 
 const routes = [
   {
@@ -375,6 +376,14 @@ const routes = [
     element: (
       <DashboardLayout>
         <AdminUsersPage />
+      </DashboardLayout>
+    ),
+  },
+  {
+    path: "/dashboard/admin/users/:id",
+    element: (
+      <DashboardLayout>
+        <UsersDetailsPageAdmin />
       </DashboardLayout>
     ),
   },

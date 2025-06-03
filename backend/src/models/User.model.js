@@ -47,6 +47,10 @@ const userSchema = new Schema({
     verified: { type: Boolean, default: false }, // Whether OTP is verified
     lastSentAt: { type: Date }, // When OTP was last sent
   },
+  emiHistory:[{
+type:mongoose.Schema.Types.ObjectId,
+ref:"Emi",
+  }]
 },{
   timestamps: true // <--- ADD THIS LINE
 });
