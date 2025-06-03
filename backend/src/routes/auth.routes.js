@@ -11,6 +11,8 @@ import {
   requestPasswordResetOTP,
   verifyOTP,
   resetPassword,
+  getUserDetails,
+  getUserTodayReferralPerformance,
 } from "../controllers/auth.controller.js";
 import { protect, authorize } from "../middlewares/auth.middleware.js";
 
@@ -31,5 +33,8 @@ router.post("/profile", getUserProfile); // Get user profile
 router.get("/admin-dashboard", protect, authorize("admin", "franchise-admin"), (req, res) => {
   res.status(200).json({ message: "Welcome to the Admin Dashboard!" });
 });
+router.get("/admin-dashboard/user/:userId", protect, authorize("admin"),getUserDetails);
+router.get("/admin-dashboard/user/referral-performance/:userId", protect, authorize("admin"),getUserTodayReferralPerformance);
+
 
 export default router;
