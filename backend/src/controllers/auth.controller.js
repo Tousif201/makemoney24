@@ -457,6 +457,7 @@ export const getUserDetails = async (req, res) => {
     });
 
     const userDetails = {
+      name : user.name,
       email: user.email,
       phone: user.phone,
       joiningDate: user.createdAt,

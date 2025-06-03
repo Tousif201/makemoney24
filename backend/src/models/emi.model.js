@@ -103,4 +103,4 @@ const emiSchema = new Schema(
 );
 
 // Export the model
-export const Emi = mongoose.models.Emi || model("Emi", emiSchema);
+export const Emi =  model("Emi", emiSchema);
