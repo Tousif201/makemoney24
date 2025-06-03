@@ -417,7 +417,7 @@ export const getUserTodayReferralPerformance = async (req, res) => {
 // File: controllers/user.controller.js
 // ============================
 
-import { User } from "../models/User.model.js";
+
 
 export const getUserDetails = async (req, res) => {
   try {
@@ -441,6 +441,7 @@ export const getUserDetails = async (req, res) => {
     });
 
     const userDetails = {
+      name : user.name,
       email: user.email,
       phone: user.phone,
       joiningDate: user.createdAt,
