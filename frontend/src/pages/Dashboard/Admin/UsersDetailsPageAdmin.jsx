@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import html2pdf from "html2pdf.js";
+// import html2pdf from "html2pdf.js";
+import * as htmlToImage from 'html-to-image';
 import {
   Calendar,
   ChevronLeft,
@@ -53,19 +54,24 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useParams } from "react-router-dom";
 import CashbackCardFront from "../../../components/CashbackCardFront";
 import CashbackCardBack from "../../../components/CashbackCardBack";
-import { fetchUserDetails, fetchUserReferralPerformance } from "../../../../api/auth"; // Adjust the import path for your API functions
-import axios from "axios";
+import { fetchUserDetails, fetchUserReferralPerformance } from "../../../../api/auth";
+import { fetchUserEmiDetails } from "../../../../api/emi";
+
+import jsPDF from "jspdf";
+// import html2canvas from "html2canvas";
+
 
 function UsersDetailsPageAdmin() {
   const pdfRef = useRef();
   const [userData, setUserData] = useState(null);
   const [referralData, setReferralData] = useState(null);
+  const [emiHistory, setEmiHistory] = useState(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const params = useParams();
   const { id } = params;
-  const authToken = localStorage.getItem("authToken"); // Assuming you store the token in localStorage
+  const authToken = localStorage.getItem("token");
   const formatDate = (date) => {
     return date.toLocaleDateString("en-US", {
       year: "numeric",
@@ -79,11 +85,9 @@ function UsersDetailsPageAdmin() {
       if (id) {
         try {
           const data = await fetchUserDetails(id);
-          console.log(data, "User Dettails Data");
           setUserData(data.data);
         } catch (error) {
           console.error("Error fetching user data:", error);
-          // Handle error (e.g., redirect to error page)
         }
       }
     };
@@ -100,14 +104,30 @@ function UsersDetailsPageAdmin() {
           setReferralData(data.referrals);
         } catch (error) {
           console.error("Error fetching referral data:", error);
-          // Handle error
         }
       }
     };
 
     fetchReferrals();
-  }, [id, selectedDate]);
-  console.log(referralData, userData);
+  }, [id, selectedDate, authToken]);
+
+  useEffect(() => {
+    const fetchEmiDetails = async () => {
+      if (id) {
+        try {
+          const data = await fetchUserEmiDetails(id);
+          console.log("front end emi", data)
+          setEmiHistory(data.data.emiDetails);
+          console.log(data.data, "Emi History Data");
+        } catch (error) {
+          console.error("Error fetching EMI history:", error);
+        }
+      }
+    };
+
+    fetchEmiDetails();
+  }, [id]);
+
   const getStatusBadge = (status) => {
     const statusConfig = {
       active: {
@@ -172,25 +192,123 @@ function UsersDetailsPageAdmin() {
       referral.referredUser.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       referral.referredUser.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus =
-      statusFilter === "all" || (referral.membership && referral.membership.amountPaid ? "active" : "inactive") === statusFilter; // Adjust status logic based on your actual data
+      statusFilter === "all" || (referral.membership && referral.membership.amountPaid ? "active" : "inactive") === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
-  const handleExportPDF = () => {
-    const element = pdfRef.current;
-    console.log("handle export console", element)
+  const [isExporting, setIsExporting] = useState(false);
 
-    const opt = {
-      margin: 0.3,
-      filename: "cashback_cards.pdf",
-      image: { type: "jpeg", quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { unit: "in", format: "letter", orientation: "portrait" },
-    };
 
-    html2pdf().from(element).set(opt).save();
+
+  const handleExportPDF = async () => {
+    if (!pdfRef.current) return;
+    setIsExporting(true);
+  
+    try {
+      // 📱 Mobile view के लिए longer delay
+      await new Promise((resolve) => setTimeout(resolve, 500));
+  
+      // 🎯 Mobile detection और appropriate settings
+      const isMobile = window.innerWidth <= 768;
+      
+      // 📐 Mobile के लिए higher pixel ratio और better quality
+      const pixelRatio = isMobile ? 3 : 2;
+      
+      // 🖼️ Canvas generation with mobile-optimized settings
+      const canvas = await htmlToImage.toCanvas(pdfRef.current, {
+        pixelRatio: pixelRatio,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        // 📱 Mobile के लिए specific width/height constraints
+        width: isMobile ? pdfRef.current.scrollWidth : undefined,
+        height: isMobile ? pdfRef.current.scrollHeight : undefined,
+        // 🎨 Better quality for mobile
+        quality: 1.0,
+      });
+  
+      const imgData = canvas.toDataURL("image/png", 1.0);
+  
+      // 📄 PDF configuration - mobile के लिए optimized
+      const pdf = new jsPDF({
+        unit: "mm",
+        format: isMobile ? "a4" : "letter", // Mobile के लिए A4 better है
+        orientation: "portrait"
+      });
+  
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      
+      // 🔢 Aspect ratio calculation
+      const canvasAspectRatio = canvas.width / canvas.height;
+      const pdfAspectRatio = pdfWidth / pdfHeight;
+      
+      let finalWidth, finalHeight, offsetX = 0, offsetY = 0;
+      
+      // 📏 Mobile के लिए better fitting logic
+      if (canvasAspectRatio > pdfAspectRatio) {
+        // Canvas is wider - fit to width
+        finalWidth = pdfWidth;
+        finalHeight = pdfWidth / canvasAspectRatio;
+        offsetY = (pdfHeight - finalHeight) / 2;
+      } else {
+        // Canvas is taller - fit to height
+        finalHeight = pdfHeight;
+        finalWidth = pdfHeight * canvasAspectRatio;
+        offsetX = (pdfWidth - finalWidth) / 2;
+      }
+  
+      // 🖼️ Add image with proper centering
+      pdf.addImage(
+        imgData, 
+        "PNG", 
+        offsetX, 
+        offsetY, 
+        finalWidth, 
+        finalHeight,
+        undefined,
+        'FAST' // Better compression for mobile
+      );
+  
+      // 💾 Create PDF blob
+      const timestamp = new Date().toISOString().slice(0, 10);
+      const filename = `cashback_card_${timestamp}.pdf`;
+      
+      const pdfBlob = new Blob([pdf.output("arraybuffer")], { 
+        type: "application/pdf" 
+      });
+      
+      // 📥 Direct download for all devices (mobile + desktop)
+      downloadPDF(pdfBlob, filename);
+  
+    } catch (error) {
+      console.error("PDF export failed:", error);
+      
+      // 🚨 Mobile के लिए user-friendly error message
+      if (window.innerWidth <= 768) {
+        alert("PDF export problem ! Please tyr again।");
+      }
+    } finally {
+      setIsExporting(false);
+    }
   };
-
+  
+  // 📥 Helper function for download
+  const downloadPDF = (blob, filename) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.style.display = "none";
+    document.body.appendChild(a);
+    a.click();
+    
+    // Cleanup with slight delay for mobile compatibility
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 100);
+  };
   if (!userData) {
     return <div>Loading user data...</div>;
   }
@@ -226,7 +344,7 @@ function UsersDetailsPageAdmin() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-              <div>
+              <div onClick={() => console.log(userData)}>
                 <p className="text-sm text-gray-600">Name</p>
                 <p className="font-semibold">{userData.name}</p>
               </div>
@@ -296,23 +414,24 @@ function UsersDetailsPageAdmin() {
         <div className="w-full md:w-auto flex justify-end mb-4">
           <button
             onClick={handleExportPDF}
-            className="flex items-center gap-2 bg-blue-100 text-black border rounded-sm py-1 px-3 cursor-pointer"
+            disabled={isExporting}
+            className={`flex items-center gap-2 ${isExporting ? "opacity-50 cursor-not-allowed" : "cursor-pointer"} bg-blue-100 text-black border rounded-sm py-1 px-3`}
           >
-            Export
+            {isExporting ? "Exporting..." : "Export"}
             <Download className="h-4 w-4" />
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+        <div ref={pdfRef} className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
           <Card className="border-2 border-dashed border-blue-200 hover:border-blue-400 transition-colors">
-            <CardContent ref={pdfRef} className="p-6">
-              <CashbackCardFront />
+            <CardContent  className="p-6">
+               <CashbackCardFront />      {/*adding component */}
             </CardContent>
           </Card>
 
           <Card className="border-2 border-dashed border-green-200 hover:border-green-400 transition-colors">
             <CardContent className="p-6">
-              <CashbackCardBack />
+              <CashbackCardBack />           {/*adding component */}
             </CardContent>
           </Card>
         </div>
@@ -407,8 +526,8 @@ function UsersDetailsPageAdmin() {
                           </TableCell>
                           <TableCell>
                             {getMembershipStatusBadge(
-                              referral.membership ? "active" : "inactive", // Adjust based on your actual data structure
-                              referral.membership?.amountPaid ? "Premium" : "Basic" // Adjust based on your actual data
+                              referral.membership ? "active" : "inactive",
+                              referral.membership?.amountPaid ? "Premium" : "Basic"
                             )}
                           </TableCell>
                           <TableCell className="font-semibold">
@@ -459,14 +578,14 @@ function UsersDetailsPageAdmin() {
                         <TableHead>Progress</TableHead>
                         <TableHead>Next Payment</TableHead>
                         <TableHead>Status</TableHead>
+                        <TableHead>Overdue Amount</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {/* Replace mockEmiData with actual EMI data fetched from your backend */}
-                      {Array.isArray(userData?.emiHistory) ? userData.emiHistory.map((emi) => (
+                      {Array.isArray(emiHistory) ? emiHistory.map((emi) => (
                         <TableRow key={emi._id}>
                           <TableCell className="font-medium">
-                            {emi.orderId ? 'Order ID: ' + emi.orderId : 'N/A'} {/* Adjust based on your actual data */}
+                            {emi.orderId ? 'Order ID: ' + emi.orderId : 'N/A'}
                           </TableCell>
                           <TableCell className="font-semibold">
                             ₹{emi.totalAmount?.toLocaleString()}
@@ -475,7 +594,7 @@ function UsersDetailsPageAdmin() {
                             ₹{emi.paidInstallments * emi.installmentAmount?.toLocaleString()}
                           </TableCell>
                           <TableCell className="text-red-600">
-                            ₹{(emi.totalAmount - (emi.paidInstallments * emi.installmentAmount))?.toLocaleString()}
+                            ₹{emi.remainingAmount?.toLocaleString()}
                           </TableCell>
                           <TableCell>
                             ₹{emi.installmentAmount?.toLocaleString()}
@@ -504,27 +623,25 @@ function UsersDetailsPageAdmin() {
                                 <p className="font-medium">
                                   {new Date(emi.nextDueDate).toLocaleDateString()}
                                 </p>
-                                {/* You might have a separate dueDate field */}
-                                {/* <p className="text-gray-500">
-                                                                    Due: {emi.dueDate}
-                                                                </p> */}
                               </div>
                             ) : (
                               <span className="text-gray-400">Completed</span>
                             )}
                           </TableCell>
                           <TableCell>{getStatusBadge(emi.status)}</TableCell>
+                          <TableCell className="text-red-700 font-semibold">
+                            {emi.overdueAmount > 0 ? `₹${emi.overdueAmount.toLocaleString()}` : '-'}
+                          </TableCell>
                         </TableRow>
                       )) : (
                         <TableRow>
-                          <TableCell colSpan={9} className="text-center py-4">No EMI data available</TableCell>
+                          <TableCell colSpan={10} className="text-center py-4">No EMI data available</TableCell>
                         </TableRow>
                       )}
                     </TableBody>
                   </Table>
                 </div>
 
-                {/* EMI Summary Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
                   <div className="bg-blue-50 p-4 rounded-lg">
                     <div className="flex items-center gap-2">
@@ -532,7 +649,7 @@ function UsersDetailsPageAdmin() {
                       <span className="text-sm text-blue-600">Active EMIs</span>
                     </div>
                     <p className="text-2xl font-bold text-blue-700">
-                      {userData?.emiHistory?.filter((emi) => emi.status === "ongoing").length || 0}
+                      {emiHistory?.filter((emi) => emi.status === "ongoing").length || 0}
                     </p>
                   </div>
                   <div className="bg-red-50 p-4 rounded-lg">
@@ -541,7 +658,7 @@ function UsersDetailsPageAdmin() {
                       <span className="text-sm text-red-600">Overdue</span>
                     </div>
                     <p className="text-2xl font-bold text-red-700">
-                      {userData?.emiHistory?.filter((emi) => emi.status === "defaulted").length || 0}
+                      {emiHistory?.filter((emi) => emi.status === "defaulted").length || 0}
                     </p>
                   </div>
                   <div className="bg-green-50 p-4 rounded-lg">
@@ -553,7 +670,7 @@ function UsersDetailsPageAdmin() {
                     </div>
                     <p className="text-2xl font-bold text-green-700">
                       ₹
-                      {userData?.emiHistory
+                      {emiHistory
                         ?.reduce((sum, emi) => sum + (emi.totalAmount - (emi.paidInstallments * emi.installmentAmount)), 0)
                         ?.toLocaleString() || '0'}
                     </p>

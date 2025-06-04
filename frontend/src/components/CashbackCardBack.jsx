@@ -44,7 +44,7 @@ const CashbackCardBack = ({
         </div>
 
         {/* Notes Section */}
-        <div className="text-xs xs:text-xs sm:text-sm md:text-sm mt-2 xs:mt-3 sm:mt-4 space-y-1 xs:space-y-2 text-gray-100 ">
+        <div className="text-xs xs:text-xs sm:text-sm md:text-sm  xs:mt-3 sm:mt-4 space-y-1 xs:space-y-2 text-gray-100 ">
           {notes.map((note, index) => (
             <p key={index} className="leading-tight ">
               <span className="font-semibold">{index + 1}.</span> {note}

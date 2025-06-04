@@ -16,6 +16,9 @@ export default defineConfig({
       scroll: "scroll 25s linear infinite",
     },
   },
+  future: {
+    defaultColorFormat: "hex", // This avoids "oklch()" colors for compatibility
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

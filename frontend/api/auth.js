@@ -97,7 +97,7 @@ export const fetchUserDetails = async (userId) => {
         },
       }
     );
-    console.log("fetch api call", response);
+    // console.log("fetch api call", response);
     return response.data;
   } catch (error) {
     console.error(error)
