@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import ProductCard from "./ProductCard";
 import { getProductServices } from "../../api/productService"; // Make sure this path is correct
+import { Link } from "react-router-dom"; // Import Link from react-router-dom
 
 const ProductList = () => {
   const [products, setProducts] = useState([]);
@@ -14,11 +15,8 @@ const ProductList = () => {
         setLoading(true);
         setError(null); // Clear any previous errors
 
-        // Fetch products and services.
-        // We can now send parameters for sorting or limiting,
-        // for example, to get the latest 6 products ordered by creation date.
         const params = {
-          limit: 6, // Request only 6 items
+          limit: 8, // Request up to 8 items for the initial display
           sortBy: "createdAt", // Sort by creation date
           order: "desc", // Get the newest first
           page: 1, // Ensure we get the first page
@@ -26,78 +24,112 @@ const ProductList = () => {
 
         const response = await getProductServices(params);
 
-        // *** Crucial Update: Access response.data instead of response directly ***
         if (response && response.data && Array.isArray(response.data)) {
           setProducts(response.data);
         } else {
-          // Log a warning if the data structure is unexpected
-          console.warn("API response data is not an array or is missing 'data' property:", response);
-          setProducts([]); // Ensure products is an empty array if data is malformed
-          // You might set an error here if this is a critical issue
-          // setError("Unexpected data format from the server.");
+          console.warn(
+            "API response data is not an array or is missing 'data' property:",
+            response
+          );
+          setProducts([]);
         }
       } catch (err) {
         console.error("Error fetching products:", err);
-        // Access nested error message if available, otherwise use a generic message
-        setError(err.response?.data?.message || "Failed to load products. Please try again later.");
+        setError(
+          err.response?.data?.message ||
+            "Failed to load products. Please try again later."
+        );
       } finally {
         setLoading(false);
       }
     };
 
     fetchProducts();
-  }, []); // Empty dependency array means this runs once on mount
+  }, []);
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-48">
-        <p>Loading products...</p> {/* Consider using a more visually engaging spinner */}
+      <div className="flex justify-center items-center h-48 sm:h-64 bg-gray-50 rounded-lg shadow-md p-4 m-4">
+        <div className="flex items-center space-x-2">
+          <div className="w-4 h-4 border-2 border-t-2 border-gray-900 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-lg text-gray-700">Loading products...</p>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex justify-center items-center h-48 text-red-600">
-        <p>{error}</p>
+      <div className="flex justify-center items-center h-48 sm:h-64 bg-red-100 rounded-lg shadow-md p-4 m-4">
+        <p className="text-xl font-medium text-red-700">{error}</p>
       </div>
     );
   }
 
-  // If no products are found after loading
   if (products.length === 0) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-10 text-center">
-        <h2 className="text-3xl font-bold mb-10">Latest Products</h2>
-        <p className="text-gray-600">No products or services available at the moment.</p>
+      <div className="max-w-7xl mx-auto px-4 py-12 sm:py-16 text-center bg-gray-50 rounded-lg shadow-lg my-8">
+        <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-4">
+          Latest Products
+        </h2>
+        <p className="text-lg text-gray-600">
+          No products or services available at the moment. Please check back soon!
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-10">
-      <h2 className="text-3xl font-bold text-center mb-10">Latest Products</h2>
-      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-        {/* Map over the fetched products directly; no need for .slice(0, 6)
-            because the backend is already limiting the results to 6. */}
-        {products.map((product) => (
-          <ProductCard
-            key={product._id} // Use product._id from MongoDB for unique key
-            product={{
-              id: product._id,
-              title: product.title,
-              description: product.description,
-              price: product.price,
-              // Check if portfolio has items, and get the first image URL
-              // Assuming portfolio items have a 'url' property for the image
-              image: product.portfolio && product.portfolio.length > 0
-                     ? product.portfolio[0].url
-                     : "https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png", // Placeholder if no image
-            }}
-          />
-        ))}
+    <section className="bg-white py-12 sm:py-16 md:py-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h2 className="text-4xl sm:text-5xl font-extrabold text-gray-900 text-center mb-12">
+          Featured Products
+        </h2>
+        <div className="grid gap-6 sm:gap-8 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4">
+          {products.map((product) => (
+            <ProductCard
+              key={product._id}
+              product={{
+                id: product._id,
+                title: product.title,
+                description: product.description,
+                price: product.price,
+                image:
+                  product.portfolio && product.portfolio.length > 0
+                    ? product.portfolio[0].url
+                    : "https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png",
+              }}
+            />
+          ))}
+        </div>
+        <div className="mt-12 text-center">
+          <Link
+            to="/browse"
+            className="inline-flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-full text-white bg-indigo-600 hover:bg-indigo-700 md:py-4 md:px-10 text-lg shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105"
+          >
+            See All Products
+            <svg
+              className="ml-3 -mr-1 h-5 w-5"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                fillRule="evenodd"
+                d="M10.293 15.707a1 1 0 010-1.414L14.586 10l-4.293-4.293a1 1 0 111.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0z"
+                clipRule="evenodd"
+              />
+              <path
+                fillRule="evenodd"
+                d="M4.293 15.707a1 1 0 010-1.414L8.586 10 4.293 5.707a1 1 0 011.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </Link>
+        </div>
       </div>
-    </div>
+    </section>
   );
 };
 

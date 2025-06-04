@@ -23,7 +23,7 @@ import {
   DollarSign,
   Loader2,
   PlusCircle,
-  XCircle, // Added XCircle for variant removal
+  XCircle,
 } from "lucide-react";
 
 // Shadcn Dialog Imports
@@ -41,18 +41,19 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useSession } from "../../../context/SessionContext";
 import { deleteFiles, uploadFiles } from "../../../../api/upload";
 import { createProductService } from "../../../../api/vendor";
-import { createCategory, getCategories } from "../../../../api/categories";
+// Updated imports for categories API:
+import { createCategory, getCategories, getCategoriesByParentId } from "../../../../api/categories"; //
 
 export default function CreateProduct() {
   const { session, loading: sessionLoading } = useSession();
   const [formData, setFormData] = useState({
     vendorId: "",
-    categoryId: "",
+    categoryId: "", // This will hold the ID of the *most specific* category
     type: "", // 'product' or 'service' - crucial for fetching relevant categories
     title: "",
     description: "",
     price: "",
-    variants: [], // Changed from string to array for structured variants
+    variants: [],
     pincode: "",
     localMediaFiles: [],
     localMediaPreviews: [],
@@ -67,7 +68,9 @@ export default function CreateProduct() {
   const [formSuccess, setFormSuccess] = useState(null);
 
   // --- Category Management States ---
-  const [categories, setCategories] = useState([]);
+  const [parentCategories, setParentCategories] = useState([]); // Stores top-level categories
+  const [subCategories, setSubCategories] = useState([]); // Stores subcategories of the selected parent
+  const [selectedTopLevelCategory, setSelectedTopLevelCategory] = useState(""); // Tracks selected top-level category ID
   const [fetchingCategories, setFetchingCategories] = useState(false);
   const [categoryError, setCategoryError] = useState(null);
 
@@ -75,6 +78,7 @@ export default function CreateProduct() {
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryDescription, setNewCategoryDescription] = useState("");
   const [newCategoryType, setNewCategoryType] = useState(""); // Will default to formData.type
+  const [newCategoryParentId, setNewCategoryParentId] = useState(""); // New: Parent ID for the new category
   const [creatingCategory, setCreatingCategory] = useState(false);
   const [newCategoryError, setNewCategoryError] = useState(null);
   const [newCategorySuccess, setNewCategorySuccess] = useState(null);
@@ -90,33 +94,71 @@ export default function CreateProduct() {
     }
   }, [session, sessionLoading, formData.vendorId]);
 
-  // Fetch categories based on selected product/service type
+  // Effect to fetch top-level categories when type changes
   useEffect(() => {
-    const fetchCategories = async () => {
+    const fetchTopLevelCategories = async () => {
       if (!formData.type) {
-        setCategories([]); // Clear categories if no type is selected
+        setParentCategories([]);
+        setSelectedTopLevelCategory("");
+        setSubCategories([]);
+        setFormData((prev) => ({ ...prev, categoryId: "" }));
         return;
       }
       setFetchingCategories(true);
       setCategoryError(null);
       try {
-        const fetched = await getCategories(formData.type); // Fetch categories by type
-        setCategories(fetched);
+        // Fetch top-level categories (parentId: null) filtered by type
+        const fetched = await getCategoriesByParentId("null", formData.type); //
+        setParentCategories(fetched);
       } catch (error) {
-        console.error("Error fetching categories:", error);
+        console.error("Error fetching top-level categories:", error);
         setCategoryError(
-          `Failed to load categories: ${
+          `Failed to load main categories: ${
             error.response?.data?.message || error.message
           }`
         );
-        setCategories([]);
+        setParentCategories([]);
       } finally {
         setFetchingCategories(false);
       }
     };
 
-    fetchCategories();
-  }, [formData.type]); // Re-fetch when type changes
+    fetchTopLevelCategories();
+  }, [formData.type]); // Re-fetch when product type changes
+
+  // Effect to fetch subcategories when selectedTopLevelCategory changes
+  useEffect(() => {
+    const fetchChildrenCategories = async () => {
+      if (selectedTopLevelCategory) {
+        setFetchingCategories(true);
+        setCategoryError(null);
+        try {
+          // Fetch subcategories for the selected top-level category
+          const fetchedChildren = await getCategoriesByParentId(selectedTopLevelCategory, formData.type); //
+          setSubCategories(fetchedChildren);
+          // If the previously selected categoryId is not among new subcategories, reset it
+          if (!fetchedChildren.some(cat => cat._id === formData.categoryId)) {
+            setFormData(prev => ({ ...prev, categoryId: "" }));
+          }
+        } catch (error) {
+          console.error("Error fetching subcategories:", error);
+          setCategoryError(
+            `Failed to load subcategories: ${
+              error.response?.data?.message || error.message
+            }`
+          );
+          setSubCategories([]);
+        } finally {
+          setFetchingCategories(false);
+        }
+      } else {
+        setSubCategories([]);
+        setFormData((prev) => ({ ...prev, categoryId: "" })); // Clear categoryId if no top-level is selected
+      }
+    };
+
+    fetchChildrenCategories();
+  }, [selectedTopLevelCategory, formData.type]); // Re-fetch when top-level category or product type changes
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -127,15 +169,28 @@ export default function CreateProduct() {
   };
 
   const handleSelectChange = (name, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-      // If type changes, reset categoryId and variants as fetched categories/variant applicability will be different
-      ...(name === "type" && { categoryId: "", variants: [] }), // Also reset variants when type changes
-    }));
-    // If type is selected, set newCategoryType for the dialog
     if (name === "type") {
-      setNewCategoryType(value);
+      setFormData((prev) => ({
+        ...prev,
+        type: value,
+        categoryId: "", // Reset category and subcategories
+      }));
+      setSelectedTopLevelCategory(""); // Reset selected top-level category
+      setNewCategoryType(value); // Set newCategoryType for the dialog
+    } else if (name === "selectedTopLevelCategory") {
+      setSelectedTopLevelCategory(value);
+      // When a top-level category is selected, the product/service category should be this one initially
+      // But allow user to choose a subcategory if available
+      setFormData((prev) => ({
+        ...prev,
+        categoryId: value, // Set categoryId to the selected top-level category
+      }));
+    } else if (name === "categoryId") {
+        // This is for selecting the final category (can be a subcategory or top-level)
+        setFormData((prev) => ({
+            ...prev,
+            categoryId: value,
+        }));
     }
   };
 
@@ -221,21 +276,42 @@ export default function CreateProduct() {
         name: newCategoryName,
         description: newCategoryDescription,
         type: newCategoryType,
+        parentId: newCategoryParentId || null, // Include parentId for new category
       };
-      const created = await createCategory(categoryData);
+      const created = await createCategory(categoryData); //
       setNewCategorySuccess(`Category "${created.name}" created successfully!`);
-      // Add the new category to the list of categories and select it
-      setCategories((prev) => [...prev, created]);
+
+      // Refresh categories based on the type and potentially selected parent
+      // If a subcategory was created, we need to refresh the subCategories list
+      // If a top-level category was created, we refresh the parentCategories list
+      if (created.parentId) {
+          const updatedSubcategories = await getCategoriesByParentId(created.parentId, created.type); //
+          setSubCategories(updatedSubcategories);
+      } else {
+          const updatedParentCategories = await getCategoriesByParentId("null", created.type); //
+          setParentCategories(updatedParentCategories);
+      }
+
+      // Auto-select the newly created category
       setFormData((prev) => ({
         ...prev,
-        categoryId: created._id, // Auto-select the newly created category
+        categoryId: created._id,
         type: created.type, // Ensure product form type matches new category type
       }));
 
-      // Clear dialog fields
+      // If a new subcategory was created, ensure its parent is selected in the UI
+      if (created.parentId && selectedTopLevelCategory !== created.parentId) {
+          setSelectedTopLevelCategory(created.parentId);
+      } else if (!created.parentId && selectedTopLevelCategory !== created._id) {
+          setSelectedTopLevelCategory(created._id); // Select the new top-level category
+      }
+
+
+      // Clear dialog fields and close dialog
       setNewCategoryName("");
       setNewCategoryDescription("");
-      setIsNewCategoryDialogOpen(false); // Close dialog
+      setNewCategoryParentId(""); // Reset parentId for next category creation
+      setIsNewCategoryDialogOpen(false);
     } catch (error) {
       console.error("Error creating new category:", error);
       setNewCategoryError(
@@ -248,7 +324,7 @@ export default function CreateProduct() {
     }
   };
 
-  // --- Variant Handlers (Copied from EditProduct) ---
+  // --- Variant Handlers ---
   const handleAddVariant = () => {
     setFormData((prev) => ({
       ...prev,
@@ -335,7 +411,6 @@ export default function CreateProduct() {
         pincode: formData.pincode,
         isBookable: formData.type === "service" ? formData.isBookable : false,
         isInStock: formData.isInStock,
-        // Ensure variants are correctly formatted for payload
         variants:
           formData.type === "product"
             ? formData.variants.map((variant) => ({
@@ -393,6 +468,8 @@ export default function CreateProduct() {
         isBookable: false,
         isInStock: true,
       });
+      setSelectedTopLevelCategory(""); // Reset category selection UI
+      setSubCategories([]);
     } catch (apiError) {
       console.error("Error creating product:", apiError);
       setFormError(
@@ -518,25 +595,26 @@ export default function CreateProduct() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label
-                    htmlFor="categoryId"
+                    htmlFor="categorySelection"
                     className="text-sm font-medium text-slate-700"
                   >
                     Category
                   </Label>
                   <div className="flex gap-2 items-center">
+                    {/* Select for Top-Level Categories */}
                     <Select
                       onValueChange={(value) =>
-                        handleSelectChange("categoryId", value)
+                        handleSelectChange("selectedTopLevelCategory", value)
                       }
-                      value={formData.categoryId}
+                      value={selectedTopLevelCategory}
                       disabled={!formData.type || fetchingCategories}
                     >
                       <SelectTrigger className="h-11 flex-grow">
                         <SelectValue
                           placeholder={
                             fetchingCategories
-                              ? "Loading categories..."
-                              : "Select category"
+                              ? "Loading main categories..."
+                              : "Select Main Category"
                           }
                         />
                       </SelectTrigger>
@@ -551,21 +629,62 @@ export default function CreateProduct() {
                             Please select a product type first.
                           </div>
                         )}
-                        {categories.length === 0 &&
+                        {parentCategories.length === 0 &&
                           !fetchingCategories &&
                           !categoryError &&
                           formData.type && (
                             <div className="p-2 text-slate-500 text-sm">
-                              No categories found for "{formData.type}".
+                              No main categories found for "{formData.type}".
                             </div>
                           )}
-                        {categories.map((cat) => (
+                        {parentCategories.map((cat) => (
                           <SelectItem key={cat._id} value={cat._id}>
                             {cat.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
+
+                    {/* Select for Subcategories (visible only if a top-level is selected) */}
+                    {selectedTopLevelCategory && (
+                        <Select
+                        onValueChange={(value) =>
+                            handleSelectChange("categoryId", value)
+                        }
+                        value={formData.categoryId} // This now holds the selected subcategory or top-level ID
+                        disabled={!selectedTopLevelCategory || fetchingCategories || subCategories.length === 0}
+                        >
+                            <SelectTrigger className="h-11 flex-grow">
+                                <SelectValue
+                                placeholder={
+                                    fetchingCategories
+                                    ? "Loading subcategories..."
+                                    : (subCategories.length === 0 ? "No subcategories" : "Select Subcategory")
+                                }
+                                />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {subCategories.length === 0 && (
+                                    <div className="p-2 text-slate-500 text-sm">
+                                        No subcategories available.
+                                    </div>
+                                )}
+                                {/* Allow selecting the parent category itself if no subcategory is chosen */}
+                                {selectedTopLevelCategory && (
+                                    <SelectItem value={selectedTopLevelCategory}>
+                                        (No Subcategory) - {parentCategories.find(c => c._id === selectedTopLevelCategory)?.name}
+                                    </SelectItem>
+                                )}
+                                {subCategories.map((cat) => (
+                                    <SelectItem key={cat._id} value={cat._id}>
+                                        {cat.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    )}
+
+
                     <Dialog
                       open={isNewCategoryDialogOpen}
                       onOpenChange={setIsNewCategoryDialogOpen}
@@ -584,8 +703,8 @@ export default function CreateProduct() {
                         <DialogHeader>
                           <DialogTitle>Create New Category</DialogTitle>
                           <DialogDescription>
-                            Add a new category. This will be available for "
-                            {formData.type}" products.
+                            Add a new category or subcategory for "
+                            {formData.type}" products/services.
                           </DialogDescription>
                         </DialogHeader>
                         <div className="grid gap-4 py-4">
@@ -622,6 +741,49 @@ export default function CreateProduct() {
                               className="bg-slate-100 text-slate-500"
                             />
                           </div>
+                           {/* New: Select Parent Category for the new category */}
+                                                   <div className="space-y-2">
+                            <Label htmlFor="newCategoryParent">
+                              Parent Category (Optional)
+                            </Label>
+                            <Select
+                                onValueChange={(value) =>
+                                    // Use a specific string like "__NONE__" for "None (Top-Level)"
+                                    // and convert it to null when updating the state.
+                                    setNewCategoryParentId(value === "__NONE__" ? null : value)
+                                }
+                                value={newCategoryParentId === null ? "__NONE__" : newCategoryParentId} // Control the value prop
+                                disabled={creatingCategory}
+                            >
+                                <SelectTrigger className="h-11 w-full">
+                                    <SelectValue placeholder="Select parent category (Optional)" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {/* Change value from "" to a distinct non-empty string, e.g., "__NONE__" */}
+                                    <SelectItem value="__NONE__">None (Top-Level)</SelectItem> {/* Option for top-level category */}
+                                    {/* Display only parent categories of the same type */}
+                                    {parentCategories
+                                        .filter(cat => cat.type === newCategoryType)
+                                        .map((cat) => (
+                                        <SelectItem key={cat._id} value={cat._id}>
+                                            {cat.name}
+                                        </SelectItem>
+                                    ))}
+                                    {/* Also allow existing subcategories to be parents (if desired, though not strictly required by model, helpful for deep nesting) */}
+                                    {subCategories
+                                        .filter(cat => cat.type === newCategoryType)
+                                        .map((cat) => (
+                                            <SelectItem key={cat._id} value={cat._id}>
+                                                &nbsp;&nbsp;&nbsp;&nbsp;{cat.name} {/* Indent for visual hierarchy */}
+                                            </SelectItem>
+                                        ))}
+                                </SelectContent>
+                            </Select>
+                            <p className="text-xs text-slate-500">
+                                If you select a parent, this will be a subcategory.
+                            </p>
+                          </div>
+
                           <div className="space-y-2">
                             <Label htmlFor="newCategoryDescription">
                               Description (Optional)
@@ -645,6 +807,9 @@ export default function CreateProduct() {
                               setIsNewCategoryDialogOpen(false);
                               setNewCategoryError(null);
                               setNewCategorySuccess(null);
+                              setNewCategoryParentId(""); // Clear parentId on cancel
+                              setNewCategoryName("");
+                              setNewCategoryDescription("");
                             }}
                             disabled={creatingCategory}
                           >
@@ -652,7 +817,7 @@ export default function CreateProduct() {
                           </Button>
                           <Button
                             onClick={handleCreateCategory}
-                            disabled={creatingCategory}
+                            disabled={creatingCategory || !newCategoryName || !newCategoryType}
                           >
                             {creatingCategory ? (
                               <>
@@ -746,7 +911,7 @@ export default function CreateProduct() {
                 />
               </div>
 
-              {/* Variant Section (Restored to original individual inputs) */}
+              {/* Variant Section */}
               {formData.type === "product" && (
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold text-slate-800">
@@ -824,8 +989,6 @@ export default function CreateProduct() {
                             min="0"
                           />
                         </div>
-                        {/* Variant Images: Could be another file input here for variant-specific images */}
-                        {/* This would require more complex state management for nested media */}
                       </div>
                     </div>
                   ))}
@@ -874,10 +1037,8 @@ export default function CreateProduct() {
                   />
                   {isUploading && (
                     <div className="absolute inset-0 flex items-center justify-center bg-white/70 backdrop-blur-sm z-10">
-                      <Loader2 className="mr-2 h-8 w-8 animate-spin text-purple-500" />
-                      <span className="ml-2 text-purple-600">
-                        Uploading media...
-                      </span>
+                      <Loader2 className="mr-2 h-8 w-8 animate-spin" />
+                      <span className="ml-2">Uploading media...</span>
                     </div>
                   )}
                 </div>

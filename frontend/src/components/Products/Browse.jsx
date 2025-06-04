@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { Link, useSearchParams, useNavigate } from "react-router-dom"; // Import useSearchParams and useNavigate
+import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,44 +14,80 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Filter, Star, Grid, List } from "lucide-react";
+import {
+  Search,
+  Filter,
+  Star,
+  Grid,
+  List,
+  ChevronDown,
+  ChevronRight,
+  Loader2,
+} from "lucide-react"; // Added Chevron icons and Loader2
+import { ScrollArea } from "@/components/ui/scroll-area";
 
-import { getCategories } from "../../../api/categories";
+// Updated category import to include getCategoriesByParentId
+import { getCategoriesByParentId } from "../../../api/categories";
 import { getProductServices } from "../../../api/productService";
 import { useSession } from "../../context/SessionContext";
 
 const DEFAULT_PRICE_MAX = 50000;
 
 export default function BrowsePage() {
-  const [searchParams, setSearchParams] = useSearchParams(); // Initialize useSearchParams
-  const navigate = useNavigate(); // Initialize useNavigate for potential redirects or complex URL changes
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   // State derived from URL search parameters, or default values
-  const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "");
-  const [selectedType, setSelectedType] = useState(searchParams.get("type") || "all");
+  const [searchQuery, setSearchQuery] = useState(
+    searchParams.get("search") || ""
+  );
+  const [selectedType, setSelectedType] = useState(
+    searchParams.get("type") || "all"
+  );
   const [selectedCategories, setSelectedCategories] = useState(
-    searchParams.get("categories") ? searchParams.get("categories").split(",") : []
+    searchParams.get("categories")
+      ? searchParams.get("categories").split(",")
+      : []
   );
   const [priceRange, setPriceRange] = useState(() => {
     const minPrice = parseInt(searchParams.get("minPrice") || "0");
-    const maxPrice = parseInt(searchParams.get("maxPrice") || String(DEFAULT_PRICE_MAX));
+    const maxPrice = parseInt(
+      searchParams.get("maxPrice") || String(DEFAULT_PRICE_MAX)
+    );
     return [minPrice, maxPrice];
   });
-  const [vendorIdFilter, setVendorIdFilter] = useState(searchParams.get("vendorId") || "");
+  const [vendorIdFilter, setVendorIdFilter] = useState(
+    searchParams.get("vendorId") || ""
+  );
 
   // Pagination states
-  const [currentPage, setCurrentPage] = useState(parseInt(searchParams.get("page") || "1"));
-  const [itemsPerPage, setItemsPerPage] = useState(parseInt(searchParams.get("limit") || "10"));
+  const [currentPage, setCurrentPage] = useState(
+    parseInt(searchParams.get("page") || "1")
+  );
+  const [itemsPerPage, setItemsPerPage] = useState(
+    parseInt(searchParams.get("limit") || "10")
+  );
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
   // Sorting states
-  const [sortBy, setSortBy] = useState(searchParams.get("sortBy") || "createdAt");
-  const [sortOrder, setSortOrder] = useState(searchParams.get("order") || "desc");
+  const [sortBy, setSortBy] = useState(
+    searchParams.get("sortBy") || "createdAt"
+  );
+  const [sortOrder, setSortOrder] = useState(
+    searchParams.get("order") || "desc"
+  );
 
-  const [viewMode, setViewMode] = useState(searchParams.get("viewMode") || "grid");
+  const [viewMode, setViewMode] = useState(
+    searchParams.get("viewMode") || "grid"
+  );
 
-  const [availableCategories, setAvailableCategories] = useState([]);
+  // --- NEW Category Management States ---
+  const [topLevelCategories, setTopLevelCategories] = useState([]);
+  const [nestedCategories, setNestedCategories] = useState({}); // { parentId: [childCat1, childCat2] }
+  const [expandedCategories, setExpandedCategories] = useState([]); // Which parents are expanded in the UI
+  // --- END NEW Category Management States ---
+
   const [items, setItems] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [loadingItems, setLoadingItems] = useState(true);
@@ -59,41 +95,68 @@ export default function BrowsePage() {
   const [errorItems, setErrorItems] = useState(null);
   const { session, loading: sessionLoading } = useSession();
 
-  // --- Category Fetching: Runs once on component mount ---
+  // --- Category Fetching: Fetch top-level categories on initial load ---
   useEffect(() => {
-    const fetchAllCategories = async () => {
+    const fetchTopLevelCategories = async () => {
       try {
         setLoadingCategories(true);
-        const fetchedCats = await getCategories();
-        const formattedCats = fetchedCats.map((cat) => ({
-          id: cat._id,
-          name: cat.name,
-          count: 0,
-        }));
-        setAvailableCategories(formattedCats);
+        setErrorCategories(null);
+        // Fetch top-level categories (parentId: null)
+        const fetched = await getCategoriesByParentId(
+          "null",
+          selectedType !== "all" ? selectedType : undefined
+        );
+        setTopLevelCategories(fetched);
       } catch (err) {
-        console.error("Error fetching categories:", err);
+        console.error("Error fetching top-level categories:", err);
         setErrorCategories("Failed to load categories.");
       } finally {
         setLoadingCategories(false);
       }
     };
-    fetchAllCategories();
-  }, []);
+    fetchTopLevelCategories();
+  }, [selectedType]); // Re-fetch top-level categories if type changes
+
+  // --- Function to fetch subcategories for a given parent ---
+  const fetchSubcategoriesForParent = useCallback(
+    async (parentId) => {
+      if (!parentId || nestedCategories[parentId]) return; // Don't re-fetch if already loaded
+
+      try {
+        // You might want a specific loading state for subcategories if this becomes slow
+        const fetchedChildren = await getCategoriesByParentId(
+          parentId,
+          selectedType !== "all" ? selectedType : undefined
+        );
+        setNestedCategories((prev) => ({
+          ...prev,
+          [parentId]: fetchedChildren,
+        }));
+      } catch (err) {
+        console.error(
+          `Error fetching subcategories for parent ${parentId}:`,
+          err
+        );
+        // Optionally, set an error for this specific parent or handle it generally
+      }
+    },
+    [nestedCategories, selectedType]
+  );
 
   // --- Synchronize state with URL search parameters ---
-  // This useEffect will update the component's internal state whenever the URL search params change.
-  // It's important to keep this separate from the effect that updates the URL,
-  // to avoid infinite loops and ensure single source of truth for URL-driven state.
   useEffect(() => {
     setSearchQuery(searchParams.get("search") || "");
     setSelectedType(searchParams.get("type") || "all");
     setSelectedCategories(
-      searchParams.get("categories") ? searchParams.get("categories").split(",") : []
+      searchParams.get("categories")
+        ? searchParams.get("categories").split(",")
+        : []
     );
     setPriceRange(() => {
       const minPrice = parseInt(searchParams.get("minPrice") || "0");
-      const maxPrice = parseInt(searchParams.get("maxPrice") || String(DEFAULT_PRICE_MAX));
+      const maxPrice = parseInt(
+        searchParams.get("maxPrice") || String(DEFAULT_PRICE_MAX)
+      );
       return [minPrice, maxPrice];
     });
     setVendorIdFilter(searchParams.get("vendorId") || "");
@@ -105,8 +168,6 @@ export default function BrowsePage() {
   }, [searchParams]);
 
   // --- Update URL search parameters whenever state changes ---
-  // This useEffect will update the URL search parameters whenever any of the filter/sort/pagination states change.
-  // This is the core of making the URL reflect the current filters.
   useEffect(() => {
     const newSearchParams = new URLSearchParams();
 
@@ -114,18 +175,19 @@ export default function BrowsePage() {
     if (selectedType !== "all") newSearchParams.set("type", selectedType);
     if (selectedCategories.length > 0)
       newSearchParams.set("categories", selectedCategories.join(","));
-    if (priceRange[0] !== 0) newSearchParams.set("minPrice", priceRange[0].toString());
-    if (priceRange[1] !== DEFAULT_PRICE_MAX) newSearchParams.set("maxPrice", priceRange[1].toString());
+    if (priceRange[0] !== 0)
+      newSearchParams.set("minPrice", priceRange[0].toString());
+    if (priceRange[1] !== DEFAULT_PRICE_MAX)
+      newSearchParams.set("maxPrice", priceRange[1].toString());
     if (vendorIdFilter) newSearchParams.set("vendorId", vendorIdFilter);
     if (currentPage !== 1) newSearchParams.set("page", currentPage.toString());
-    if (itemsPerPage !== 10) newSearchParams.set("limit", itemsPerPage.toString());
+    if (itemsPerPage !== 10)
+      newSearchParams.set("limit", itemsPerPage.toString());
     if (sortBy !== "createdAt") newSearchParams.set("sortBy", sortBy);
     if (sortOrder !== "desc") newSearchParams.set("order", sortOrder);
     if (viewMode !== "grid") newSearchParams.set("viewMode", viewMode);
 
-    // Using setSearchParams from useSearchParams to update the URL
-    // It will trigger a re-render and the `useEffect` that reads searchParams will update states.
-    setSearchParams(newSearchParams, { replace: true }); // `replace: true` prevents adding new entries to history
+    setSearchParams(newSearchParams, { replace: true });
   }, [
     searchQuery,
     selectedType,
@@ -137,7 +199,7 @@ export default function BrowsePage() {
     sortBy,
     sortOrder,
     viewMode,
-    setSearchParams, // setSearchParams must be a dependency
+    setSearchParams,
   ]);
 
   // --- Main Product/Service Fetching: Debounced and optimized ---
@@ -218,24 +280,56 @@ export default function BrowsePage() {
     };
   }, [fetchProductsAndServices]);
 
-  // No longer need a separate effect for resetting page on filter/sort change,
-  // because the `useEffect` that updates search params will handle it.
-  // If a filter changes, `currentPage` will be set to 1 in the URL,
-  // and the `fetchProductsAndServices` will re-run with the updated parameters including page 1.
-
-
   // --- Handlers for User Interactions ---
-  // Update state, which in turn will trigger the useEffect to update the URL
-  const handleCategoryChange = (categoryId, checked) => {
-    setSelectedCategories((prevCategories) => {
-      if (checked) {
-        return [...prevCategories, categoryId];
-      } else {
-        return prevCategories.filter((id) => id !== categoryId);
-      }
-    });
-    setCurrentPage(1); // Reset to page 1 on filter change
-  };
+  // Updated handleCategoryChange for hierarchical selection
+  const handleCategoryChange = useCallback(
+    (categoryId, checked, isParent = false) => {
+      setSelectedCategories((prevCategories) => {
+        let newCategories = new Set(prevCategories); // Use Set for efficient add/delete
+
+        if (checked) {
+          newCategories.add(categoryId);
+          // If it's a parent, expand it and fetch its children if not already fetched
+          if (isParent) {
+            setExpandedCategories((prevExpanded) => [
+              ...prevExpanded,
+              categoryId,
+            ]);
+            fetchSubcategoriesForParent(categoryId);
+            // If a parent is checked, all its *currently loaded* direct children should also be checked.
+            // This ensures a consistent selection for the filter.
+            // For now, we only check direct children. For deeply nested, a recursive function would be needed.
+            if (nestedCategories[categoryId]) {
+              nestedCategories[categoryId].forEach((child) =>
+                newCategories.add(child._id)
+              );
+            }
+          }
+        } else {
+          newCategories.delete(categoryId);
+          // If unchecking a parent, also uncheck all its children (and recursively, grandchildren)
+          if (isParent) {
+            setExpandedCategories((prevExpanded) =>
+              prevExpanded.filter((id) => id !== categoryId)
+            );
+            // Recursively uncheck children. This might need a helper function for deep nesting.
+            const uncheckChildren = (parent_id) => {
+              if (nestedCategories[parent_id]) {
+                nestedCategories[parent_id].forEach((child) => {
+                  newCategories.delete(child._id);
+                  uncheckChildren(child._id); // Recursive call for nested children
+                });
+              }
+            };
+            uncheckChildren(categoryId);
+          }
+        }
+        return Array.from(newCategories);
+      });
+      setCurrentPage(1); // Reset to page 1 on filter change
+    },
+    [nestedCategories, fetchSubcategoriesForParent]
+  ); // Depend on nestedCategories and fetchSubcategoriesForParent
 
   const handlePriceRangeChange = (newRange) => {
     setPriceRange(newRange);
@@ -245,6 +339,10 @@ export default function BrowsePage() {
   const handleTypeChange = (newType) => {
     setSelectedType(newType);
     setCurrentPage(1); // Reset to page 1 on filter change
+    setTopLevelCategories([]); // Clear categories to force re-fetch
+    setNestedCategories({}); // Clear nested categories
+    setExpandedCategories([]); // Collapse all
+    setSelectedCategories([]); // Clear category selection
   };
 
   const handleSearchQueryChange = (e) => {
@@ -265,6 +363,20 @@ export default function BrowsePage() {
     }
   };
 
+  const toggleCategoryExpand = useCallback(
+    (categoryId) => {
+      setExpandedCategories((prevExpanded) => {
+        if (prevExpanded.includes(categoryId)) {
+          return prevExpanded.filter((id) => id !== categoryId);
+        } else {
+          fetchSubcategoriesForParent(categoryId); // Fetch children when expanding
+          return [...prevExpanded, categoryId];
+        }
+      });
+    },
+    [fetchSubcategoriesForParent]
+  );
+
   // --- Memoized Values for Rendering ---
   const displayedItems = useMemo(() => items, [items]);
 
@@ -283,6 +395,89 @@ export default function BrowsePage() {
     }
     return range;
   }, [currentPage, totalPages]);
+
+  // Helper function to render categories recursively (or just two levels for now)
+  const renderCategoryCheckboxes = useCallback(
+    (categoriesToRender, level = 0) => {
+      return categoriesToRender.map((category) => (
+        <div key={category._id} className="relative">
+          <div
+            className="flex items-center space-x-2"
+            style={{ paddingLeft: `${level * 16}px` }}
+          >
+            {category.hasChildren ||
+            (nestedCategories[category._id] &&
+              nestedCategories[category._id].length > 0) ? (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={() => toggleCategoryExpand(category._id)}
+              >
+                {expandedCategories.includes(category._id) ? (
+                  <ChevronDown className="h-4 w-4" />
+                ) : (
+                  <ChevronRight className="h-4 w-4" />
+                )}
+              </Button>
+            ) : (
+              <div className="h-6 w-6 flex items-center justify-center"></div> // Placeholder for alignment
+            )}
+            <Checkbox
+              id={category._id}
+              checked={selectedCategories.includes(category._id)}
+              onCheckedChange={
+                (checked) =>
+                  handleCategoryChange(
+                    category._id,
+                    checked,
+                    category.parentId === null
+                  ) // Pass true if it's a top-level category
+              }
+            />
+            <Label
+              htmlFor={category._id}
+              className="text-sm flex-1 cursor-pointer"
+            >
+              {category.name}
+            </Label>
+            {/* Optional: Show loading spinner if children are being fetched */}
+            {expandedCategories.includes(category._id) &&
+              !nestedCategories[category._id] && (
+                <Loader2 className="ml-2 h-4 w-4 animate-spin text-gray-400" />
+              )}
+          </div>
+          {expandedCategories.includes(category._id) &&
+            nestedCategories[category._id] && (
+              <div className="pl-4 border-l ml-4 border-gray-200">
+                {" "}
+                {/* Indent children */}
+                {renderCategoryCheckboxes(
+                  nestedCategories[category._id],
+                  level + 1
+                )}
+              </div>
+            )}
+        </div>
+      ));
+    },
+    [
+      selectedCategories,
+      expandedCategories,
+      nestedCategories,
+      handleCategoryChange,
+      toggleCategoryExpand,
+    ]
+  );
+
+  if (sessionLoading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Loader2 className="h-10 w-10 animate-spin text-purple-500" />
+        <p className="ml-4 text-lg text-gray-600">Loading user session...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -304,7 +499,7 @@ export default function BrowsePage() {
             <Input
               placeholder="Search products, services, or vendors..."
               value={searchQuery}
-              onChange={handleSearchQueryChange} // Use the new handler
+              onChange={handleSearchQueryChange}
               className="pl-10 h-12 text-lg"
             />
           </div>
@@ -334,49 +529,39 @@ export default function BrowsePage() {
                     </SelectContent>
                   </Select>
                 </div>
-
-                {/* Category Filter */}
-                <div className="mb-6">
-                  <h3 className="font-medium mb-3">Categories</h3>
-                  {loadingCategories ? (
-                    <p className="text-gray-500">Loading categories...</p>
-                  ) : errorCategories ? (
-                    <p className="text-red-500">{errorCategories}</p>
-                  ) : availableCategories.length === 0 ? (
-                    <p className="text-gray-500">No categories available.</p>
-                  ) : (
-                    <div className="space-y-3">
-                      {availableCategories.map((category) => (
-                        <div
-                          key={category.id}
-                          className="flex items-center space-x-2"
-                        >
-                          <Checkbox
-                            id={category.id}
-                            checked={selectedCategories.includes(category.id)}
-                            onCheckedChange={(checked) =>
-                              handleCategoryChange(category.id, checked)
-                            }
-                          />
-                          <Label
-                            htmlFor={category.id}
-                            className="text-sm flex-1 cursor-pointer"
-                          >
-                            {category.name}
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
+                <ScrollArea className="h-72  ">
+                  {/* Category Filter - Updated for Subcategories */}
+                  <div className="mb-6">
+                    <h3 className="font-medium mb-3">Categories</h3>
+                    {loadingCategories ? (
+                      <p className="text-gray-500 flex items-center">
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
+                        Loading categories...
+                      </p>
+                    ) : errorCategories ? (
+                      <p className="text-red-500">{errorCategories}</p>
+                    ) : topLevelCategories.length === 0 &&
+                      selectedType !== "all" ? (
+                      <p className="text-gray-500">
+                        No main categories found for "{selectedType}".
+                      </p>
+                    ) : topLevelCategories.length === 0 &&
+                      selectedType === "all" ? (
+                      <p className="text-gray-500">No categories available.</p>
+                    ) : (
+                      <div className="space-y-3">
+                        {renderCategoryCheckboxes(topLevelCategories)}
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
                 {/* Price Range */}
                 <div className="mb-6">
                   <h3 className="font-medium mb-3">Price Range</h3>
                   <div className="px-2">
                     <Slider
                       value={priceRange}
-                      onValueChange={handlePriceRangeChange} // Use the new handler
+                      onValueChange={handlePriceRangeChange}
                       max={DEFAULT_PRICE_MAX}
                       step={500}
                       className="mb-4"
@@ -409,7 +594,7 @@ export default function BrowsePage() {
               <div className="flex items-center gap-4">
                 <Select
                   value={`${sortBy}-${sortOrder}`}
-                  onValueChange={handleSortChange} // Use the new handler
+                  onValueChange={handleSortChange}
                 >
                   <SelectTrigger className="w-48">
                     <SelectValue />
@@ -449,8 +634,9 @@ export default function BrowsePage() {
             {/* Results Grid / List */}
             {loadingItems ? (
               <div className="flex justify-center items-center h-48">
-                <p className="text-gray-500">
-                  Fetching products and services...
+                <p className="text-gray-500 flex items-center">
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Fetching
+                  products and services...
                 </p>
               </div>
             ) : errorItems ? (
