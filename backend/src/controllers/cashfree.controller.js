@@ -6,9 +6,10 @@ import { Cashfree } from "cashfree-pg";
 const getCashfreeInstance = () => {
   // Determine the environment based on NODE_ENV.
   // Cashfree.SANDBOX and Cashfree.PRODUCTION are direct string values in SDK v5+.
-  const environment = process.env.NODE_ENV === 'production'
-    ? Cashfree.PRODUCTION
-    : Cashfree.SANDBOX;
+  const environment =
+    process.env.NODE_ENV === "production"
+      ? Cashfree.PRODUCTION
+      : Cashfree.SANDBOX;
 
   // Create and return a new Cashfree SDK instance.
   return new Cashfree(
@@ -29,7 +30,13 @@ export const createOrderCF = async (req, res) => {
   const cashfree = getCashfreeInstance();
 
   try {
-    const { order_amount, customer_details, order_id, order_note } = req.body;
+    const {
+      order_amount,
+      customer_details,
+      order_id,
+      order_note,
+      redirectPath,
+    } = req.body;
 
     // Basic validation for required fields
     if (
@@ -62,7 +69,7 @@ export const createOrderCF = async (req, res) => {
       order_meta: {
         // The URL where Cashfree will redirect the user after payment.
         // It's crucial to set this to your frontend's payment status page.
-        return_url: `${process.env.FRONTEND_URL}/dashboard/test?order_id={order_id}&order_status={order_status}`,
+        return_url: `${process.env.FRONTEND_URL}/${redirectPath}?order_id={order_id}`,
         // Optional: Webhook URL for server-to-server payment status notifications.
         // Highly recommended for robust payment handling.
         notify_url: `${process.env.BACKEND_URL}/api/cashfree/webhook`,
@@ -193,14 +200,18 @@ export const handleWebhook = async (req, res) => {
   const event = req.body; // The Cashfree webhook payload
 
   // === ADD THIS LOG: SHOW RECEIVED BODY ===
-  console.log("[WEBHOOK RECEIVER] Received raw webhook body:", JSON.stringify(req.body, null, 2));
-
+  console.log(
+    "[WEBHOOK RECEIVER] Received raw webhook body:",
+    JSON.stringify(req.body, null, 2)
+  );
 
   console.log("[WEBHOOK RECEIVER] Webhook Event Type:", event.type);
 
   try {
     // === ADD THIS LOG: INSIDE TRY BLOCK ===
-    console.log("[WEBHOOK RECEIVER] Inside try block. Attempting to parse event data.");
+    console.log(
+      "[WEBHOOK RECEIVER] Inside try block. Attempting to parse event data."
+    );
 
     const orderId = event.data.order.order_id;
     const paymentStatus = event.data.payment.payment_status; // e.g., "SUCCESS", "FAILED", "PENDING"
@@ -223,19 +234,27 @@ export const handleWebhook = async (req, res) => {
     // await new Promise(resolve => setTimeout(resolve, 500)); // Simulate async DB operation
     // console.log(`[WEBHOOK RECEIVER] Database updated for Order ID ${orderId} with status ${paymentStatus}`);
 
-
     // Acknowledge the webhook: Cashfree expects a 200 OK response.
     // If you don't send 200, Cashfree will retry sending the webhook.
     console.log("[WEBHOOK RECEIVER] Sending 200 OK response to Cashfree.");
     res.status(200).send("Webhook received and processed successfully");
   } catch (error) {
     // === ADD THIS LOG: INSIDE CATCH BLOCK ===
-    console.error("[WEBHOOK RECEIVER] Error processing Cashfree Webhook payload:", error);
-    console.error("[WEBHOOK RECEIVER] Error details:", error.message, error.stack);
+    console.error(
+      "[WEBHOOK RECEIVER] Error processing Cashfree Webhook payload:",
+      error
+    );
+    console.error(
+      "[WEBHOOK RECEIVER] Error details:",
+      error.message,
+      error.stack
+    );
     // If there's an internal error processing the webhook, it's often best
     // to still send a 200 OK to prevent Cashfree from retrying indefinitely,
     // but ensure the error is logged for investigation.
-    console.log("[WEBHOOK RECEIVER] Sending 200 OK response despite internal error.");
+    console.log(
+      "[WEBHOOK RECEIVER] Sending 200 OK response despite internal error."
+    );
     res.status(200).send("Error processing webhook, please check server logs.");
   }
 };

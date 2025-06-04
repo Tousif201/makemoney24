@@ -95,7 +95,7 @@ export default function ViewOrderDetailsDialog({
             </Label>
             <span>
               {order.address
-                ? `${order.address.address || ""}, ${
+                ? `${order.address.address || ""},${order.address || ""}, ${
                     order.address.city || ""
                   }, ${order.address.pincode || ""}`
                     .replace(/^, | ,|, $/g, "")

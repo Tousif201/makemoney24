@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react"; // Import useMemo
-import { Link } from "react-router-dom";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { Link, useSearchParams, useNavigate } from "react-router-dom"; // Import useSearchParams and useNavigate
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -20,26 +20,36 @@ import { getCategories } from "../../../api/categories";
 import { getProductServices } from "../../../api/productService";
 import { useSession } from "../../context/SessionContext";
 
-const DEFAULT_PRICE_MAX = 50000; // Define a constant for max price
+const DEFAULT_PRICE_MAX = 50000;
 
 export default function BrowsePage() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedType, setSelectedType] = useState("all");
-  const [selectedCategories, setSelectedCategories] = useState([]);
-  const [priceRange, setPriceRange] = useState([0, DEFAULT_PRICE_MAX]);
-  const [vendorIdFilter, setVendorIdFilter] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams(); // Initialize useSearchParams
+  const navigate = useNavigate(); // Initialize useNavigate for potential redirects or complex URL changes
+
+  // State derived from URL search parameters, or default values
+  const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "");
+  const [selectedType, setSelectedType] = useState(searchParams.get("type") || "all");
+  const [selectedCategories, setSelectedCategories] = useState(
+    searchParams.get("categories") ? searchParams.get("categories").split(",") : []
+  );
+  const [priceRange, setPriceRange] = useState(() => {
+    const minPrice = parseInt(searchParams.get("minPrice") || "0");
+    const maxPrice = parseInt(searchParams.get("maxPrice") || String(DEFAULT_PRICE_MAX));
+    return [minPrice, maxPrice];
+  });
+  const [vendorIdFilter, setVendorIdFilter] = useState(searchParams.get("vendorId") || "");
 
   // Pagination states
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10); // Corresponds to 'limit' in backend
+  const [currentPage, setCurrentPage] = useState(parseInt(searchParams.get("page") || "1"));
+  const [itemsPerPage, setItemsPerPage] = useState(parseInt(searchParams.get("limit") || "10"));
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
   // Sorting states
-  const [sortBy, setSortBy] = useState("createdAt"); // Default to 'createdAt' matching backend default
-  const [sortOrder, setSortOrder] = useState("desc"); // Default to 'desc' matching backend default
+  const [sortBy, setSortBy] = useState(searchParams.get("sortBy") || "createdAt");
+  const [sortOrder, setSortOrder] = useState(searchParams.get("order") || "desc");
 
-  const [viewMode, setViewMode] = useState("grid");
+  const [viewMode, setViewMode] = useState(searchParams.get("viewMode") || "grid");
 
   const [availableCategories, setAvailableCategories] = useState([]);
   const [items, setItems] = useState([]);
@@ -47,8 +57,9 @@ export default function BrowsePage() {
   const [loadingItems, setLoadingItems] = useState(true);
   const [errorCategories, setErrorCategories] = useState(null);
   const [errorItems, setErrorItems] = useState(null);
+  const { session, loading: sessionLoading } = useSession();
+
   // --- Category Fetching: Runs once on component mount ---
-  const { session, loading } = useSession();
   useEffect(() => {
     const fetchAllCategories = async () => {
       try {
@@ -57,7 +68,7 @@ export default function BrowsePage() {
         const formattedCats = fetchedCats.map((cat) => ({
           id: cat._id,
           name: cat.name,
-          count: 0, // Still no count from API, so keeping it 0
+          count: 0,
         }));
         setAvailableCategories(formattedCats);
       } catch (err) {
@@ -68,18 +79,75 @@ export default function BrowsePage() {
       }
     };
     fetchAllCategories();
-  }, []); // Empty dependency array ensures this runs only once
+  }, []);
+
+  // --- Synchronize state with URL search parameters ---
+  // This useEffect will update the component's internal state whenever the URL search params change.
+  // It's important to keep this separate from the effect that updates the URL,
+  // to avoid infinite loops and ensure single source of truth for URL-driven state.
+  useEffect(() => {
+    setSearchQuery(searchParams.get("search") || "");
+    setSelectedType(searchParams.get("type") || "all");
+    setSelectedCategories(
+      searchParams.get("categories") ? searchParams.get("categories").split(",") : []
+    );
+    setPriceRange(() => {
+      const minPrice = parseInt(searchParams.get("minPrice") || "0");
+      const maxPrice = parseInt(searchParams.get("maxPrice") || String(DEFAULT_PRICE_MAX));
+      return [minPrice, maxPrice];
+    });
+    setVendorIdFilter(searchParams.get("vendorId") || "");
+    setCurrentPage(parseInt(searchParams.get("page") || "1"));
+    setItemsPerPage(parseInt(searchParams.get("limit") || "10"));
+    setSortBy(searchParams.get("sortBy") || "createdAt");
+    setSortOrder(searchParams.get("order") || "desc");
+    setViewMode(searchParams.get("viewMode") || "grid");
+  }, [searchParams]);
+
+  // --- Update URL search parameters whenever state changes ---
+  // This useEffect will update the URL search parameters whenever any of the filter/sort/pagination states change.
+  // This is the core of making the URL reflect the current filters.
+  useEffect(() => {
+    const newSearchParams = new URLSearchParams();
+
+    if (searchQuery) newSearchParams.set("search", searchQuery);
+    if (selectedType !== "all") newSearchParams.set("type", selectedType);
+    if (selectedCategories.length > 0)
+      newSearchParams.set("categories", selectedCategories.join(","));
+    if (priceRange[0] !== 0) newSearchParams.set("minPrice", priceRange[0].toString());
+    if (priceRange[1] !== DEFAULT_PRICE_MAX) newSearchParams.set("maxPrice", priceRange[1].toString());
+    if (vendorIdFilter) newSearchParams.set("vendorId", vendorIdFilter);
+    if (currentPage !== 1) newSearchParams.set("page", currentPage.toString());
+    if (itemsPerPage !== 10) newSearchParams.set("limit", itemsPerPage.toString());
+    if (sortBy !== "createdAt") newSearchParams.set("sortBy", sortBy);
+    if (sortOrder !== "desc") newSearchParams.set("order", sortOrder);
+    if (viewMode !== "grid") newSearchParams.set("viewMode", viewMode);
+
+    // Using setSearchParams from useSearchParams to update the URL
+    // It will trigger a re-render and the `useEffect` that reads searchParams will update states.
+    setSearchParams(newSearchParams, { replace: true }); // `replace: true` prevents adding new entries to history
+  }, [
+    searchQuery,
+    selectedType,
+    selectedCategories,
+    priceRange,
+    vendorIdFilter,
+    currentPage,
+    itemsPerPage,
+    sortBy,
+    sortOrder,
+    viewMode,
+    setSearchParams, // setSearchParams must be a dependency
+  ]);
 
   // --- Main Product/Service Fetching: Debounced and optimized ---
-  // Memoize the API call logic to ensure it's stable across renders
   const fetchProductsAndServices = useCallback(async () => {
     setLoadingItems(true);
-    setErrorItems(null); // Clear previous errors
+    setErrorItems(null);
 
     const params = {
       title: searchQuery || undefined,
       type: selectedType !== "all" ? selectedType : undefined,
-      // Only send price range if it's not the default full range
       minPrice: priceRange[0] !== 0 ? priceRange[0] : undefined,
       maxPrice: priceRange[1] !== DEFAULT_PRICE_MAX ? priceRange[1] : undefined,
       vendorId: vendorIdFilter || undefined,
@@ -90,7 +158,7 @@ export default function BrowsePage() {
     };
 
     if (selectedCategories.length > 0) {
-      params.categoryId = selectedCategories.join(","); // Join multiple IDs for backend
+      params.categoryId = selectedCategories.join(",");
     }
 
     try {
@@ -108,9 +176,9 @@ export default function BrowsePage() {
           item.portfolio && item.portfolio.length > 0
             ? item.portfolio[0].url
             : "/placeholder.svg",
-        rating: item.rating || 0, // Default to 0 if no rating field
-        vendor: item.vendorId ? item.vendorId.name : "N/A", // Use populated vendor name
-        category: item.categoryId ? item.categoryId.name : "N/A", // Use populated category name
+        rating: item.rating || 0,
+        vendor: item.vendorId ? item.vendorId.name : "N/A",
+        category: item.categoryId ? item.categoryId.name : "N/A",
         type: item.type,
         inStock: item.isInStock,
         isBookable: item.isBookable,
@@ -137,41 +205,27 @@ export default function BrowsePage() {
     itemsPerPage,
     sortBy,
     sortOrder,
-  ]); // Dependencies for the memoized callback
+  ]);
 
   // Effect to trigger data fetching with debounce
-  // This useEffect will re-run `fetchProductsAndServices` after a delay
-  // whenever any of its dependencies (passed via useCallback) change.
   useEffect(() => {
     const handler = setTimeout(() => {
       fetchProductsAndServices();
-    }, 300); // Debounce delay
+    }, 300);
 
     return () => {
-      clearTimeout(handler); // Cleanup: clear timeout if dependencies change before delay
+      clearTimeout(handler);
     };
-  }, [fetchProductsAndServices]); // The only dependency is the memoized callback
+  }, [fetchProductsAndServices]);
 
-  // --- Reset Page on Filter/Sort Change ---
-  // This effect ensures that whenever filters or sort options change,
-  // we reset to the first page to get relevant results.
-  useEffect(() => {
-    // Only reset page if not already on page 1, to avoid unnecessary re-fetches
-    // or if the component is just mounting with initial state.
-    if (currentPage !== 1) {
-      setCurrentPage(1);
-    }
-  }, [
-    searchQuery,
-    selectedType,
-    selectedCategories,
-    priceRange,
-    vendorIdFilter,
-    sortBy,
-    sortOrder,
-  ]); // Dependencies that should trigger a page reset
+  // No longer need a separate effect for resetting page on filter/sort change,
+  // because the `useEffect` that updates search params will handle it.
+  // If a filter changes, `currentPage` will be set to 1 in the URL,
+  // and the `fetchProductsAndServices` will re-run with the updated parameters including page 1.
+
 
   // --- Handlers for User Interactions ---
+  // Update state, which in turn will trigger the useEffect to update the URL
   const handleCategoryChange = (categoryId, checked) => {
     setSelectedCategories((prevCategories) => {
       if (checked) {
@@ -180,8 +234,29 @@ export default function BrowsePage() {
         return prevCategories.filter((id) => id !== categoryId);
       }
     });
-    // No need to call setCurrentPage(1) directly here,
-    // as the useEffect above handles resetting the page when selectedCategories changes.
+    setCurrentPage(1); // Reset to page 1 on filter change
+  };
+
+  const handlePriceRangeChange = (newRange) => {
+    setPriceRange(newRange);
+    setCurrentPage(1); // Reset to page 1 on filter change
+  };
+
+  const handleTypeChange = (newType) => {
+    setSelectedType(newType);
+    setCurrentPage(1); // Reset to page 1 on filter change
+  };
+
+  const handleSearchQueryChange = (e) => {
+    setSearchQuery(e.target.value);
+    setCurrentPage(1); // Reset to page 1 on filter change
+  };
+
+  const handleSortChange = (val) => {
+    const [field, order] = val.split("-");
+    setSortBy(field);
+    setSortOrder(order);
+    setCurrentPage(1); // Reset to page 1 on sort change
   };
 
   const handlePageChange = (page) => {
@@ -191,15 +266,11 @@ export default function BrowsePage() {
   };
 
   // --- Memoized Values for Rendering ---
-  // `displayedItems` is simply `items` because filtering/sorting is done by the backend.
-  // Use useMemo here if you were doing any significant client-side transformation
-  // that you don't want to re-run on every render.
   const displayedItems = useMemo(() => items, [items]);
 
-  // Use useMemo for pagination range to avoid re-calculating on every render
   const paginationRange = useMemo(() => {
     const range = [];
-    const maxPagesToShow = 5; // e.g., show 5 page numbers in pagination
+    const maxPagesToShow = 5;
     let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
     let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
 
@@ -233,7 +304,7 @@ export default function BrowsePage() {
             <Input
               placeholder="Search products, services, or vendors..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={handleSearchQueryChange} // Use the new handler
               className="pl-10 h-12 text-lg"
             />
           </div>
@@ -252,7 +323,7 @@ export default function BrowsePage() {
                 {/* Type Filter */}
                 <div className="mb-6">
                   <h3 className="font-medium mb-3">Type</h3>
-                  <Select value={selectedType} onValueChange={setSelectedType}>
+                  <Select value={selectedType} onValueChange={handleTypeChange}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -305,7 +376,7 @@ export default function BrowsePage() {
                   <div className="px-2">
                     <Slider
                       value={priceRange}
-                      onValueChange={setPriceRange}
+                      onValueChange={handlePriceRangeChange} // Use the new handler
                       max={DEFAULT_PRICE_MAX}
                       step={500}
                       className="mb-4"
@@ -338,11 +409,7 @@ export default function BrowsePage() {
               <div className="flex items-center gap-4">
                 <Select
                   value={`${sortBy}-${sortOrder}`}
-                  onValueChange={(val) => {
-                    const [field, order] = val.split("-");
-                    setSortBy(field);
-                    setSortOrder(order);
-                  }}
+                  onValueChange={handleSortChange} // Use the new handler
                 >
                   <SelectTrigger className="w-48">
                     <SelectValue />
@@ -537,7 +604,6 @@ export default function BrowsePage() {
                   >
                     Previous
                   </Button>
-                  {/* Render page numbers based on the calculated range */}
                   {paginationRange.map((pageNumber) => (
                     <Button
                       key={pageNumber}

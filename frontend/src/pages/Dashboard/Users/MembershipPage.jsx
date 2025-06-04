@@ -1,6 +1,13 @@
 "use client";
 
-import { Calendar, Check, CreditCard, Shield, Star } from "lucide-react";
+import {
+  Calendar,
+  Check,
+  CreditCard,
+  QrCode,
+  Shield,
+  Star,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -32,7 +39,7 @@ export default function MembershipPage() {
     );
   }
 
-  const isMember = user?.isMember;
+  const isMember = user.isMember;
 
   const benefits = [
     "PayLater options on orders above ₹500",
@@ -106,6 +113,87 @@ export default function MembershipPage() {
     "This membership card can be used in all regions",
   ];
 
+  // This QR code should encode the payment request (e.g., UPI QR code).
+  const qrCodeImageUrl = "https://hexdocs.pm/qr_code/docs/qrcode.svg";
+  const whatsappNumber = "+919876543210"; // Replace with your actual WhatsApp number
+
+  // permanent needs cashfree integration
+  // if (!isMember) {
+  //   return (
+  //     <div className="flex-1 space-y-6 p-6">
+  //       <div className="flex items-center gap-4">
+  //         <div>
+  //           <h1 className="text-3xl font-bold text-purple-900">
+  //             Become a Member
+  //           </h1>
+  //           <p className="text-purple-600">
+  //             Unlock exclusive benefits and features
+  //           </p>
+  //         </div>
+  //       </div>
+
+  //       <div className="max-w-2xl mx-auto">
+  //         <Card className="border-purple-200">
+  //           <CardHeader className="text-center">
+  //             <div className="mx-auto h-16 w-16 rounded-full bg-purple-100 flex items-center justify-center mb-4">
+  //               <Star className="h-8 w-8 text-purple-600" />
+  //             </div>
+  //             <CardTitle className="text-2xl text-purple-900">
+  //               Premium Membership
+  //             </CardTitle>
+  //             <CardDescription className="text-purple-600">
+  //               Join our exclusive membership program and enjoy premium benefits
+  //             </CardDescription>
+  //           </CardHeader>
+  //           <CardContent className="space-y-6">
+  //             <div className="text-center">
+  //               <div className="text-4xl font-bold text-purple-900">₹1,200</div>
+  //               <p className="text-purple-600">One-time payment</p>
+  //             </div>
+
+  //             <div className="space-y-3">
+  //               <h3 className="font-semibold text-purple-900">
+  //                 What you'll get:
+  //               </h3>
+  //               {benefits.map((benefit, index) => (
+  //                 <div key={index} className="flex items-center gap-3">
+  //                   <Check className="h-5 w-5 text-green-600" />
+  //                   <span className="text-purple-700">{benefit}</span>
+  //                 </div>
+  //               ))}
+  //             </div>
+
+  //             {/* === INTEGRATED RAZORPAY PAYMENT BUTTON === */}
+  //             {user?._id ? ( // Only show if user is logged in
+  //               <RazorpayPaymentButton
+  //                 amount={membershipAmountInPaise}
+  //                 receiptId={generateReceiptId(user._id)}
+  //                 companyName="MakeMoney24"
+  //                 description="Premium Membership Purchase"
+  //                 logoUrl="https://placehold.co/100x100/8B5CF6/FFFFFF?text=MM24"
+  //                 onPaymentSuccess={handlePaymentSuccess}
+  //                 onPaymentError={handlePaymentError}
+  //                 className="w-full bg-purple-600 hover:bg-purple-700"
+  //               >
+  //                 <CreditCard className="mr-2 h-5 w-5" />
+  //                 Become a Member Now
+  //               </RazorpayPaymentButton>
+  //             ) : (
+  //               <Button
+  //                 className="w-full bg-purple-600 hover:bg-purple-700"
+  //                 size="lg"
+  //                 disabled
+  //               >
+  //                 Please log in to become a member
+  //               </Button>
+  //             )}
+  //           </CardContent>
+  //         </Card>
+  //       </div>
+  //     </div>
+  //   );
+  // }
+  // temp fix
   if (!isMember) {
     return (
       <div className="flex-1 space-y-6 p-6">
@@ -151,30 +239,46 @@ export default function MembershipPage() {
                 ))}
               </div>
 
-              {/* === INTEGRATED RAZORPAY PAYMENT BUTTON === */}
-              {user?._id ? ( // Only show if user is logged in
-                <RazorpayPaymentButton
-                  amount={membershipAmountInPaise}
-                  receiptId={generateReceiptId(user._id)}
-                  companyName="MakeMoney24"
-                  description="Premium Membership Purchase"
-                  logoUrl="https://placehold.co/100x100/8B5CF6/FFFFFF?text=MM24"
-                  onPaymentSuccess={handlePaymentSuccess}
-                  onPaymentError={handlePaymentError}
-                  className="w-full bg-purple-600 hover:bg-purple-700"
+              {/* === QR CODE PAYMENT SECTION === */}
+              <div className="mt-6 p-4 border rounded-lg bg-purple-50 text-center">
+                <h3 className="text-lg font-semibold text-purple-800 mb-3 flex items-center justify-center gap-2">
+                  <QrCode className="h-6 w-6 text-purple-700" />
+                  Auto Membership Enrollment Coming Soon!
+                </h3>
+                <p className="text-purple-700 mb-4">
+                  For immediate access, make a payment via QR code:
+                </p>
+                <div className="flex justify-center mb-4">
+                  <img
+                    src={qrCodeImageUrl}
+                    alt="Payment QR Code"
+                    className="w-48 h-48 border border-gray-300 rounded-lg shadow-sm object-contain"
+                  />
+                </div>
+                <p className="text-sm font-medium text-purple-800 mb-2">
+                  Scan this QR code and pay ₹1,200
+                </p>
+                <p className="text-sm text-gray-700">
+                  Then, WhatsApp a screenshot of your payment to:
+                </p>
+                <a
+                  href={`https://wa.me/${whatsappNumber}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-purple-600 hover:underline font-bold text-lg flex items-center justify-center mt-2"
                 >
-                  <CreditCard className="mr-2 h-5 w-5" />
-                  Become a Member Now
-                </RazorpayPaymentButton>
-              ) : (
-                <Button
-                  className="w-full bg-purple-600 hover:bg-purple-700"
-                  size="lg"
-                  disabled
-                >
-                  Please log in to become a member
-                </Button>
-              )}
+                  <img
+                    src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg"
+                    alt="WhatsApp"
+                    className="h-5 w-5 mr-2"
+                  />
+                  {whatsappNumber}
+                </a>
+                <p className="text-xs text-gray-500 mt-2">
+                  Admin will upgrade your membership shortly after verification.
+                </p>
+              </div>
+              {/* === END QR CODE PAYMENT SECTION === */}
             </CardContent>
           </Card>
         </div>

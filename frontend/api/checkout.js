@@ -21,33 +21,54 @@ const apiClient = axios.create({
   },
 });
 
+// Optional: Attach Authorization token from localStorage (authToken)
+// if your checkout routes are protected by authentication middleware.
+apiClient.interceptors.request.use((config) => {
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("authToken");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+});
+
 /**
- * @function handleCheckout
- * @description Sends a POST request to the backend's /handle-checkout endpoint
- * to initiate the checkout process.
- * @param {Object} checkoutData - The data required for checkout, typically including:
- * @param {string} checkoutData.userId - The ID of the user placing the order.
- * @param {string} checkoutData.vendorId - The ID of the vendor for the order.
- * @param {Array<Object>} checkoutData.items - An array of product/service items.
- * @param {string} checkoutData.items[].productServiceId - The ID of the product/service.
- * @param {number} checkoutData.items[].quantity - The quantity of the product/service.
- * @param {number} checkoutData.items[].price - The price of the product/service at order time.
- * @param {number} checkoutData.totalAmount - The total amount of the order.
- * @param {Object} checkoutData.address - The delivery/billing address details.
- * @returns {Promise<Object>} A promise that resolves with the API response data
- * or rejects with an error.
+ * @function handleOnlinePaymentCheckout
+ * @description Sends a request to the backend to process an online payment checkout.
+ * This typically involves creating an order and a transaction after successful payment gateway interaction.
+ * @param {Object} payload - The data for the online checkout, including userId, vendorId, items, totalAmount, address, and cashfreeOrderId.
+ * @returns {Promise<Object>} - A promise that resolves with the backend's response data on success, or rejects with an error.
  */
-export const handleCheckout = async (checkoutData) => {
+export const handleOnlinePaymentCheckout = async (payload) => {
   try {
-    const response = await apiClient.post("/handle-checkout", checkoutData);
+    const response = await apiClient.post("/handle-online-checkout", payload);
     return response.data;
   } catch (error) {
-    // Log the error for debugging purposes
-    console.error(
-      "Error during checkout:",
-      error.response ? error.response.data : error.message
+    console.error("Error during online payment checkout:", error);
+    // Throw a more structured error that can be caught by the calling component
+    throw (
+      error.response?.data || { message: "Failed to complete online checkout." }
     );
-    // Re-throw the error so it can be handled by the calling component/function
-    throw error;
+  }
+};
+
+/**
+ * @function handleEmiCheckout
+ * @description Sends a request to the backend to process an EMI (Equated Monthly Installment) checkout.
+ * This creates an order, an initial transaction (down payment + processing fee), and an EMI plan.
+ * @param {Object} payload - The data for the EMI checkout, including common order details and EMI-specific fields.
+ * @returns {Promise<Object>} - A promise that resolves with the backend's response data on success, or rejects with an error.
+ */
+export const handleEmiCheckout = async (payload) => {
+  try {
+    const response = await apiClient.post("/handle-emi-checkout", payload);
+    return response.data;
+  } catch (error) {
+    console.error("Error during EMI checkout:", error);
+    // Throw a more structured error that can be caught by the calling component
+    throw (
+      error.response?.data || { message: "Failed to complete EMI checkout." }
+    );
   }
 };

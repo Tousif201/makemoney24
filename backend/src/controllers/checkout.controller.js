@@ -4,6 +4,7 @@ import { Order } from "../models/Order.model.js"; // Adjust path
 import { Transaction } from "../models/Transaction.model.js"; // Adjust path
 import { Emi } from "../models/emi.model.js"; // Adjust path
 import { User } from "../models/User.model.js"; // Adjust path
+import { verifyCashfreePayment } from "../utils/cashfreePaymentUtils.js";
 // internalCashfreePaymentVerification (defined above or imported)
 
 // --- Standard Online Payment Checkout ---
@@ -18,45 +19,60 @@ export const handleOnlinePaymentCheckout = async (req, res) => {
   } = req.body;
 
   // 1. Basic mandatory fields validation
-  if (!userId || !vendorId || !Array.isArray(items) || items.length === 0 || !totalAmount || !address) {
+  if (
+    !userId ||
+    !vendorId ||
+    !Array.isArray(items) ||
+    items.length === 0 ||
+    !totalAmount ||
+    !address
+  ) {
     return res.status(400).json({
       success: false,
-      message: "Missing required fields: userId, vendorId, items, totalAmount, and address are mandatory.",
+      message:
+        "Missing required fields: userId, vendorId, items, totalAmount, and address are mandatory.",
     });
   }
   if (!cashfreeOrderId) {
-    return res.status(400).json({ success: false, message: "Missing Cashfree Order ID." });
+    return res
+      .status(400)
+      .json({ success: false, message: "Missing Cashfree Order ID." });
   }
 
   // 2. Basic validation for items array and totalAmount (similar to original)
   for (const item of items) {
-    if (!item.productServiceId || typeof item.quantity !== "number" || item.quantity < 1 || typeof item.price !== "number" || item.price < 0) {
+    if (
+      !item.productServiceId ||
+      typeof item.quantity !== "number" ||
+      item.quantity < 1 ||
+      typeof item.price !== "number" ||
+      item.price < 0
+    ) {
       return res.status(400).json({
         success: false,
-        message: "Each item must have a valid productServiceId, quantity (min 1), and price (min 0).",
+        message:
+          "Each item must have a valid productServiceId, quantity (min 1), and price (min 0).",
       });
     }
   }
   if (typeof totalAmount !== "number" || totalAmount <= 0) {
-    return res.status(400).json({ success: false, message: "totalAmount must be a positive number." });
+    return res.status(400).json({
+      success: false,
+      message: "totalAmount must be a positive number.",
+    });
   }
 
   // 3. Verify Cashfree Payment INTERNALLY
-  const paymentVerification = await internalCashfreePaymentVerification(cashfreeOrderId);
+  const paymentVerification = await verifyCashfreePayment(cashfreeOrderId);
   if (!paymentVerification.success) {
     return res.status(400).json({
       success: false,
-      message: paymentVerification.message || "Cashfree payment verification failed.",
-      details: paymentVerification.data || paymentVerification.errorDetails,
+      message:
+        paymentVerification.message || "Cashfree payment verification failed.",
+      details:
+        paymentVerification.orderDetails || paymentVerification.errorDetails,
     });
   }
-  // Ensure the amount matches (optional but recommended safety check)
-  if (parseFloat(paymentVerification.data.amount) !== parseFloat(totalAmount)) {
-       console.warn(`Amount mismatch for Cashfree Order ID ${cashfreeOrderId}. Expected: ${totalAmount}, Got: ${paymentVerification.data.amount}`);
-       // Decide if this is a critical failure. For now, we'll log and proceed if payment was successful.
-       // return res.status(400).json({ success: false, message: "Payment amount mismatch." });
-  }
-
 
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -82,9 +98,10 @@ export const handleOnlinePaymentCheckout = async (req, res) => {
       amount: totalAmount, // Amount verified from Cashfree
       description: `Payment for Order ID: ${savedOrder._id}`,
       status: "success", // Since paymentVerification.success is true
-      cashfreeOrderId: paymentVerification.data.orderId, // Store Cashfree's order_id
-      cashfreePaymentId: paymentVerification.data.cfPaymentId, // Store Cashfree's payment_id
-      paymentGatewayResponse: paymentVerification.data.paymentGatewayResponse,
+      cashfreeOrderId: paymentVerification.orderDetails.orderId, // Store Cashfree's order_id
+      cashfreePaymentId: paymentVerification.orderDetails.cfPaymentId, // Store Cashfree's payment_id
+      paymentGatewayResponse:
+        paymentVerification.orderDetails.paymentGatewayResponse,
     });
     const savedTransaction = await newTransaction.save({ session });
 
@@ -92,16 +109,16 @@ export const handleOnlinePaymentCheckout = async (req, res) => {
     // If not using the hook, or for explicitness:
     savedOrder.transactionId = savedTransaction._id;
     if (savedTransaction.status === "success") {
-        savedOrder.paymentStatus = "completed";
+      savedOrder.paymentStatus = "completed";
     }
     await savedOrder.save({ session });
-
 
     await session.commitTransaction();
 
     res.status(201).json({
       success: true,
-      message: "Online payment checkout successful. Order and transaction created.",
+      message:
+        "Online payment checkout successful. Order and transaction created.",
       order: savedOrder,
       transaction: savedTransaction,
     });
@@ -139,68 +156,116 @@ export const handleEmiCheckout = async (req, res) => {
   const initialPaymentAmount = downPayment + processingFee; // This is what should have been paid via Cashfree
 
   // 1. Basic mandatory fields validation
-  if (!userId || !vendorId || !Array.isArray(items) || items.length === 0 || !totalAmount || !address) {
-    return res.status(400).json({ success: false, message: "Missing common required fields." });
+  if (
+    !userId ||
+    !vendorId ||
+    !Array.isArray(items) ||
+    items.length === 0 ||
+    !totalAmount ||
+    !address
+  ) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Missing common required fields." });
   }
   if (!cashfreeOrderId) {
-    return res.status(400).json({ success: false, message: "Missing Cashfree Order ID for EMI initial payment." });
+    return res.status(400).json({
+      success: false,
+      message: "Missing Cashfree Order ID for EMI initial payment.",
+    });
   }
 
   // 2. Basic validation for items array and totalAmount
   for (const item of items) {
-    if (!item.productServiceId || typeof item.quantity !== "number" || item.quantity < 1 || typeof item.price !== "number" || item.price < 0) {
+    if (
+      !item.productServiceId ||
+      typeof item.quantity !== "number" ||
+      item.quantity < 1 ||
+      typeof item.price !== "number" ||
+      item.price < 0
+    ) {
       return res.status(400).json({
         success: false,
-        message: "Each item must have a valid productServiceId, quantity (min 1), and price (min 0).",
+        message:
+          "Each item must have a valid productServiceId, quantity (min 1), and price (min 0).",
       });
     }
   }
   if (typeof totalAmount !== "number" || totalAmount <= 0) {
-    return res.status(400).json({ success: false, message: "Order totalAmount must be a positive number." });
+    return res.status(400).json({
+      success: false,
+      message: "Order totalAmount must be a positive number.",
+    });
   }
 
   // 3. Validate EMI specific fields
   if (
-    typeof downPayment !== "number" || downPayment < 0 ||
-    typeof processingFee !== "number" || processingFee < 0 ||
-    typeof billingCycleInDays !== "number" || billingCycleInDays < 1 ||
-    typeof totalInstallments !== "number" || totalInstallments < 1 ||
-    typeof installmentAmount !== "number" || installmentAmount <= 0
+    typeof downPayment !== "number" ||
+    downPayment < 0 ||
+    typeof processingFee !== "number" ||
+    processingFee < 0 ||
+    typeof billingCycleInDays !== "number" ||
+    billingCycleInDays < 1 ||
+    typeof totalInstallments !== "number" ||
+    totalInstallments < 1 ||
+    typeof installmentAmount !== "number" ||
+    installmentAmount <= 0
   ) {
     return res.status(400).json({
       success: false,
-      message: "For EMI: downPayment, processingFee, billingCycleInDays, totalInstallments, and installmentAmount are mandatory and must be valid.",
+      message:
+        "For EMI: downPayment, processingFee, billingCycleInDays, totalInstallments, and installmentAmount are mandatory and must be valid.",
     });
   }
 
   // 4. EMI consistency check (totalAmount of goods vs EMI plan)
-   const calculatedEmiTotalValue = downPayment + (totalInstallments * installmentAmount);
-   const expectedTotalValueIncludingProcessing = totalAmount + processingFee;
-   const epsilon = 0.01;
-
-   if (Math.abs(calculatedEmiTotalValue - expectedTotalValueIncludingProcessing) > epsilon) {
-     return res.status(400).json({
-       success: false,
-       message: `EMI payment breakdown (Downpayment: ${downPayment} + Installments: ${totalInstallments}*${installmentAmount}=${totalInstallments*installmentAmount}) sums to ${calculatedEmiTotalValue}. This should cover Total Order Amount (${totalAmount}) + Processing Fee (${processingFee}) = ${expectedTotalValueIncludingProcessing}. Difference is ${Math.abs(calculatedEmiTotalValue - expectedTotalValueIncludingProcessing)}. Please check terms.`,
-     });
-   }
+  //   const calculatedEmiTotalValue =
+  //     downPayment + totalInstallments * installmentAmount + processingFee;
+  //   const expectedTotalValueIncludingProcessing = totalAmount + processingFee;
+  //   const epsilon = 0.01;
+  // console.log(calculatedEmiTotalValue,expectedTotalValueIncludingProcessing ,processingFee, Math.abs(calculatedEmiTotalValue - expectedTotalValueIncludingProcessing),calculatedEmiTotalValue - expectedTotalValueIncludingProcessing)
+  //   if (
+  //     Math.abs(calculatedEmiTotalValue - expectedTotalValueIncludingProcessing) >
+  //     epsilon
+  //   ) {
+  //     return res.status(400).json({
+  //       success: false,
+  //       message: `EMI payment breakdown (Downpayment: ${downPayment} + Installments: ${totalInstallments}*${installmentAmount}=${totalInstallments * installmentAmount}) sums to ${calculatedEmiTotalValue}. This should cover Total Order Amount (${totalAmount}) + Processing Fee (${processingFee}) = ${expectedTotalValueIncludingProcessing}. Difference is ${Math.abs(calculatedEmiTotalValue - expectedTotalValueIncludingProcessing)}. Please check terms.`,
+  //     });
+  //   }
 
   // 5. User EMI Eligibility Check (same as before)
   try {
-    const user = await User.findById(userId).populate({ path: 'emiHistory', model: 'Emi' }); // Ensure Emi model is registered for populate
+    const user = await User.findById(userId).populate({
+      path: "emiHistory",
+      model: "Emi",
+    }); // Ensure Emi model is registered for populate
     if (!user) {
-      return res.status(404).json({ success: false, message: "User not found." });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found." });
     }
     if (!user.isMember) {
-      return res.status(403).json({ success: false, message: "User is not a member. EMI facility not available." });
+      return res.status(403).json({
+        success: false,
+        message: "User is not a member. EMI facility not available.",
+      });
     }
 
-    const nonDefaultedEmis = user.emiHistory.filter(emi => emi.status !== "defaulted");
-    const existingActiveOrDefaultedEmis = user.emiHistory.filter(emi => emi.status === "ongoing" || emi.status === "defaulted");
+    const nonDefaultedEmis = user.emiHistory.filter(
+      (emi) => emi.status !== "defaulted"
+    );
+    const existingActiveOrDefaultedEmis = user.emiHistory.filter(
+      (emi) => emi.status === "ongoing" || emi.status === "defaulted"
+    );
 
-
-    if (existingActiveOrDefaultedEmis.some(emi => emi.status === "defaulted")) {
-        return res.status(403).json({ success: false, message: "User has a defaulted EMI. New EMI facility is blocked." });
+    if (
+      existingActiveOrDefaultedEmis.some((emi) => emi.status === "defaulted")
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "User has a defaulted EMI. New EMI facility is blocked.",
+      });
     }
 
     const currentEmiAttemptNumber = nonDefaultedEmis.length + 1;
@@ -214,26 +279,37 @@ export const handleEmiCheckout = async (req, res) => {
     }
   } catch (error) {
     console.error("Error during EMI eligibility check:", error);
-    return res.status(500).json({ success: false, message: "Error checking EMI eligibility.", error: error.message });
+    return res.status(500).json({
+      success: false,
+      message: "Error checking EMI eligibility.",
+      error: error.message,
+    });
   }
 
-
   // 6. Verify Cashfree Payment for the initial EMI amount (downpayment + processingFee)
-  const paymentVerification = await internalCashfreePaymentVerification(cashfreeOrderId);
+  const paymentVerification = await verifyCashfreePayment(cashfreeOrderId);
   if (!paymentVerification.success) {
     return res.status(400).json({
       success: false,
-      message: paymentVerification.message || "Cashfree payment verification for EMI initial amount failed.",
-      details: paymentVerification.data || paymentVerification.errorDetails,
+      message:
+        paymentVerification.message ||
+        "Cashfree payment verification for EMI initial amount failed.",
+      details:
+        paymentVerification.orderDetails || paymentVerification.errorDetails,
     });
   }
 
   // Ensure the amount paid matches initialPaymentAmount
-  if (parseFloat(paymentVerification.data.amount) !== parseFloat(initialPaymentAmount)) {
-    console.warn(`EMI Initial Amount mismatch for Cashfree Order ID ${cashfreeOrderId}. Expected: ${initialPaymentAmount}, Got: ${paymentVerification.data.amount}`);
+  if (
+    parseFloat(paymentVerification.orderDetails.amount) !==
+    parseFloat(initialPaymentAmount)
+  ) {
+    console.warn(
+      `EMI Initial Amount mismatch for Cashfree Order ID ${cashfreeOrderId}. Expected: ${initialPaymentAmount}, Got: ${paymentVerification.orderDetails.amount}`
+    );
     return res.status(400).json({
-        success: false,
-        message: `EMI initial payment amount mismatch. Expected ${initialPaymentAmount} but paid ${paymentVerification.data.amount}.`
+      success: false,
+      message: `EMI initial payment amount mismatch. Expected ${initialPaymentAmount} but paid ${paymentVerification.orderDetails.amount}.`,
     });
   }
 
@@ -280,33 +356,37 @@ export const handleEmiCheckout = async (req, res) => {
       amount: initialPaymentAmount, // Verified amount from Cashfree
       description: `EMI Initial Payment (Down Payment + Processing Fee) for Order ID: ${savedOrder._id}`,
       status: "success",
-      cashfreeOrderId: paymentVerification.data.orderId,
-      cashfreePaymentId: paymentVerification.data.cfPaymentId,
-      paymentGatewayResponse: paymentVerification.data.paymentGatewayResponse,
+      cashfreeOrderId: paymentVerification.orderDetails.orderId,
+      cashfreePaymentId: paymentVerification.orderDetails.cfPaymentId,
+      paymentGatewayResponse:
+        paymentVerification.orderDetails.paymentGatewayResponse,
     });
     const savedTransaction = await newTransaction.save({ session });
 
     // 10. Update Order with transactionId and paymentStatus
     savedOrder.transactionId = savedTransaction._id;
     if (savedTransaction.status === "success") {
-        savedOrder.paymentStatus = "completed"; // Mark order as paid (initial part)
+      savedOrder.paymentStatus = "completed"; // Mark order as paid (initial part)
     }
     await savedOrder.save({ session });
 
-
     // 11. Update User's EMI History
-    await User.findByIdAndUpdate(userId, { $push: { emiHistory: savedEmi._id } }, { session, new: true });
+    await User.findByIdAndUpdate(
+      userId,
+      { $push: { emiHistory: savedEmi._id } },
+      { session, new: true }
+    );
 
     await session.commitTransaction();
 
     res.status(201).json({
       success: true,
-      message: "EMI checkout successful. Order, initial transaction, and EMI plan created.",
+      message:
+        "EMI checkout successful. Order, initial transaction, and EMI plan created.",
       order: savedOrder,
       transaction: savedTransaction,
       emi: savedEmi,
     });
-
   } catch (error) {
     await session.abortTransaction();
     console.error("Error during EMI checkout:", error);

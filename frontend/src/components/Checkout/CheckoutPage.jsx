@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,7 +18,6 @@ import { Badge } from "@/components/ui/badge";
 import { MapPin, User, Lock, CreditCard } from "lucide-react";
 import { useCart } from "../../context/CartContext";
 import { useSession } from "../../context/SessionContext";
-import { handleCheckout } from "../../../api/checkout";
 
 import {
   Dialog,
@@ -30,7 +29,11 @@ import {
   DialogTitle,
 } from "../ui/dialog";
 import { Slider } from "@/components/ui/slider";
-import { createRazorpayOrderApi,verifyPaymentApi } from "../../../api/razorpay";
+// We need this back to initiate the Cashfree payment!
+import { createCashfreeOrder } from "../../../api/cashfree"; // Assuming this is your API call to create Cashfree order
+import { load } from "@cashfreepayments/cashfree-js";
+// These are for backend processing AFTER Cashfree payment is done/redirected
+import { handleEmiCheckout, handleOnlinePaymentCheckout } from "../../../api/checkout";
 
 // --- START: EMI Feature Related Constants and Helper Functions ---
 const MIN_AMOUNT_FOR_EMI = 500;
@@ -43,54 +46,32 @@ const calculateMonthlyEMI = (principal, tenureInMonths) => {
 };
 // --- END: EMI Feature Related Constants and Helper Functions ---
 
-// Helper to load Razorpay script dynamically
-const loadRazorpayScript = (src) => {
-  return new Promise((resolve) => {
-    const script = document.createElement("script");
-    script.src = src;
-    script.onload = () => resolve(true);
-    script.onerror = () => resolve(false);
-    document.body.appendChild(script);
-  });
-};
-
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const { items, getTotalPrice, clearCart } = useCart();
   const { session, user } = useSession();
 
   const [isProcessing, setIsProcessing] = useState(false);
-  const [sameAsShipping, setSameAsShipping] = useState(true);
-
   const [shippingInfo, setShippingInfo] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
+    firstName: user?.firstName || "",
+    lastName: user?.lastName || "",
+    email: user?.email || "",
+    phone: user?.phone || "",
     address: "",
     city: "",
     state: "",
     pincode: "",
     country: "India",
   });
-
-  const [billingInfo, setBillingInfo] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-    address: "",
-    city: "",
-    state: "",
-    pincode: "",
-    country: "India",
-  });
-
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   // EMI Feature States
   const [showEmiDialog, setShowEmiDialog] = useState(false);
   const [downPayment, setDownPayment] = useState(0); // Down payment percentage (0-100)
   const [emiTenure, setEmiTenure] = useState("3"); // Default EMI tenure in months as a string
   const [isEmiConfirmed, setIsEmiConfirmed] = useState(false); // New state to track if EMI was confirmed
+
+  // State to temporarily store transaction details for post-payment processing
+  const [pendingTransactionDetails, setPendingTransactionDetails] = useState(null);
 
   // Calculate prices using useMemo
   const totalPrice = useMemo(() => getTotalPrice(), [getTotalPrice]);
@@ -102,7 +83,6 @@ export default function CheckoutPage() {
 
   const processingFee = useMemo(() => {
     if (finalTotal < MIN_AMOUNT_FOR_EMI) return 0;
-    // Current logic from the component, assumes processing fee is for the entire finalTotal
     if (finalTotal <= 3000) {
       return finalTotal * 0.05;
     } else {
@@ -111,24 +91,113 @@ export default function CheckoutPage() {
   }, [finalTotal]);
 
   const downPaymentAmount = useMemo(() => {
-    // Calculates down payment amount based on the percentage of finalTotal
     return (finalTotal * downPayment) / 100;
   }, [finalTotal, downPayment]);
 
   const remainingAmountForEmi = useMemo(() => {
-    // Amount remaining to be paid via installments
     return finalTotal - downPaymentAmount;
   }, [finalTotal, downPaymentAmount]);
 
   const totalDownPaymentDue = useMemo(() => {
-    // This is the amount the user pays upfront if EMI is selected
     return downPaymentAmount + processingFee;
   }, [downPaymentAmount, processingFee]);
 
   const monthlyEmi = useMemo(() => {
-    // Calculate monthly EMI for the remaining amount
     return calculateMonthlyEMI(remainingAmountForEmi, parseInt(emiTenure));
   }, [remainingAmountForEmi, emiTenure]);
+
+   // useEffect to handle Cashfree redirects and backend processing
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const cashfreeOrderId = urlParams.get("order_id"); // This is Cashfree's order_id from the redirect
+
+    // Retrieve pending transaction details from session storage
+    const storedPendingDetails = JSON.parse(sessionStorage.getItem('pendingCheckoutDetails'));
+
+    // Check if we have Cashfree redirect parameters AND stored checkout details
+    if (cashfreeOrderId && storedPendingDetails) {
+      console.log(
+        `[useEffect] Redirect detected for Cashfree Order ID: ${cashfreeOrderId}.`
+      );
+      console.log("[useEffect] Stored pending details:", storedPendingDetails);
+
+      // Prevent duplicate processing on refresh
+      if (sessionStorage.getItem('processingRedirect') === 'true') {
+        console.log('[useEffect] Already processing redirect, exiting.');
+        return;
+      }
+      sessionStorage.setItem('processingRedirect', 'true'); // Set flag
+
+      const processPaymentResponse = async () => {
+        console.log("process payment response triggered for backend verification.");
+        setIsProcessing(true); // Show loading state
+
+        try {
+          const commonPayload = {
+            userId: storedPendingDetails.userId,
+            vendorId: storedPendingDetails.vendorId,
+            items: storedPendingDetails.items,
+            totalAmount: storedPendingDetails.totalAmount, // This is the total order value
+            address: storedPendingDetails.address,
+            cashfreeOrderId: cashfreeOrderId, // Pass Cashfree's orderId
+          };
+
+          let backendCheckoutResult;
+          if (storedPendingDetails.isEmi) {
+            const emiSpecificPayload = {
+              ...commonPayload,
+              downPayment: storedPendingDetails.downPayment,
+              processingFee: storedPendingDetails.processingFee,
+              billingCycleInDays: storedPendingDetails.billingCycleInDays,
+              totalInstallments: storedPendingDetails.totalInstallments,
+              installmentAmount: storedPendingDetails.installmentAmount,
+            };
+            console.log("Calling handleEmiCheckout with:", emiSpecificPayload);
+            backendCheckoutResult = await handleEmiCheckout(emiSpecificPayload);
+          } else {
+            console.log("Calling handleOnlinePaymentCheckout with:", commonPayload);
+            backendCheckoutResult = await handleOnlinePaymentCheckout(commonPayload);
+          }
+
+          if (backendCheckoutResult.success) {
+            alert("Order placed successfully! Check your order history.");
+            clearCart();
+            // Navigate to success page with order details
+            navigate("/checkout/success", { state: { order: backendCheckoutResult.order, type: storedPendingDetails.isEmi ? 'emi' : 'online' } });
+          } else {
+            // Backend indicated failure after its own verification
+            alert(`Order processing failed: ${backendCheckoutResult.message || "Unknown error"}`);
+            console.error("Backend checkout failed:", backendCheckoutResult.error || backendCheckoutResult.message);
+            // Navigate to failure page
+            navigate("/payment-failed");
+          }
+        } catch (error) {
+          alert("An unexpected error occurred during order processing. Please check your order status.");
+          console.error("Error during post-payment verification:", error);
+          navigate("/payment-failed");
+        } finally {
+          setIsProcessing(false); // Hide loading state
+          sessionStorage.removeItem('pendingCheckoutDetails'); // Clear stored details
+          sessionStorage.removeItem('processingRedirect'); // Clear processing flag
+          // Always clean up URL parameters after processing
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+      };
+
+      // Trigger the backend processing function immediately if Cashfree Order ID is present
+      // Your backend will handle the actual verification with Cashfree.
+      processPaymentResponse();
+
+    } else if (urlParams.toString() !== '' && !cashfreeOrderId && !storedPendingDetails) {
+        // This 'else if' block catches cases where URL parameters are present but
+        // it's not a Cashfree redirect (missing order_id) OR
+        // storedPendingDetails were lost/never set for a valid redirect.
+        console.log("[useEffect] Detected URL parameters but not a valid Cashfree redirect with stored details. Cleaning URL.");
+        window.history.replaceState({}, document.title, window.location.pathname);
+    } else {
+      console.log("[useEffect] No Cashfree payment parameters or stored details found in URL/session.");
+    }
+  }, [navigate, clearCart]); // Add dependencies for useEffect
 
   // --- CONDITIONAL RENDERING AFTER ALL HOOKS ARE DECLARED ---
   if (!session) {
@@ -161,301 +230,9 @@ export default function CheckoutPage() {
 
   const handleShippingChange = (field, value) => {
     setShippingInfo((prev) => ({ ...prev, [field]: value }));
-    if (sameAsShipping) {
-      setBillingInfo((prev) => ({ ...prev, [field]: value }));
-    }
   };
 
-  const handleBillingChange = (field, value) => {
-    setBillingInfo((prev) => ({ ...prev, [field]: value }));
-  };
-
-  // This will be called by Razorpay's handler after a successful payment
-  const handlePaymentSuccess = useCallback(
-    async (razorpayResponse) => {
-      console.log("--- handlePaymentSuccess initiated (Razorpay callback) ---");
-      console.log("Razorpay Response:", razorpayResponse);
-      setIsProcessing(true);
-
-      try {
-        // Step 1: Verify the payment with your backend API
-        console.log("Step 1: Verifying Razorpay payment with backend...");
-        const verificationPayload = {
-          razorpay_payment_id: razorpayResponse.razorpay_payment_id,
-          razorpay_order_id: razorpayResponse.razorpay_order_id,
-          razorpay_signature: razorpayResponse.razorpay_signature,
-        };
-        const validatedRazorpayResponse = await verifyPaymentApi(
-          verificationPayload
-        );
-
-        if (!validatedRazorpayResponse.success) {
-          alert(
-            `Payment verification failed: ${
-              validatedRazorpayResponse.message || "Unknown error"
-            }`
-          );
-          setIsProcessing(false);
-          return; // Stop further processing if verification fails
-        }
-        console.log(
-          "Razorpay payment verified successfully:",
-          validatedRazorpayResponse
-        );
-
-        console.log("Step 2: Grouping cart items by vendor...");
-        const itemsByVendor = items.reduce((acc, item) => {
-          const vendorId = item.vendor;
-          if (!acc[vendorId]) {
-            acc[vendorId] = [];
-          }
-          acc[vendorId].push(item);
-          return acc;
-        }, {});
-        console.log("Items grouped by vendor:", itemsByVendor);
-
-        const createdOrderIds = [];
-        let successCount = 0;
-        let failureCount = 0;
-
-        console.log("Step 3: Calling handleCheckout for each vendor...");
-        for (const vendorId in itemsByVendor) {
-          const vendorItems = itemsByVendor[vendorId];
-          const vendorOrderSubtotal = vendorItems.reduce(
-            (sum, item) => sum + item.price * item.quantity,
-            0
-          );
-
-          // Base checkout payload
-          const checkoutPayload = {
-            userId: session?.id,
-            vendorId: vendorId,
-            items: vendorItems.map((item) => ({
-              productServiceId: item.id,
-              quantity: item.quantity,
-              price: item.price,
-              variant: item.variant,
-            })),
-            totalAmount: vendorOrderSubtotal, // This is the total for THIS vendor's order
-            address: shippingInfo,
-            // Use the original razorpayResponse details, as verification simply confirms their authenticity
-            razorpayPaymentId: razorpayResponse.razorpay_payment_id,
-            razorpayOrderId: razorpayResponse.razorpay_order_id,
-            razorpaySignature: razorpayResponse.razorpay_signature,
-          };
-
-          // Add EMI specific fields if EMI was confirmed
-          if (isEmiConfirmed) {
-            // Calculate proportional values for each vendor's order
-            // This ensures downPayment, processingFee, and installmentAmount are
-            // correctly distributed per vendor order for the EMI plan.
-            const proportionalDownPayment =
-              (downPaymentAmount * vendorOrderSubtotal) / finalTotal;
-            const proportionalProcessingFee =
-              (processingFee * vendorOrderSubtotal) / finalTotal;
-            // The remainingAmountForEmi is the cart-wide principal for EMIs.
-            // proportionalInstallmentAmount calculates this vendor's share of the monthly EMI.
-            const proportionalInstallmentAmount =
-              (monthlyEmi * vendorOrderSubtotal) /
-              (finalTotal - downPaymentAmount);
-
-            checkoutPayload.isEmi = true;
-            checkoutPayload.downPayment = parseFloat(
-              proportionalDownPayment.toFixed(2)
-            );
-            checkoutPayload.processingFee = parseFloat(
-              proportionalProcessingFee.toFixed(2)
-            );
-            checkoutPayload.billingCycleInDays = parseInt(emiTenure) * 30; // Assuming 30 days per month
-            checkoutPayload.totalInstallments = parseInt(emiTenure);
-            checkoutPayload.installmentAmount = parseFloat(
-              proportionalInstallmentAmount.toFixed(2)
-            );
-          }
-
-          console.log(
-            `Attempting to call handleCheckout for Vendor ID: ${vendorId} with payload:`,
-            checkoutPayload
-          );
-
-          try {
-            const response = await handleCheckout(checkoutPayload);
-            if (response.success) {
-              console.log(
-                `Order for Vendor ID ${vendorId} successful:`,
-                response
-              );
-              createdOrderIds.push(response.order._id);
-              successCount++;
-            } else {
-              console.error(
-                `Order for Vendor ID ${vendorId} failed:`,
-                response.message
-              );
-              failureCount++;
-            }
-          } catch (error) {
-            console.error(
-              `Error calling handleCheckout for Vendor ID ${vendorId}:`,
-              error
-            );
-            failureCount++;
-          }
-        }
-
-        console.log("All handleCheckout calls completed.");
-        console.log(
-          `Successful orders: ${successCount}, Failed orders: ${failureCount}`
-        );
-
-        if (successCount > 0) {
-          alert(
-            `Orders placed successfully for ${successCount} vendor(s)! ${
-              failureCount > 0 ? `(${failureCount} failed)` : ""
-            }`
-          );
-          clearCart();
-          console.log("Cart cleared.");
-          navigate(`/checkout/success?orderIds=${createdOrderIds.join(",")}`);
-        } else {
-          alert("All orders failed to place. Please contact support.");
-        }
-      } catch (error) {
-        console.error(
-          "An unexpected error occurred during multi-vendor checkout or payment verification:",
-          error
-        );
-        alert(
-          "An unexpected error occurred during checkout or payment verification. Please try again."
-        );
-      } finally {
-        console.log("--- handlePaymentSuccess finished ---");
-        setIsProcessing(false);
-        setIsEmiConfirmed(false); // Reset EMI confirmation after processing
-      }
-    },
-    [
-      items,
-      session?.id,
-      shippingInfo,
-      isEmiConfirmed,
-      downPaymentAmount,
-      processingFee,
-      emiTenure,
-      monthlyEmi,
-      finalTotal,
-      clearCart,
-      navigate,
-    ]
-  ); // Dependencies for useCallback
-
-  // This will be called by Razorpay's handler if payment fails
-  const handlePaymentError = useCallback((error) => {
-    console.error("Payment error (from Razorpay):", error);
-    alert(
-      `Payment Failed: ${
-        error.description || error.message || "Please try again."
-      }`
-    );
-    setIsProcessing(false);
-    setIsEmiConfirmed(false); // Reset EMI confirmation on error
-  }, []);
-
-  // Function to initiate Razorpay payment
-  const openRazorpay = useCallback(async () => {
-    setIsProcessing(true);
-
-    const res = await loadRazorpayScript(
-      "https://checkout.razorpay.com/v1/checkout.js"
-    );
-
-    if (!res) {
-      alert("Razorpay SDK failed to load. Are you online?");
-      setIsProcessing(false);
-      return;
-    }
-
-    // Determine the amount to send to your backend for Razorpay order creation
-    const amountForRazorpayOrder = isEmiConfirmed
-      ? totalDownPaymentDue
-      : finalTotal;
-
-    // --- NEW: Create Razorpay Order via Backend API ---
-    console.log("Creating Razorpay order on backend...");
-    const orderCreationPayload = {
-      amount: Math.round(amountForRazorpayOrder * 100), // Amount in paisa
-      currency: "INR",
-      receipt: `receipt_${Date.now()}`, // Unique receipt ID
-      payment_capture: 1, // Auto capture payment
-      // You can add more notes or data to this payload if your backend API expects it
-    };
-
-    let orderResponse;
-    try {
-      orderResponse = await createRazorpayOrderApi(orderCreationPayload);
-      if (!orderResponse.success || !orderResponse.orderId) {
-        alert(
-          `Failed to create Razorpay order: ${
-            orderResponse.message || "Unknown error"
-          }`
-        );
-        setIsProcessing(false);
-        return;
-      }
-      console.log("Razorpay order created:", orderResponse);
-    } catch (error) {
-      console.error("Error creating Razorpay order:", error);
-      alert("An error occurred while preparing payment. Please try again.");
-      setIsProcessing(false);
-      return;
-    }
-    // --- END NEW ---
-
-    const options = {
-      // IMPORTANT: Replace with your actual Razorpay Key ID
-      key: "YOUR_RAZORPAY_KEY_ID",
-      amount: orderResponse.amount, // Use amount returned by backend (should match what you sent)
-      currency: orderResponse.currency, // Use currency returned by backend
-      name: "MakeMoney24",
-      description: isEmiConfirmed ? "EMI Initial Payment" : "Product Purchase",
-      image: "https://placehold.co/100x100/8B5CF6/FFFFFF?text=MM24",
-      order_id: orderResponse.orderId, // <--- Use the order_id from your backend here
-      handler: (response) => handlePaymentSuccess(response),
-      prefill: {
-        name: `${shippingInfo.firstName} ${shippingInfo.lastName}`,
-        email: shippingInfo.email,
-        contact: shippingInfo.phone,
-      },
-      notes: {
-        orderType: isEmiConfirmed ? "EMI" : "Full Payment",
-        // Additional notes can be added here
-      },
-      theme: {
-        color: "#8B5CF6", // Purple
-      },
-    };
-
-    const paymentObject = new window.Razorpay(options);
-    paymentObject.on("payment.failed", (response) =>
-      handlePaymentError(response.error)
-    );
-    paymentObject.open();
-  }, [
-    isEmiConfirmed,
-    totalDownPaymentDue,
-    finalTotal,
-    shippingInfo,
-    session?.id, // Added session.id for receipt
-    handlePaymentSuccess,
-    handlePaymentError,
-    // createRazorpayOrderApi implicitly used by the call
-  ]);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    console.log("Form submission initiated (client-side validation check).");
-
-    // Form validation
+  const validateShippingInfo = () => {
     if (
       !shippingInfo.firstName ||
       !shippingInfo.lastName ||
@@ -466,36 +243,106 @@ export default function CheckoutPage() {
       !shippingInfo.state ||
       !shippingInfo.pincode
     ) {
-      alert(
-        "Please fill in all shipping information before proceeding to payment."
-      );
-      console.log("Shipping information missing.");
-      return;
+      alert("Please fill in all shipping information before proceeding.");
+      return false;
     }
-    if (
-      !sameAsShipping &&
-      (!billingInfo.firstName ||
-        !billingInfo.lastName ||
-        !billingInfo.address ||
-        !billingInfo.city ||
-        !billingInfo.state ||
-        !billingInfo.pincode)
-    ) {
-      alert(
-        "Please fill in all billing information before proceeding to payment."
-      );
-      console.log("Billing information missing.");
+    if (!agreedToTerms) {
+      alert("You must agree to the Terms of Service and Privacy Policy.");
+      return false;
+    }
+    return true;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsProcessing(true);
+
+    if (!validateShippingInfo()) {
+      setIsProcessing(false);
       return;
     }
 
-    console.log(
-      `Client-side validation passed. ${
-        isEmiConfirmed ? "EMI initial payment" : "Full payment"
-      } expected to be triggered next.`
-    );
+    // Map cart items to the expected backend format (productServiceId, quantity, price)
+    const formattedItems = items.map(item => ({
+      productServiceId: item.productId,
+      quantity: item.quantity,
+      price: item.price
+    }));
 
-    // Trigger Razorpay payment
-    openRazorpay();
+    const paymentAmount = isEmiConfirmed ? totalDownPaymentDue : finalTotal;
+    const vendorIdFromItems = items[0]?.vendor; // Assuming single vendor for simplicity
+
+    // Prepare data to store for post-payment processing
+    const pendingDetails = {
+      userId: user._id,
+      vendorId: vendorIdFromItems,
+      items: formattedItems,
+      totalAmount: finalTotal, // Store full order total, not just initial payment amount
+      address: `${shippingInfo.address}, ${shippingInfo.city}, ${shippingInfo.state} - ${shippingInfo.pincode}, ${shippingInfo.country}`,
+      isEmi: isEmiConfirmed,
+      // EMI specific details if applicable
+      downPayment: isEmiConfirmed ? downPaymentAmount : undefined,
+      processingFee: isEmiConfirmed ? processingFee : undefined,
+      billingCycleInDays: isEmiConfirmed ? 30 : undefined, // Assuming a monthly billing cycle
+      totalInstallments: isEmiConfirmed ? parseInt(emiTenure) : undefined,
+      installmentAmount: isEmiConfirmed ? monthlyEmi : undefined,
+    };
+    // Store these details in sessionStorage before redirecting to Cashfree
+    sessionStorage.setItem('pendingCheckoutDetails', JSON.stringify(pendingDetails));
+
+    try {
+      // Step 1: Create Cashfree Order on YOUR backend to get payment_session_id
+      const cashfreeOrderRes = await createCashfreeOrder({
+        order_amount: paymentAmount,
+        customer_details: {
+          customer_id: user._id,
+          customer_phone: shippingInfo.phone,
+          customer_email: shippingInfo.email,
+        },
+        order_note: isEmiConfirmed ? "EMI Initial Payment" : "Full Payment",
+        // The redirectPath should be the current checkout page, where the useEffect will pick up parameters
+        redirectPath: "checkout",
+      });
+
+      if (cashfreeOrderRes.success && cashfreeOrderRes.payment_session_id) {
+        const paymentSessionId = cashfreeOrderRes.payment_session_id;
+        console.log(
+          `[Client] Received payment_session_id: ${paymentSessionId}. Loading Cashfree SDK...`
+        );
+
+        const cashfree = await load({
+          mode: "sandbox", // "sandbox" for testing, "production" for live
+        });
+
+        console.log(
+          "[Client] Cashfree SDK loaded. Initiating checkout with redirect..."
+        );
+        let checkoutOptions = {
+          paymentSessionId: paymentSessionId,
+          redirectTarget: "_self", // Redirect to same tab
+          onScriptLoad: () =>
+            console.log(
+              "[Cashfree SDK] script loaded successfully for redirect."
+            ),
+          onScriptError: (error) =>
+            console.error("[Cashfree SDK] script load error:", error),
+        };
+
+        // This will redirect the user to Cashfree's payment page
+        cashfree.checkout(checkoutOptions);
+
+      } else {
+        alert(cashfreeOrderRes.message || "Failed to initiate payment with Cashfree. Please try again.");
+        console.error("Failed to create Cashfree order:", cashfreeOrderRes.error || cashfreeOrderRes.message);
+        sessionStorage.removeItem('pendingCheckoutDetails'); // Clear if initiation fails
+      }
+    } catch (error) {
+      alert("An error occurred during payment initiation. Please try again.");
+      console.error("Error during Cashfree order creation:", error);
+      sessionStorage.removeItem('pendingCheckoutDetails'); // Clear if initiation fails
+    } finally {
+      setIsProcessing(false); // Only set to false here, as actual order processing is handled by useEffect on redirect
+    }
   };
 
   const handleEmiConfirmation = () => {
@@ -507,45 +354,19 @@ export default function CheckoutPage() {
       alert("Please select an EMI tenure.");
       return;
     }
-    if (
-      remainingAmountForEmi <= 0 &&
-      parseInt(emiTenure) > 0 &&
-      downPayment < 100
-    ) {
-      alert(
-        "Remaining amount for EMI must be greater than zero for installments, or down payment must be 100%."
-      );
-      return;
+    if (remainingAmountForEmi <= 0 && downPayment < 100) {
+        alert("The remaining amount for EMI is zero, but down payment is not 100%. Please adjust.");
+        return;
     }
-    if (monthlyEmi <= 0 && remainingAmountForEmi > 0) {
+    if (remainingAmountForEmi > 0 && monthlyEmi <= 0) {
       alert(
         "Calculated monthly EMI is zero or less. Adjust down payment or tenure."
       );
       return;
     }
 
-    console.log("--- EMI Conversion Confirmed ---");
-    console.log(`Original Total: ₹${finalTotal.toLocaleString()}`);
-    console.log(`Down Payment Percentage: ${downPayment}%`);
-    console.log(`Down Payment Amount: ₹${downPaymentAmount.toLocaleString()}`);
-    console.log(`Processing Fee: ₹${processingFee.toLocaleString()}`);
-    console.log(
-      `Total Due Now (Down Payment + Fee): ₹${totalDownPaymentDue.toLocaleString()}`
-    );
-    console.log(
-      `Remaining Amount for EMIs: ₹${remainingAmountForEmi.toLocaleString()}`
-    );
-    console.log(`Selected EMI Tenure: ${emiTenure} months`);
-    console.log(`Estimated Monthly EMI: ₹${monthlyEmi.toLocaleString()}`);
-    console.log(
-      `Overall Total Payable (Down Payment + Monthly EMIs): ₹${(
-        totalDownPaymentDue +
-        monthlyEmi * parseInt(emiTenure)
-      ).toLocaleString()}`
-    );
-
-    setIsEmiConfirmed(true); // Mark EMI as confirmed
-    setShowEmiDialog(false); // Close the dialog
+    setIsEmiConfirmed(true);
+    setShowEmiDialog(false);
     alert(
       "EMI plan configured. Proceed to place order to complete the initial payment."
     );
@@ -651,17 +472,19 @@ export default function CheckoutPage() {
                         onValueChange={(value) =>
                           handleShippingChange("state", value)
                         }
+                        required
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select state" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="delhi">Delhi</SelectItem>
-                          <SelectItem value="mumbai">Mumbai</SelectItem>
-                          <SelectItem value="bangalore">Bangalore</SelectItem>
-                          <SelectItem value="chennai">Chennai</SelectItem>
-                          <SelectItem value="kolkata">Kolkata</SelectItem>
-                          {/* Add more states as needed */}
+                          <SelectItem value="Delhi">Delhi</SelectItem>
+                          <SelectItem value="Maharashtra">Maharashtra</SelectItem>
+                          <SelectItem value="Karnataka">Karnataka</SelectItem>
+                          <SelectItem value="Tamil Nadu">Tamil Nadu</SelectItem>
+                          <SelectItem value="West Bengal">West Bengal</SelectItem>
+                          <SelectItem value="Madhya Pradesh">Madhya Pradesh</SelectItem>
+                           {/* Add more states as needed (e.g., from a comprehensive list) */}
                         </SelectContent>
                       </Select>
                     </div>
@@ -677,118 +500,6 @@ export default function CheckoutPage() {
                       />
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-
-              {/* Billing Information */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <User className="h-5 w-5 text-yellow-600" />
-                    Billing Information
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="same-as-shipping"
-                      checked={sameAsShipping}
-                      onCheckedChange={(checked) => {
-                        setSameAsShipping(checked);
-                        if (checked) {
-                          setBillingInfo(shippingInfo);
-                        }
-                      }}
-                    />
-                    <Label htmlFor="same-as-shipping">
-                      Same as shipping address
-                    </Label>
-                  </div>
-
-                  {!sameAsShipping && (
-                    <>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="billing-firstName">First Name</Label>
-                          <Input
-                            id="billing-firstName"
-                            value={billingInfo.firstName}
-                            onChange={(e) =>
-                              handleBillingChange("firstName", e.target.value)
-                            }
-                            required
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="billing-lastName">Last Name</Label>
-                          <Input
-                            id="billing-lastName"
-                            value={billingInfo.lastName}
-                            onChange={(e) =>
-                              handleBillingChange("lastName", e.target.value)
-                            }
-                            required
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <Label htmlFor="billing-address">Address</Label>
-                        <Textarea
-                          id="billing-address"
-                          value={billingInfo.address}
-                          onChange={(e) =>
-                            handleBillingChange("address", e.target.value)
-                          }
-                          required
-                        />
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                          <Label htmlFor="billing-city">City</Label>
-                          <Input
-                            id="billing-city"
-                            value={billingInfo.city}
-                            onChange={(e) =>
-                              handleBillingChange("city", e.target.value)
-                            }
-                            required
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="billing-state">State</Label>
-                          <Select
-                            value={billingInfo.state}
-                            onValueChange={(value) =>
-                              handleBillingChange("state", value)
-                            }
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select state" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="delhi">Delhi</SelectItem>
-                              <SelectItem value="mumbai">Mumbai</SelectItem>
-                              <SelectItem value="bangalore">
-                                Bangalore
-                              </SelectItem>
-                              {/* Add more states as needed */}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label htmlFor="billing-pincode">Pincode</Label>
-                          <Input
-                            id="billing-pincode"
-                            value={billingInfo.pincode}
-                            onChange={(e) =>
-                              handleBillingChange("pincode", e.target.value)
-                            }
-                            required
-                          />
-                        </div>
-                      </div>
-                    </>
-                  )}
                 </CardContent>
               </Card>
             </div>
@@ -937,7 +648,13 @@ export default function CheckoutPage() {
                   </Button>
 
                   <label className="flex items-start text-xs text-gray-500">
-                    <input type="checkbox" className="mr-2 mt-1" required />
+                    <input
+                      type="checkbox"
+                      className="mr-2 mt-1"
+                      required
+                      checked={agreedToTerms}
+                      onChange={(e) => setAgreedToTerms(e.target.checked)}
+                    />
                     <span>
                       By placing your order, you agree to our{" "}
                       <span className="underline">Terms of Service</span> and{" "}
@@ -1054,7 +771,7 @@ export default function CheckoutPage() {
             </DialogClose>
             <Button
               type="button"
-              onClick={handleEmiConfirmation} // Now calls handleEmiConfirmation
+              onClick={handleEmiConfirmation}
               disabled={
                 finalTotal < MIN_AMOUNT_FOR_EMI ||
                 !emiTenure ||

@@ -177,12 +177,7 @@ export const getAdminDashboardData = async (req, res) => {
 export const upgradeUser = async (req, res) => {
   const { userId } = req.params;
   // Destructure Razorpay fields directly from req.body
-  const {
-    membershipAmount,
-    razorpayPaymentId,
-    razorpayOrderId,
-    razorpaySignature,
-  } = req.body;
+  const { membershipAmount, cashFreeOrderId } = req.body;
 
   if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
     return res
@@ -194,15 +189,6 @@ export const upgradeUser = async (req, res) => {
     return res
       .status(400)
       .json({ success: false, message: "Invalid membership amount." });
-  }
-
-  // Validate Razorpay fields - they should be present if this is a payment-driven upgrade
-  if (!razorpayPaymentId || !razorpayOrderId || !razorpaySignature) {
-    return res.status(400).json({
-      success: false,
-      message:
-        "Missing Razorpay payment details. Payment ID, Order ID, and Signature are required.",
-    });
   }
 
   const session = await mongoose.startSession();
@@ -237,9 +223,9 @@ export const upgradeUser = async (req, res) => {
       amount: membershipAmount,
       description: `Membership purchase for ${user.email}`,
       status: "success", // Assuming payment is already verified before this step
-      razorpayPaymentId, // Use the provided Razorpay fields
-      razorpayOrderId, // Use the provided Razorpay fields
-      razorpaySignature, // Use the provided Razorpay fields
+      cashFreeOrderId: cashFreeOrderId
+        ? cashFreeOrderId
+        : "Mannual_Enrollment ",
     });
     await newTransaction.save({ session });
 

@@ -46,6 +46,7 @@ import ProductDetailPage from "../pages/ProductDetailPage";
 import { Toaster } from "sonner";
 import UsersDetailsPageAdmin from "../pages/Dashboard/Admin/UsersDetailsPageAdmin";
 import EmiSchedule from "../pages/Dashboard/Users/EmiSchedule";
+import Test from "../pages/Dashboard/test";
 
 const routes = [
   {
@@ -408,6 +409,14 @@ const routes = [
     element: (
       <DashboardLayout>
         <EmiSchedule />
+      </DashboardLayout>
+    ),
+  },
+   {
+    path: "/dashboard/test",
+    element: (
+      <DashboardLayout>
+        <Test />
       </DashboardLayout>
     ),
   },
