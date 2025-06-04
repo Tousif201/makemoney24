@@ -39,7 +39,7 @@ export default function MembershipPage() {
     );
   }
 
-  const isMember = user.isMember;
+  const isMember = false;
 
   const benefits = [
     "PayLater options on orders above ₹500",
@@ -114,8 +114,8 @@ export default function MembershipPage() {
   ];
 
   // This QR code should encode the payment request (e.g., UPI QR code).
-  const qrCodeImageUrl = "https://hexdocs.pm/qr_code/docs/qrcode.svg";
-  const whatsappNumber = "+919876543210"; // Replace with your actual WhatsApp number
+  const qrCodeImageUrl = "/scanner.jpeg";
+  const whatsappNumber = "+918237301130"; // Replace with your actual WhatsApp number
 
   // permanent needs cashfree integration
   // if (!isMember) {

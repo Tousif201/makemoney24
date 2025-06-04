@@ -1,19 +1,43 @@
-// src/routes/cashfree.routes.js (assuming this is your router file)
+// src/routes/cashfree.routes.js
 import express from "express";
-// Import handleWebhook along with your existing controller functions
-import { createOrderCF, verifyPayment, handleWebhook } from "../controllers/cashfree.controller.js";
+import {
+  createOrderCF,
+  verifyPayment,
+  handleWebhook,
+  getBalance,     // <-- Import new payout controller
+  verifyBank,     // <-- Import new payout controller
+  sendPayout      // <-- Import new payout controller
+} from "../controllers/cashfree.controller.js"; // Assuming controller file is named cashfreeController.js
 
 const router = express.Router();
 
+// -----------------------------------------------------------------------------
+// PAYMENT GATEWAY (PG) ROUTES
+// -----------------------------------------------------------------------------
+
 // Route to create a Cashfree order
-router.post("/create-order", createOrderCF); // Changed from "/" to "/create-order" for clarity and consistency
+router.post("/create-order", createOrderCF);
 
 // Route to verify payment status
 router.get("/verify-payment/:order_id", verifyPayment);
 
-// Route for Cashfree Webhook notifications
-// This is the URL you will configure in your Cashfree Dashboard for webhooks.
-// Make sure your backend server allows raw body parsing for this endpoint if you implement signature verification.
+// Route for Cashfree Webhook notifications for Payment Gateway
+// This is the URL you will configure in your Cashfree Dashboard for PG webhooks.
 router.post("/webhook", handleWebhook);
+
+// -----------------------------------------------------------------------------
+// PAYOUTS ROUTES
+// -----------------------------------------------------------------------------
+
+// Route to get Cashfree Payout account balance
+router.get("/payouts/balance", getBalance);
+
+// Route to verify bank account details for Payouts
+// Expects bankAccount and ifsc in the request body
+router.post("/payouts/verify-bank-account", verifyBank);
+
+// Route to initiate a payout (bank transfer)
+// Expects amount, bankAccount, ifsc, name, transferId in the request body
+router.post("/payouts/transfer", sendPayout);
 
 export default router;
