@@ -9,9 +9,10 @@ import {
   UserPlus,
   Users,
   Wallet,
+  Star, // Imported Star icon
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useState, useEffect } from "react"; // Import useState and useEffect
+import { useState, useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -59,25 +60,37 @@ export default function UserHome() {
   const defaultStats = [
     {
       title: "Total Earnings",
-      value: analyticsData?.totalLevelEarning !== undefined ? `₹${analyticsData.totalLevelEarning.toLocaleString()}` : "Loading...",
+      value:
+        analyticsData?.totalLevelEarning !== undefined
+          ? `₹${analyticsData.totalLevelEarning.toLocaleString()}`
+          : "Loading...",
       change: "From Referral Levels",
       icon: TrendingUp,
     },
     {
       title: "Active Referrals",
-      value: analyticsData?.activeReffrals !== undefined ? analyticsData.activeReffrals.toLocaleString() : "Loading...",
+      value:
+        analyticsData?.activeReffrals !== undefined
+          ? analyticsData.activeReffrals.toLocaleString()
+          : "Loading...",
       change: "Active Members",
       icon: Users,
     },
     {
       title: "Available Balance", // More specific title
-      value: analyticsData?.walletBalance !== undefined ? `₹${analyticsData.walletBalance.toLocaleString()}` : "Loading...",
+      value:
+        analyticsData?.walletBalance !== undefined
+          ? `₹${analyticsData.walletBalance.toLocaleString()}`
+          : "Loading...",
       change: "Withdrawable",
       icon: Wallet,
     },
     {
       title: "Total Orders",
-      value: analyticsData?.totalOrders !== undefined ? analyticsData.totalOrders.toLocaleString() : "Loading...",
+      value:
+        analyticsData?.totalOrders !== undefined
+          ? analyticsData.totalOrders.toLocaleString()
+          : "Loading...",
       change: "Lifetime",
       icon: ShoppingCart,
     },
@@ -115,10 +128,11 @@ export default function UserHome() {
       icon: ShoppingCart,
     },
     {
-      title: "Income Reports",
-      description: "Track your level-wise income and commissions",
-      href: "/dashboard/referrals", // Assuming this links to a page showing income reports
+      title: "Emi Repayment",
+      description: "Track your Emi repaymaent schedule",
+      href: "/dashboard/emi-schedule", // Assuming this links to a page showing income reports
       icon: BarChart3,
+      // Removed 'animate: true' as we're directly applying animate-pulse
     },
   ];
 
@@ -146,30 +160,47 @@ export default function UserHome() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold ">Welcome back, {userDisplayName}!</h1>
+            <h1 className="text-3xl font-bold ">
+              Welcome back, {userDisplayName}!
+            </h1>
             <p className="text-gray-500">
               Here's what's happening with your business today.
             </p>
+          </div>
+        </div>
+        {/* Updated Profile Score Section */}
+        <div className="flex items-center space-x-2 p-2 bg-purple-50 rounded-lg shadow-sm">
+          <Star className="h-5 w-5 text-purple-600" />{" "}
+          {/* Icon for Profile Score */}
+          <div>
+            <p className="text-sm font-medium text-gray-700">Profile Score</p>
+            <span className="text-xl font-bold text-purple-800">
+              {user.profileScore}
+            </span>
           </div>
         </div>
       </div>
 
       {/* Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {defaultStats.map((stat) => ( // Use defaultStats which now contains dynamic data
-          <Card key={stat.title} className="border-purple-100">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium ">
-                {stat.title}
-              </CardTitle>
-              <stat.icon className="h-4 w-4 text-purple-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold ">{stat.value}</div>
-              <p className="text-xs text-green-600">{stat.change}</p>
-            </CardContent>
-          </Card>
-        ))}
+        {defaultStats.map(
+          (
+            stat // Use defaultStats which now contains dynamic data
+          ) => (
+            <Card key={stat.title} className="border-purple-100">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium ">
+                  {stat.title}
+                </CardTitle>
+                <stat.icon className="h-4 w-4 text-purple-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold ">{stat.value}</div>
+                <p className="text-xs text-green-600">{stat.change}</p>
+              </CardContent>
+            </Card>
+          )
+        )}
       </div>
 
       {/* Quick Actions */}
@@ -183,8 +214,20 @@ export default function UserHome() {
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {quickActions.map((action) => (
-              <Link key={action.title} to={action.href}>
-                <Card className="cursor-pointer transition-colors hover:bg-purple-50 border-purple-100">
+              <Link
+                key={action.title}
+                to={action.href}
+                // Apply animate-pulse directly to the Emi Repayment card
+                className={
+                  action.title === "Emi Repayment" ? "animate-pulse" : ""
+                }
+              >
+                <Card className="cursor-pointer transition-colors hover:bg-purple-50 border-purple-100 relative">
+                  {" "}
+                  {/* Added relative positioning */}
+                  {action.title === "Emi Repayment" && (
+                    <div className="absolute top-2 right-2 w-3 h-3 bg-red-500 rounded-full animate-pulse"></div> // Red dot
+                  )}
                   <CardContent className="p-4">
                     <div className="flex items-start space-x-3">
                       <action.icon className="h-6 w-6  text-purple-600 mt-1" />
@@ -210,7 +253,8 @@ export default function UserHome() {
             <CardTitle className="">Recent Referrals</CardTitle>
           </CardHeader>
           <CardContent>
-            {analyticsData?.recentReffrals && analyticsData.recentReffrals.length > 0 ? (
+            {analyticsData?.recentReffrals &&
+            analyticsData.recentReffrals.length > 0 ? (
               <div className="space-y-3">
                 {analyticsData.recentReffrals.map((referral) => (
                   <div
@@ -219,7 +263,8 @@ export default function UserHome() {
                   >
                     <div>
                       <p className="font-medium ">{referral.name}</p>
-                      <p className="text-sm ">{referral.joinDate}</p> {/* Use joinDate */}
+                      <p className="text-sm ">{referral.joinDate}</p>{" "}
+                      {/* Use joinDate */}
                     </div>
                     {/* Commission is not directly in recentReffrals from controller, you might need to add it */}
                     {/* <span className="font-medium text-green-600">
@@ -230,7 +275,9 @@ export default function UserHome() {
                 ))}
               </div>
             ) : (
-              <p className="text-gray-500 text-center py-4">No recent referrals.</p>
+              <p className="text-gray-500 text-center py-4">
+                No recent referrals.
+              </p>
             )}
             <Button
               asChild
@@ -246,10 +293,16 @@ export default function UserHome() {
             <CardTitle className="">Recent Transactions</CardTitle>
           </CardHeader>
           <CardContent>
-            {analyticsData?.recentTransaction && analyticsData.recentTransaction.length > 0 ? (
+            {analyticsData?.recentTransaction &&
+            analyticsData.recentTransaction.length > 0 ? (
               <div className="space-y-3">
                 {analyticsData.recentTransaction.map((transaction, index) => (
-                  <div key={transaction.txnId || index} className="flex items-center justify-between"> {/* Use txnId as key */}
+                  <div
+                    key={transaction.txnId || index}
+                    className="flex items-center justify-between"
+                  >
+                    {" "}
+                    {/* Use txnId as key */}
                     <div>
                       <p className="font-medium ">{transaction.type}</p>
                       <p className="text-sm ">{transaction.date}</p>
@@ -261,13 +314,17 @@ export default function UserHome() {
                           : "text-green-600"
                       }`}
                     >
-                      {transaction.amount < 0 ? `-₹${Math.abs(transaction.amount).toLocaleString()}` : `₹${transaction.amount.toLocaleString()}`}
+                      {transaction.amount < 0
+                        ? `-₹${Math.abs(transaction.amount).toLocaleString()}`
+                        : `₹${transaction.amount.toLocaleString()}`}
                     </span>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-gray-500 text-center py-4">No recent transactions.</p>
+              <p className="text-gray-500 text-center py-4">
+                No recent transactions.
+              </p>
             )}
             <Button
               asChild

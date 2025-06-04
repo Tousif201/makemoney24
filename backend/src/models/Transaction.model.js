@@ -19,6 +19,7 @@ const transactionSchema = new Schema(
         "purchase",
         "return",
         "emi",
+        "emi_initial_payment",
       ],
       required: true,
     },
@@ -35,9 +36,7 @@ const transactionSchema = new Schema(
     },
 
     // Razorpay fields
-    razorpayPaymentId: { type: String, trim: true, required: false },
-    razorpayOrderId: { type: String, trim: true, required: false },
-    razorpaySignature: { type: String, trim: true, required: false },
+    cashFreeOrderId:{type:String,unique:true}
   },
   {
     timestamps: true,

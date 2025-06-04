@@ -1,4 +1,13 @@
-import { Calendar, Check, CreditCard, Shield, Star } from "lucide-react";
+"use client";
+
+import {
+  Calendar,
+  Check,
+  CreditCard,
+  QrCode,
+  Shield,
+  Star,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,6 +21,12 @@ import { useSession } from "../../../context/SessionContext";
 import RazorpayPaymentButton from "../../../components/RazorpayPaymentButton"; // Ensure this path is correct
 import { upgradeUser } from "../../../../api/user";
 import { Link } from "react-router-dom";
+
+// Import the image assets directly into MembershipPage
+import frontImg from "../../../assets/cashback/card11.png";
+import backImg from "../../../assets/cashback/card12.png";
+import logo from "../../../assets/makemoney.png";
+
 export default function MembershipPage() {
   const { loading, session, user, refreshSession } = useSession();
   const membershipAmountInPaise = 1200 * 100; // ₹1200 converted to paise for Razorpay
@@ -24,7 +39,7 @@ export default function MembershipPage() {
     );
   }
 
-  const isMember = user?.isMember;
+  const isMember = user.isMember;
 
   const benefits = [
     "PayLater options on orders above ₹500",
@@ -89,6 +104,96 @@ export default function MembershipPage() {
     );
   };
 
+  // Default values for card details (as they are not in user object)
+  const defaultCardNumber = "0987 6543 2109 1234";
+  const defaultValidFrom = "05/25";
+  const defaultExpiryDate = "05/26";
+  const defaultNotes = [
+    "This card is only valid for people who are registered as members",
+    "This membership card can be used in all regions",
+  ];
+
+  // This QR code should encode the payment request (e.g., UPI QR code).
+  const qrCodeImageUrl = "https://hexdocs.pm/qr_code/docs/qrcode.svg";
+  const whatsappNumber = "+919876543210"; // Replace with your actual WhatsApp number
+
+  // permanent needs cashfree integration
+  // if (!isMember) {
+  //   return (
+  //     <div className="flex-1 space-y-6 p-6">
+  //       <div className="flex items-center gap-4">
+  //         <div>
+  //           <h1 className="text-3xl font-bold text-purple-900">
+  //             Become a Member
+  //           </h1>
+  //           <p className="text-purple-600">
+  //             Unlock exclusive benefits and features
+  //           </p>
+  //         </div>
+  //       </div>
+
+  //       <div className="max-w-2xl mx-auto">
+  //         <Card className="border-purple-200">
+  //           <CardHeader className="text-center">
+  //             <div className="mx-auto h-16 w-16 rounded-full bg-purple-100 flex items-center justify-center mb-4">
+  //               <Star className="h-8 w-8 text-purple-600" />
+  //             </div>
+  //             <CardTitle className="text-2xl text-purple-900">
+  //               Premium Membership
+  //             </CardTitle>
+  //             <CardDescription className="text-purple-600">
+  //               Join our exclusive membership program and enjoy premium benefits
+  //             </CardDescription>
+  //           </CardHeader>
+  //           <CardContent className="space-y-6">
+  //             <div className="text-center">
+  //               <div className="text-4xl font-bold text-purple-900">₹1,200</div>
+  //               <p className="text-purple-600">One-time payment</p>
+  //             </div>
+
+  //             <div className="space-y-3">
+  //               <h3 className="font-semibold text-purple-900">
+  //                 What you'll get:
+  //               </h3>
+  //               {benefits.map((benefit, index) => (
+  //                 <div key={index} className="flex items-center gap-3">
+  //                   <Check className="h-5 w-5 text-green-600" />
+  //                   <span className="text-purple-700">{benefit}</span>
+  //                 </div>
+  //               ))}
+  //             </div>
+
+  //             {/* === INTEGRATED RAZORPAY PAYMENT BUTTON === */}
+  //             {user?._id ? ( // Only show if user is logged in
+  //               <RazorpayPaymentButton
+  //                 amount={membershipAmountInPaise}
+  //                 receiptId={generateReceiptId(user._id)}
+  //                 companyName="MakeMoney24"
+  //                 description="Premium Membership Purchase"
+  //                 logoUrl="https://placehold.co/100x100/8B5CF6/FFFFFF?text=MM24"
+  //                 onPaymentSuccess={handlePaymentSuccess}
+  //                 onPaymentError={handlePaymentError}
+  //                 className="w-full bg-purple-600 hover:bg-purple-700"
+  //               >
+  //                 <CreditCard className="mr-2 h-5 w-5" />
+  //                 Become a Member Now
+  //               </RazorpayPaymentButton>
+  //             ) : (
+  //               <Button
+  //                 className="w-full bg-purple-600 hover:bg-purple-700"
+  //                 size="lg"
+  //                 disabled
+  //               >
+  //                 Please log in to become a member
+  //               </Button>
+  //             )}
+  //           </CardContent>
+  //         </Card>
+  //       </div>
+  //     </div>
+  //   );
+  // }
+  // temp fix
   if (!isMember) {
     return (
       <div className="flex-1 space-y-6 p-6">
@@ -134,30 +239,46 @@ export default function MembershipPage() {
                 ))}
               </div>
 
-              {/* === INTEGRATED RAZORPAY PAYMENT BUTTON === */}
-              {user?._id ? ( // Only show if user is logged in
-                <RazorpayPaymentButton
-                  amount={membershipAmountInPaise}
-                  receiptId={generateReceiptId(user._id)}
-                  companyName="MakeMoney24"
-                  description="Premium Membership Purchase"
-                  logoUrl="https://placehold.co/100x100/8B5CF6/FFFFFF?text=MM24"
-                  onPaymentSuccess={handlePaymentSuccess}
-                  onPaymentError={handlePaymentError}
-                  className="w-full bg-purple-600 hover:bg-purple-700"
+              {/* === QR CODE PAYMENT SECTION === */}
+              <div className="mt-6 p-4 border rounded-lg bg-purple-50 text-center">
+                <h3 className="text-lg font-semibold text-purple-800 mb-3 flex items-center justify-center gap-2">
+                  <QrCode className="h-6 w-6 text-purple-700" />
+                  Auto Membership Enrollment Coming Soon!
+                </h3>
+                <p className="text-purple-700 mb-4">
+                  For immediate access, make a payment via QR code:
+                </p>
+                <div className="flex justify-center mb-4">
+                  <img
+                    src={qrCodeImageUrl}
+                    alt="Payment QR Code"
+                    className="w-48 h-48 border border-gray-300 rounded-lg shadow-sm object-contain"
+                  />
+                </div>
+                <p className="text-sm font-medium text-purple-800 mb-2">
+                  Scan this QR code and pay ₹1,200
+                </p>
+                <p className="text-sm text-gray-700">
+                  Then, WhatsApp a screenshot of your payment to:
+                </p>
+                <a
+                  href={`https://wa.me/${whatsappNumber}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-purple-600 hover:underline font-bold text-lg flex items-center justify-center mt-2"
                 >
-                  <CreditCard className="mr-2 h-5 w-5" />
-                  Become a Member Now
-                </RazorpayPaymentButton>
-              ) : (
-                <Button
-                  className="w-full bg-purple-600 hover:bg-purple-700"
-                  size="lg"
-                  disabled
-                >
-                  Please log in to become a member
-                </Button>
-              )}
+                  <img
+                    src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg"
+                    alt="WhatsApp"
+                    className="h-5 w-5 mr-2"
+                  />
+                  {whatsappNumber}
+                </a>
+                <p className="text-xs text-gray-500 mt-2">
+                  Admin will upgrade your membership shortly after verification.
+                </p>
+              </div>
+              {/* === END QR CODE PAYMENT SECTION === */}
             </CardContent>
           </Card>
         </div>
@@ -205,6 +326,92 @@ export default function MembershipPage() {
           </CardContent>
         </Card>
       </div>
+      {/* Conditionally render the virtual cards directly if user is a member */}
+      {isMember && (
+        <div className="flex flex-col items-center justify-center gap-10 p-4 sm:p-6">
+          <h2 className="text-3xl font-bold text-purple-900 mt-8">
+            Your Virtual Membership Cards
+          </h2>
+          <div className="flex md:flex-row flex-col gap-10">
+            {/* Front of the Card */}
+            <Card className="relative max-w-[500px] w-full aspect-[10/7] sm:aspect-[10/7] rounded-2xl overflow-hidden shadow-xl bg-amber-600 text-white font-semibold">
+              <img
+                src={frontImg}
+                alt="Card Front Background"
+                className="absolute inset-0 w-full h-full object-cover z-0 "
+              />
+              <div className="relative z-10 w-full h-full flex flex-col justify-between p-4 sm:p-8 bottom-3">
+                <div>
+                  <img
+                    src={logo}
+                    alt="Logo"
+                    className="h-12 w-12 sm:h-16 sm:w-16 relative bottom-6"
+                  />
+                </div>
+                <div>
+                  <h2 className="text-2xl sm:text-3xl font-bold mb-2 sm:mb-4">
+                    CASHBACK CARD
+                  </h2>
+                  <p className="text-lg sm:text-2xl tracking-widest mb-4 sm:mb-6">
+                    {defaultCardNumber}
+                  </p>
+                  <p className="text-base sm:text-lg">
+                    {user?.name || "Member"}
+                  </p>
+                </div>
+                <div className="flex gap-6 text-xs sm:text-sm">
+                  <div>
+                    <p className="text-gray-200">VALID FROM</p>
+                    <p>{defaultValidFrom}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-200">EXPIRY DATE</p>
+                    <p>{defaultExpiryDate}</p>
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            {/* Back of the Card */}
+            <Card className="relative max-w-[500px] w-full aspect-[10/7] sm:aspect-[10/7] rounded-2xl overflow-hidden shadow-xl bg-amber-600 text-white font-semibold">
+              <img
+                src={backImg}
+                alt="Card Back Background"
+                className="absolute inset-0 w-full h-full object-cover z-0"
+              />
+              <div className="relative z-10 w-full h-full flex flex-col justify-between p-4 sm:p-8 bottom-2">
+                <div>
+                  <img
+                    src={logo}
+                    alt="Logo"
+                    className="h-12 sm:h-15 mb-3 sm:mb-4 "
+                  />
+                  <h2 className="text-xl sm:text-2xl font-bold">
+                    PRODUCT EMI CARD
+                  </h2>
+                </div>
+
+                <div className="text-sm sm:text-base">
+                  <p className="flex items-center gap-2">
+                    📞 {user?.phone || "N/A"}
+                  </p>
+                  <p className="flex items-center gap-2">
+                    📧 {user?.email || "N/A"}
+                  </p>
+                </div>
+
+                <div className="text-xs sm:text-sm mt-2 sm:mt-4 space-y-1 text-gray-100">
+                  {defaultNotes.map((note, index) => (
+                    <p key={index}>
+                      {index + 1}. {note}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            </Card>
+          </div>
+        </div>
+      )}
       <Link to="/dashboard/referrals">
         <Button
           className="mt-10 bg-purple-600 hover:bg-purple-700 text-white text-lg px-8 py-6 rounded-full shadow-lg transform transition-transform duration-300 hover:scale-105"

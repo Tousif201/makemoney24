@@ -21,6 +21,8 @@ import { Search, Users, UserPlus, DollarSign } from "lucide-react"; // Removed F
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getAdminDashboard } from "../../../../api/user"; // Adjust this path if necessary
 import { Link } from "react-router-dom";
+import UpdateUserStatusDialog from "../../../components/Dashboad/Admin/UpdateUserStatusDialog";
+import UpgradeUserDialog from "../../../components/Dashboad/Admin/UpgradeUserDialog";
 
 export default function UsersPage() {
   const [dashboardData, setDashboardData] = useState(null);
@@ -199,10 +201,13 @@ export default function UsersPage() {
                     <TableHead>User</TableHead>
                     <TableHead>Contact</TableHead>
                     <TableHead>Membership Status</TableHead>
+                    <TableHead>Account Status</TableHead>
+
                     <TableHead>Referrals</TableHead>
                     <TableHead>Referral Earnings</TableHead>
                     <TableHead>Total Spent</TableHead>
                     <TableHead>Join Date</TableHead>
+                    <TableHead>Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -215,8 +220,8 @@ export default function UsersPage() {
                   ) : (
                     users.map((user) => (
                       <TableRow key={user.id}>
-                        <Link to={`/dashboard/admin/users/${user.id}`}>
-                          <TableCell>
+                        <TableCell>
+                          <Link to={`/dashboard/admin/users/${user.id}`}>
                             <div className="flex items-center gap-3">
                               <Avatar className="h-8 w-8">
                                 <AvatarImage src="/placeholder.svg" />{" "}
@@ -237,8 +242,8 @@ export default function UsersPage() {
                                 {/* Display referralCode here */}
                               </div>
                             </div>
-                          </TableCell>
-                        </Link>
+                          </Link>
+                        </TableCell>
                         <TableCell>
                           <div>
                             <div className="text-sm">{user.email}</div>
@@ -250,6 +255,17 @@ export default function UsersPage() {
 
                         <TableCell>
                           {getStatusBadge(user.membershipStatus === "Member")}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            className={`${
+                              user.accountStatus === "active"
+                                ? "bg-green-100 text-green-800"
+                                : "bg-red-100 text-red-800"
+                            }`}
+                          >
+                            {user.accountStatus}
+                          </Badge>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">
@@ -267,6 +283,20 @@ export default function UsersPage() {
                         </TableCell>
                         <TableCell>
                           {new Date(user.joiningDate).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>
+                          <UpdateUserStatusDialog
+                            userId={user.id}
+                            fetchDashboardData={fetchDashboardData}
+                            key={user.id}
+                            currentStatus={user.accountStatus}
+                          />
+                          {/* this is an temp feature  */}
+                          <UpgradeUserDialog
+                            name={user.name}
+                            userId={user.id}
+                            onUpgradeSuccess={fetchDashboardData}
+                          />
                         </TableCell>
                       </TableRow>
                     ))

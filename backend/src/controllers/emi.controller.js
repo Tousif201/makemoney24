@@ -65,7 +65,7 @@ export const getUserEmiHistoryByUser = async (req, res) => {
     });
 
 
-    res.status(200).json({ success: true, data: { emiDetails, totalRemainingAmount, overdueAmount } });
+    res.status(200).json({ success: true, data: {emiDetails, totalRemainingAmount, overdueAmount } });
 
   } catch (error) {
     console.error("Error fetching user EMI history:", error);
