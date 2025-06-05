@@ -144,7 +144,7 @@ const PAYOUTS_SANDBOX_URL = "https://payout-gamma.cashfree.com/payout"; // Updat
 export const getPayoutAuthToken = async () => {
   // Determine the correct base URL based on the Payouts environment.
   const PayoutsBaseUrl =
-    process.env.CASHFREE_PAYOUT_ENVIRONMENT === "PROD"
+    process.env.CASHFREE_PAYOUT_ENVIRONMENT === "production"
       ? PAYOUTS_PRODUCTION_URL
       : PAYOUTS_SANDBOX_URL;
 
