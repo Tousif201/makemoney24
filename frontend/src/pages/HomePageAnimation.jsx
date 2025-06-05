@@ -7,12 +7,12 @@ const HomePageAnimation = () => {
   const [banners, setBanners] = useState([]);
   const [activeIndex, setActiveIndex] = useState(0);
   const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(true); // Add loading state
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchBanners = async () => {
       try {
-        setLoading(true); // Set loading to true at the start
+        setLoading(true);
         const response = await getAllBanners();
         let bannerData = [];
 
@@ -43,7 +43,7 @@ const HomePageAnimation = () => {
           "Failed to load homepage banners or no banners available for animation."
         );
       } finally {
-        setLoading(false); // Set loading to false when done (or error)
+        setLoading(false);
       }
     };
 
@@ -51,14 +51,14 @@ const HomePageAnimation = () => {
   }, []);
 
   useEffect(() => {
-    // Only set up interval if banners are loaded and there are banners
     if (!loading && banners.length > 0) {
       const interval = setInterval(() => {
         setActiveIndex((prev) => (prev + 1) % banners.length);
-      }, 3000); // Adjust interval time as needed (e.g., 3000ms = 3 seconds)
+      }, 3000);
+
       return () => clearInterval(interval);
     }
-  }, [banners, loading]); // Dependency on banners and loading state
+  }, [banners, loading]);
 
   const handleRedirect = (url) => {
     if (url) {
@@ -68,8 +68,7 @@ const HomePageAnimation = () => {
 
   if (loading) {
     return (
-      <div className="relative w-full md:min-h-[35rem] overflow-hidden rounded-lg">
-        {/* Skeleton Loader */}
+      <div className="relative w-full min-h-[20rem] md:min-h-[35rem] overflow-hidden rounded-lg">
         <Skeleton className="absolute inset-0 w-full h-full rounded-lg" />
       </div>
     );
@@ -85,15 +84,15 @@ const HomePageAnimation = () => {
 
   if (banners.length === 0) {
     return (
-      <div className="flex justify-center items-center py-8 md:min-h-[35rem] w-full bg-gray-50 rounded-lg">
+      <div className="flex justify-center items-center py-8 min-h-[20rem] md:min-h-[35rem] w-full bg-gray-50 rounded-lg">
         <p className="text-lg text-gray-700">No animated banners to display.</p>
       </div>
     );
   }
 
   return (
-    <div className="relative w-full md:min-h-[35rem] overflow-hidden rounded-lg">
-      <AnimatePresence mode="wait"> {/* Use mode="wait" to ensure exit animation completes before new component mounts */}
+    <div className="relative w-full min-h-[20rem] md:min-h-[35rem] overflow-hidden rounded-lg">
+      <AnimatePresence mode="wait">
         {banners.length > 0 && (
           <motion.img
             key={activeIndex}
@@ -102,7 +101,7 @@ const HomePageAnimation = () => {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 1.2, ease: "easeInOut" }}
-            className="absolute inset-0 w-full h-full object-cover cursor-pointer"
+            className="absolute inset-0 w-full h-full object-contain sm:object-cover cursor-pointer"
             alt={`Animated Slide ${activeIndex + 1}`}
             onClick={() => handleRedirect(banners[activeIndex].redirectTo)}
           />
