@@ -580,7 +580,7 @@ export default function AdminHome() {
             <CardContent>
               <ChartContainer
                 config={growthConfig}
-                className="aspect-[4/3] min-h-[200px] w-full"
+                className="aspect-[4/3] min-h-[300px] w-full"
               >
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
@@ -727,7 +727,7 @@ export default function AdminHome() {
                         ) : activity.activityType.includes("Vendor") ? (
                           <Target className="w-3 h-3" />
                         ) : activity.activityType.includes("Franchise") ? (
-                          <IndianRupee className="w-3 h-3" /> // Using dollar sign for franchise creation (can change icon)
+                          <IndianRupee className="w-3 h-3" /> 
                         ) : (
                           <Activity className="w-3 h-3" />
                         )}

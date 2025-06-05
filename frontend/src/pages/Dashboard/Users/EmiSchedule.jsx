@@ -12,6 +12,7 @@ import {
   Search,
   Download,
   Loader2,
+  IndianRupee,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -253,7 +254,7 @@ function EmiSchedule() {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-2">
-                <DollarSign className="w-5 h-5 text-purple-600" />
+                <IndianRupee className="w-5 h-5 text-purple-600" />
                 <span className="text-sm text-purple-600">Outstanding</span>
               </div>
               <p className="text-2xl font-bold text-purple-700">
