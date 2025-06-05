@@ -33,9 +33,7 @@ function CreateBannerDialog() {
 
   const handleCreateBanner = async () => {
     if (!selectedFile || !newBanner.redirectUrl) {
-      toast.success({
-        variant: "destructive",
-        title: "Missing fields",
+      toast.error("Missing fields", {
         description: "Please select an image and enter a redirect URL.",
       });
       return;
@@ -58,9 +56,7 @@ function CreateBannerDialog() {
       const res = await createBanner(bannerPayload);
       console.log("Banner created:", res);
 
-      toast.error({
-        variant: "default",
-        title: "Banner created",
+      toast.success("Banner created", {
         description: "Your banner has been successfully created.",
       });
 
@@ -69,9 +65,7 @@ function CreateBannerDialog() {
       setIsCreateDialogOpen(false);
     } catch (error) {
       console.error("Failed to create banner:", error);
-      toast({
-        variant: "destructive",
-        title: "Banner creation failed",
+      toast.error("Banner creation failed", {
         description: "Something went wrong. Please try again.",
       });
     } finally {
@@ -130,6 +124,11 @@ function CreateBannerDialog() {
               onChange={handleFileChange}
               className="col-span-3 sm:col-span-3 text-xs sm:text-sm"
             />
+            {/* Message for recommended image size */}
+            <p className="col-span-full text-sm text-gray-500 mt-1 sm:ml-[calc(25%+1rem)]">
+              Recommended: <span className="font-bold">1920 x 800</span> pixels
+              for best display.
+            </p>
           </div>
 
           {/* Image Preview */}
