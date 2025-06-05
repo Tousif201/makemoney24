@@ -1,41 +1,47 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useCart } from "../context/CartContext";
 import { motion } from "framer-motion";
 import { FaShoppingCart, FaEye } from "react-icons/fa";
 import Swal from "sweetalert2";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const ProductCard = ({ product }) => {
   const { addToCart } = useCart();
+  const [isMobileOrTablet, setIsMobileOrTablet] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const checkScreen = () => {
+      setIsMobileOrTablet(window.innerWidth < 1024);
+    };
+    checkScreen();
+    window.addEventListener("resize", checkScreen);
+    return () => window.removeEventListener("resize", checkScreen);
+  }, []);
 
   const handleAddToCart = () => {
-    // Removed 'service' parameter as it's not passed directly from onClick
-    addToCart(product); // Pass the 'product' prop directly
+    addToCart(product);
     Swal.fire({
       icon: "success",
       title: "🛍️ Added to Cart!",
-      text: `${product.title} has been added to your cart.`, // Use product.title
+      text: `${product.title} has been added to your cart.`,
       timer: 3000,
       showConfirmButton: false,
       toast: true,
-      position: "bottom-end", // Often better for toasts
+      position: "bottom-end",
       background: "#f0fdf4",
       color: "#0f172a",
-      customClass: {
-        popup: "swal2-toast-popup", // Add a custom class if you want to style further
-      },
     });
   };
 
-  // Optional: Function to handle view/details click
+  const handleImageClick = () => {
+    if (isMobileOrTablet) {
+      navigate(`/item/${product.id}`); // Navigate to product detail
+    }
+  };
+
   const handleViewDetails = () => {
-    // Implement navigation to a product details page
-    // For example, if using React Router:
-    // navigate(`/product/${product.id}`);
-    console.log(
-      `Viewing details for product: ${product.title} (ID: ${product.id})`
-    );
-    // Or open a modal with details
+    console.log(`Viewing details for product: ${product.title}`);
   };
 
   return (
@@ -44,30 +50,34 @@ const ProductCard = ({ product }) => {
       transition={{ type: "spring", stiffness: 300 }}
       className="relative bg-white border rounded-xl overflow-hidden shadow-md group"
     >
+      {/* Image - click on mobile navigates */}
       <img
         src={product.image}
         alt={product.title}
-        className="w-full h-80 object-cover"
+        className="w-full h-80 object-cover cursor-pointer"
+        onClick={handleImageClick}
       />
 
-      {/* Hover Overlay */}
-      <div className="absolute inset-0 bg-opacity-0 group-hover:bg-opacity-40 transition duration-300 flex items-center justify-center gap-4 opacity-0 group-hover:opacity-100">
+      {/* Overlay icons - only show on desktop */}
+      <div
+        className={`
+          absolute inset-0 transition duration-300 flex items-center justify-center gap-4
+          hidden md:flex md:opacity-0 md:group-hover:opacity-100 md:group-hover:bg-black/40
+        `}
+      >
         <button
-          // Pass the product object directly to handleAddToCart without an extra arrow function
-          // when `handleAddToCart` doesn't need to be parameterized from the JSX.
-          // If you need to pass it, you'd do: `onClick={() => handleAddToCart(product)}`
-          // but since `handleAddToCart` now accesses `product` from the prop, this is cleaner.
           onClick={handleAddToCart}
           className="text-white text-xl bg-blue-600 p-2 rounded-full hover:bg-blue-700 transition"
-          aria-label={`Add ${product.title} to cart`} // Accessibility
+          aria-label={`Add ${product.title} to cart`}
         >
           <FaShoppingCart />
         </button>
+
         <Link to={`/item/${product.id}`}>
           <button
-            onClick={handleViewDetails} // Added click handler for view details
+            onClick={handleViewDetails}
             className="text-white text-xl bg-gray-600 p-2 rounded-full hover:bg-gray-700 transition"
-            aria-label={`View details for ${product.title}`} // Accessibility
+            aria-label={`View details for ${product.title}`}
           >
             <FaEye />
           </button>

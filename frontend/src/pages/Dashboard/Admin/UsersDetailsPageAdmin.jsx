@@ -18,6 +18,7 @@ import {
   Star,
   CreditCard,
   FileText,
+  IndianRupee,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -397,7 +398,7 @@ function UsersDetailsPageAdmin() {
               </div>
               <div className="bg-purple-50 p-4 rounded-lg">
                 <div className="flex items-center gap-2">
-                  <DollarSign className="w-5 h-5 text-purple-600" />
+                  <IndianRupee className="w-5 h-5 text-purple-600" />
                   <span className="text-sm text-purple-600">
                     Total Earnings
                   </span>
@@ -665,7 +666,7 @@ function UsersDetailsPageAdmin() {
                   </div>
                   <div className="bg-green-50 p-4 rounded-lg">
                     <div className="flex items-center gap-2">
-                      <DollarSign className="w-5 h-5 text-green-600" />
+                      <IndianRupee className="w-5 h-5 text-green-600" />
                       <span className="text-sm text-green-600">
                         Total Outstanding
                       </span>
