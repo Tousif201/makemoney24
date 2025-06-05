@@ -1,7 +1,10 @@
 // src/controllers/cashfreeController.js
 import { Cashfree } from "cashfree-pg";
-import { cashfreePayoutClient } from "../utils/cashfreePaymentUtils.js";
-
+import {
+  cashfreePayoutClient,
+  getPayoutAuthToken,
+} from "../utils/cashfreePaymentUtils.js";
+import axios from "axios";
 // -----------------------------------------------------------------------------
 // HELPER FUNCTIONS
 // -----------------------------------------------------------------------------
@@ -164,7 +167,8 @@ export const createOrderCF = async (req, res) => {
       );
       return res.status(500).json({
         success: false,
-        message: "Failed to create Cashfree order. Please check Cashfree response.",
+        message:
+          "Failed to create Cashfree order. Please check Cashfree response.",
         details: response.data || "No data received from Cashfree",
       });
     }
@@ -203,9 +207,7 @@ export const verifyPayment = async (req, res) => {
 
   // Validate that an order_id is provided.
   if (!order_id) {
-    console.error(
-      "Validation Error in verifyPayment: Order ID is required."
-    );
+    console.error("Validation Error in verifyPayment: Order ID is required.");
     return res.status(400).json({
       success: false,
       message: "Order ID is required for payment verification.",
@@ -234,7 +236,8 @@ export const verifyPayment = async (req, res) => {
         order_status: response.data.order_status,
         // Note: The exact field for payment status might vary (e.g., tx_status, transaction_status, payment_status).
         // Refer to Cashfree documentation for the specific response structure of PGOrderFetchPayments.
-        payment_status: response.data.tx_status || response.data.payment_status || "N/A",
+        payment_status:
+          response.data.tx_status || response.data.payment_status || "N/A",
       });
     } else {
       // Handle cases where the order is not found or details are unavailable.
@@ -319,7 +322,9 @@ export const handleWebhook = async (req, res) => {
       "[WEBHOOK RECEIVER] Invalid webhook payload structure. Missing event.data.order or event.data.payment."
     );
     // Sending 200 to prevent retries for a malformed payload that we can't process.
-    return res.status(200).send("Webhook received but payload structure is invalid.");
+    return res
+      .status(200)
+      .send("Webhook received but payload structure is invalid.");
   }
 
   console.log("[WEBHOOK RECEIVER] Webhook Event Type:", event.type); // e.g., "PAYMENT_SUCCESS_WEBHOOK", "ORDER_PAID"
@@ -401,10 +406,7 @@ export const handleWebhook = async (req, res) => {
       "[WEBHOOK RECEIVER] Error processing Cashfree Webhook payload:",
       error
     );
-    console.error(
-      "[WEBHOOK RECEIVER] Error details - Message:",
-      error.message
-    );
+    console.error("[WEBHOOK RECEIVER] Error details - Message:", error.message);
     console.error("[WEBHOOK RECEIVER] Error details - Stack:", error.stack);
 
     // It's generally recommended to still send a 200 OK for critical processing errors
@@ -447,7 +449,11 @@ export const getBalance = async (req, res) => {
     // Make a GET request to the getBalance endpoint for Payouts.
     const response = await client.get("/payout/v1/getBalance");
 
-    if (response.data && response.data.status === "SUCCESS" && response.data.data) {
+    if (
+      response.data &&
+      response.data.status === "SUCCESS" &&
+      response.data.data
+    ) {
       console.log(
         `Successfully fetched balance. Available: ${response.data.data.availableBalance}`
       );
@@ -463,7 +469,8 @@ export const getBalance = async (req, res) => {
       );
       return res.status(response.status || 500).json({
         success: false,
-        message: "Failed to fetch balance or unexpected response from Cashfree.",
+        message:
+          "Failed to fetch balance or unexpected response from Cashfree.",
         details: response.data,
       });
     }
@@ -506,7 +513,8 @@ export const verifyBank = async (req, res) => {
     );
     return res.status(400).json({
       success: false,
-      message: "Bank account number (bankAccount) and IFSC code (ifsc) are required.",
+      message:
+        "Bank account number (bankAccount) and IFSC code (ifsc) are required.",
     });
   }
 
@@ -517,15 +525,21 @@ export const verifyBank = async (req, res) => {
     console.log(
       `Attempting to verify bank details: Account: ${bankAccount}, IFSC: ${ifsc}`
     );
-    console.log(client)
+    console.log(client);
     // Make a POST request to the validateBankDetails endpoint.
     const response = await client.post("/payout/v1/validateBankDetails", {
       bankAccount,
       ifsc,
     });
-console.log(response.data)
-    if (response.data && response.data.status === "SUCCESS" && response.data.data) {
-      const isVerified = response.data.data.bankName !== "" && response.data.data.accountStatus === "VALID";
+    console.log(response.data);
+    if (
+      response.data &&
+      response.data.status === "SUCCESS" &&
+      response.data.data
+    ) {
+      const isVerified =
+        response.data.data.bankName !== "" &&
+        response.data.data.accountStatus === "VALID";
       console.log(
         `Bank verification result for ${bankAccount}: Verified: ${isVerified}, Bank Name: ${response.data.data.bankName}, Account Status: ${response.data.data.accountStatus}`
       );
@@ -544,7 +558,9 @@ console.log(response.data)
       );
       return res.status(response.status || 500).json({
         success: false,
-        message: response.data?.message || "Bank verification failed or unexpected response from Cashfree.",
+        message:
+          response.data?.message ||
+          "Bank verification failed or unexpected response from Cashfree.",
         details: response.data,
       });
     }
@@ -557,12 +573,12 @@ console.log(response.data)
     // Check for specific Cashfree error structure for bank validation (e.g., invalid IFSC)
     const errorData = error.response?.data;
     if (errorData && errorData.subCode && errorData.message) {
-         return res.status(error.response.status || 400).json({
-            success: false,
-            message: errorData.message, // Cashfree's specific error message
-            subCode: errorData.subCode,
-            details: errorData
-        });
+      return res.status(error.response.status || 400).json({
+        success: false,
+        message: errorData.message, // Cashfree's specific error message
+        subCode: errorData.subCode,
+        details: errorData,
+      });
     }
     return res.status(error.response?.status || 500).json({
       success: false,
@@ -590,102 +606,102 @@ console.log(response.data)
  * transfer details, and status from Cashfree, or an error message.
  */
 export const sendPayout = async (req, res) => {
-  const { amount, bankAccount, ifsc, name, transferId } = req.body;
+  const {
+    beneficiary_id,
+    beneficiary_name,
+    bank_account_number,
+    bank_ifsc,
+    vpa,
+    beneficiary_email,
+    beneficiary_phone,
+    beneficiary_country_code,
+    beneficiary_address,
+    beneficiary_city,
+    beneficiary_state,
+    beneficiary_postal_code,
+    transfer_amount,
+    transfer_id,
+  } = req.body;
 
-  // Validate required fields for the payout.
-  if (!amount || !bankAccount || !ifsc || !name || !transferId) {
-    console.error("Validation Error in sendPayout: Missing required fields.");
-    return res.status(400).json({
-      success: false,
-      message:
-        "Missing required payout fields: amount, bankAccount, ifsc, name, and transferId are required.",
-    });
+  const CASHFREE_BASE_URL = "https://sandbox.cashfree.com/payout"; // Change for production
+  const CASHFREE_CLIENT_ID = process.env.CASHFREE_PAYOUT_CLIENT_ID;
+  const CASHFREE_CLIENT_SECRET = process.env.CASHFREE_PAYOUT_CLIENT_SECRET;
+  const CASHFREE_API_VERSION = "2024-01-01";
+
+  if (!beneficiary_id || !transfer_amount || !transfer_id) {
+    return res.status(400).json({ error: "Missing required fields" });
   }
 
-  if (isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
-      console.error("Validation Error in sendPayout: Invalid amount.");
-      return res.status(400).json({
-          success: false,
-          message: "Amount must be a positive number.",
-      });
-  }
-
+  const headers = {
+    "x-client-id": CASHFREE_CLIENT_ID,
+    "x-client-secret": CASHFREE_CLIENT_SECRET,
+    "x-api-version": CASHFREE_API_VERSION,
+    "Content-Type": "application/json",
+  };
 
   try {
-    // Obtain the pre-configured Axios client for Cashfree Payouts API.
-    const client = await cashfreePayoutClient();
-
-    // Construct the payload for the requestTransfer API.
-    const payoutPayload = {
-      amount: parseFloat(amount), // Ensure amount is a number.
-      transferId, // Your unique transfer ID for idempotency and tracking.
-      transferMode: "banktransfer", // Common transfer mode. Others include "upi", "amazonpay", etc.
-      beneDetails: { // Beneficiary details object
-        bankAccount,
-        ifsc,
-        name,
-        // email: beneficiaryEmail, // Optional: beneficiary email
-        // phone: beneficiaryPhone, // Optional: beneficiary phone
+    // STEP 1: Create Beneficiary
+    const beneficiaryPayload = {
+      beneficiary_id,
+      beneficiary_name,
+      beneficiary_instrument_details: {
+        bank_account_number,
+        bank_ifsc,
+        vpa,
       },
-      // narration: "Payout via API", // Optional: description for the transfer (appears in bank statement)
-      // remarks: "Monthly Payout", // Optional: internal remarks
+      beneficiary_contact_details: {
+        beneficiary_email,
+        beneficiary_phone,
+        beneficiary_country_code,
+        beneficiary_address,
+        beneficiary_city,
+        beneficiary_state,
+        beneficiary_postal_code,
+      },
     };
 
-    console.log(
-      `Attempting to send payout. Transfer ID: ${transferId}, Amount: ${amount} to Account: ${bankAccount}`
-    );
-    // Make a POST request to the requestTransfer endpoint.
-    // Note: The endpoint and payload structure might differ slightly based on Cashfree API version.
-    // This example uses a common structure for "/payout/v1.2/requestTransfer" or similar.
-    // Adjust "/payout/v1/requestTransfer" if using a different Payouts API version.
-    const response = await client.post(
-      "/payout/v1.2/requestTransfer", // Using v1.2 as an example with beneDetails
-      payoutPayload
+    try {
+      await axios.post(`${CASHFREE_BASE_URL}/beneficiary`, beneficiaryPayload, {
+        headers,
+      });
+      console.log(`Beneficiary ${beneficiary_id} created`);
+    } catch (err) {
+      const cfError = err.response?.data;
+      console.log(cfError)
+      if (cfError?.code === "conflict_with_existing_beneficiary") {
+        console.log("Beneficiary already exists, continuing to transfer.");
+      } else {
+        console.error("Error creating beneficiary:", cfError || err.message);
+        return res
+          .status(500)
+          .json({ error: "Failed to create beneficiary", details: cfError });
+      }
+    }
+
+    // STEP 2: Initiate Transfer
+    const transferPayload = {
+      transfer_id,
+      transfer_amount,
+      beneficiary_details: {
+        beneficiary_id,
+      },
+    };
+
+    const transferRes = await axios.post(
+      `${CASHFREE_BASE_URL}/transfers`,
+      transferPayload,
+      { headers }
     );
 
-    // Check for successful payout initiation.
-    if (response.data && response.data.status === "SUCCESS" && response.data.data) {
-      console.log(
-        `Payout initiated successfully. Transfer ID: ${transferId}, Cashfree Reference ID: ${response.data.data.referenceId}, Status: ${response.data.data.utr || 'PENDING'}`
-      );
-      return res.status(200).json({
-        success: true,
-        transfer: response.data.data, // Contains details like referenceId, utr (when available), etc.
-        status: response.data.status, // Overall status from Cashfree, usually "SUCCESS" if accepted.
-        message: response.data.message || "Payout request accepted by Cashfree.",
-      });
-    } else {
-      console.error(
-        "Payout initiation failed or received an unexpected response from Cashfree:",
-        response.data
-      );
-      return res.status(response.status || 500).json({
-        success: false,
-        message: response.data?.message || "Payout initiation failed or unexpected response from Cashfree.",
-        details: response.data,
-      });
-    }
+    return res.status(200).json({
+      message: "Transfer initiated",
+      transfer: transferRes.data,
+    });
   } catch (error) {
-    console.error(
-      "Error in sendPayout controller (Cashfree Payouts):",
-      error.response ? error.response.data : error.message,
-      error.stack
-    );
-     const errorData = error.response?.data;
-    // Provide more specific error feedback if Cashfree returns structured error.
-    if (errorData && errorData.subCode && errorData.message) {
-         return res.status(error.response.status || 400).json({
-            success: false,
-            message: errorData.message,
-            subCode: errorData.subCode,
-            details: errorData
-        });
-    }
-    return res.status(error.response?.status || 500).json({
-      success: false,
-      message: "Internal server error during payout initiation.",
-      error: errorData || error.message,
+    console.error("Unexpected error:", error.message);
+    return res.status(500).json({
+      error: "Unexpected server error",
+      message: error.message,
     });
   }
 };
-
