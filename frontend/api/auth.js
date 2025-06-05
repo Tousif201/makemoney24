@@ -111,7 +111,7 @@ export const fetchUserReferralPerformance = async (userId, date) => {
 
     const token = localStorage.getItem("authToken");
     if (!token) throw new Error("Token not found");
-    const response = await apiClient.get(`/admin-dashboard/user/referral-performance/${userId}`, {
+    const response = await apiClient.post(`/admin-dashboard/user/referral-performance/${userId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },

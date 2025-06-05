@@ -402,7 +402,7 @@ export default function MembershipMilestonesPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                $
+              ₹
                 {stats?.totalRewardsDistributed !== undefined
                   ? stats.totalRewardsDistributed.toLocaleString()
                   : "N/A"}
@@ -466,7 +466,7 @@ export default function MembershipMilestonesPage() {
                         </TableCell>
                         <TableCell>{milestone.milestone}</TableCell>
                         <TableCell className="font-medium text-green-600">
-                          ${milestone.rewardAmount}
+                        ₹{milestone.rewardAmount}
                         </TableCell>
                         <TableCell>{milestone.description}</TableCell>
                         <TableCell>{getStatusBadge(milestone.status)}</TableCell>

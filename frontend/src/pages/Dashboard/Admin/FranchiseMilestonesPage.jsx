@@ -29,6 +29,7 @@ import {
   TrendingUp,
   DollarSign,
   Target,
+  IndianRupee,
 } from "lucide-react";
 import {
   Dialog,
@@ -424,7 +425,7 @@ getFranchiseMilestoneStats()
       Rewards Paid
     </CardTitle>
     <div className="p-2 bg-blue-500 rounded-lg">
-      <DollarSign className="h-4 w-4 text-white" />
+      <IndianRupee className="h-4 w-4 text-white" />
     </div>
   </CardHeader>
   <CardContent>
@@ -519,7 +520,7 @@ getFranchiseMilestoneStats()
                           </div>
                         </TableCell>
                         <TableCell>{m.milestone}</TableCell>
-                        <TableCell>{m.rewardAmount}</TableCell>
+                        <TableCell>₹{m.rewardAmount}</TableCell>
                         <TableCell>{getStatusBadge(m.status)}</TableCell>
                         <TableCell>{m.timeLimitDays}</TableCell>
                         <TableCell>{new Date(m.createdAt).toLocaleDateString()}</TableCell>

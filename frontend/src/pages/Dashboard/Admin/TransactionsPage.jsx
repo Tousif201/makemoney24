@@ -277,7 +277,7 @@ export default function TransactionsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                ${totalAmountCompleted.toLocaleString()}
+              ₹{totalAmountCompleted.toLocaleString()}
               </div>
               <p className="text-xs text-muted-foreground">Completed transactions (on current page)</p>
             </CardContent>
@@ -401,7 +401,7 @@ export default function TransactionsPage() {
                             {getTypeBadge(transaction.transactionType)}
                           </div>
                         </TableCell>
-                        <TableCell className="font-medium">${transaction.amount.toFixed(2)}</TableCell>
+                        <TableCell className="font-medium">₹{transaction.amount.toFixed(2)}</TableCell>
                         <TableCell>{getStatusBadge(transaction.status)}</TableCell>
                         <TableCell>
                           <div>

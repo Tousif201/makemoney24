@@ -163,7 +163,7 @@ export default function UsersPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                ${totalReferralEarnings.toLocaleString()}
+              ₹{totalReferralEarnings.toLocaleString()}
               </div>
               <p className="text-xs text-muted-foreground">
                 Total earnings disbursed via referrals
@@ -276,10 +276,10 @@ export default function UsersPage() {
                           </div>
                         </TableCell>
                         <TableCell className="font-medium text-green-600">
-                          ${user.totalReferralEarnings.toLocaleString()}
+                        ₹{user.totalReferralEarnings.toLocaleString()}
                         </TableCell>
                         <TableCell className="font-medium">
-                          ${user.totalSpent.toLocaleString()}
+                        ₹{user.totalSpent.toLocaleString()}
                         </TableCell>
                         <TableCell>
                           {new Date(user.joiningDate).toLocaleDateString()}
