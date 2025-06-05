@@ -222,6 +222,7 @@ export default function BannersPage() {
       <Card className="shadow-sm">
         <CardHeader>
           <CardTitle>All Banners</CardTitle>
+             
           <CardDescription>
             View and manage all your existing banners.
             {isReordering && (

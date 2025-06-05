@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+
 // Import Shadcn Carousel components
 import {
   Carousel,
@@ -6,12 +7,9 @@ import {
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
-} from "@/components/ui/carousel"; // Adjust path if necessary, depends on your shadcn setup
+} from "@/components/ui/carousel"; // Adjust path as per your setup
 
-// Import your API
 import { getAllBanners } from "../../api/banner";
-
-// For autoplay, we'll use Embla Carousel's API
 import AutoplayPlugin from "embla-carousel-autoplay";
 
 const LandingSlider = () => {
@@ -30,8 +28,6 @@ const LandingSlider = () => {
         } else if (Array.isArray(response)) {
           bannerData = response;
         } else {
-          // If response is not an array, assume it's directly the array of banners
-          // This handles cases where the API might return the array directly or inside a 'data' field.
           bannerData = response;
         }
 
@@ -41,13 +37,8 @@ const LandingSlider = () => {
           throw new Error("No valid banners available.");
         }
 
-        // --- MODIFIED LOGIC HERE ---
-        // Calculate half the number of valid banners
         const halfLength = Math.ceil(validBanners.length / 2);
-        // Slice the array to get exactly half of the banners
         setBanners(validBanners.slice(0, halfLength));
-        // --- END MODIFIED LOGIC ---
-
       } catch (err) {
         console.error("Error fetching banners:", err);
         setError(
@@ -59,7 +50,7 @@ const LandingSlider = () => {
     };
 
     fetchBanners();
-  }, []); // Empty dependency array means this runs once on mount
+  }, []);
 
   const handleBannerClick = (url) => {
     if (url) {
@@ -109,35 +100,28 @@ const LandingSlider = () => {
           opts={{
             align: "start",
             loop: true,
-            // No specific breakpoints needed here for `opts` as `basis-full` handles single slide
           }}
           className="w-full"
         >
           <CarouselContent className="-ml-4">
-            {" "}
-            {/* Adjusted spacing for single item */}
             {banners.map((banner, index) => (
               <CarouselItem
                 key={banner._id || index}
-                // ALWAYS basis-full for single slide view
-                className="pl-4 basis-full" // `pl-4` creates spacing around the item, effectively -ml-4 on content creates the space
+                className="pl-4 basis-full"
                 onClick={() => handleBannerClick(banner.redirectTo)}
               >
                 <div className="p-1">
-                  {" "}
-                  {/* Small padding around the item content */}
-                  <div className="w-full aspect-video rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer">
+                  <div className="w-full aspect-video md:aspect-[16/6] rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer bg-gray-100">
                     <img
                       src={banner.image.url}
                       alt={`Slide ${index + 1}`}
-                      className="h-full w-full object-cover"
+                      className="w-full h-full  object-cover md:object-cover sm:object-cover"
                     />
                   </div>
                 </div>
               </CarouselItem>
             ))}
           </CarouselContent>
-          {/* Navigation arrows are still available if you want to allow manual navigation */}
           <CarouselPrevious />
           <CarouselNext />
         </Carousel>

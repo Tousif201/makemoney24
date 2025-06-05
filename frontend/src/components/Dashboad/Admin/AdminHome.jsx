@@ -460,7 +460,7 @@ export default function AdminHome() {
                       tickLine={false}
                       tick={{ fontSize: 12, fill: "#666" }}
                       tickFormatter={(value) =>
-                        `$${(value / 1000).toFixed(1)}k`
+                        `₹${(value / 1000).toFixed(1)}k`
                       }
                     />
                     <ChartTooltip
@@ -674,7 +674,7 @@ export default function AdminHome() {
                       </div>
                       <div className="text-right">
                         <p className="font-semibold text-sm">
-                          ${parseFloat(vendor.revenue.amt).toLocaleString()}
+                        ₹{parseFloat(vendor.revenue.amt).toLocaleString()}
                         </p>
                         <p className="text-xs text-green-600 font-medium">
                           {getTrendIndicator(vendor.revenue.rateofGrowth).text}
@@ -727,7 +727,7 @@ export default function AdminHome() {
                         ) : activity.activityType.includes("Vendor") ? (
                           <Target className="w-3 h-3" />
                         ) : activity.activityType.includes("Franchise") ? (
-                          <DollarSign className="w-3 h-3" /> // Using dollar sign for franchise creation (can change icon)
+                          <IndianRupee className="w-3 h-3" /> // Using dollar sign for franchise creation (can change icon)
                         ) : (
                           <Activity className="w-3 h-3" />
                         )}
