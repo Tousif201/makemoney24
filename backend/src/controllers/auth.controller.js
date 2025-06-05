@@ -129,7 +129,9 @@ export const loginUser = async (req, res) => {
           message: "Your account has been suspended. Please contact support.",
         });
     }
-
+  if(user.otp && user.otp.verified === false) {
+    return res.status(401).json({ message: "Please verify your OTP first." });
+  }
     // 3. Compare passwords
     const isMatch = await getComparePassword(password, user.password);
     if (!isMatch) {

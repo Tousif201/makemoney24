@@ -34,7 +34,7 @@ router.get("/admin-dashboard", protect, authorize("admin", "franchise-admin"), (
   res.status(200).json({ message: "Welcome to the Admin Dashboard!" });
 });
 router.get("/admin-dashboard/user/:userId", protect, authorize("admin"),getUserDetails);
-router.get("/admin-dashboard/user/referral-performance/:userId", protect, authorize("admin"),getUserTodayReferralPerformance);
+router.post("/admin-dashboard/user/referral-performance/:userId", protect, authorize("admin"),getUserTodayReferralPerformance);
 
 
 export default router;
