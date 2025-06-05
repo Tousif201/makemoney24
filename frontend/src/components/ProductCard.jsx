@@ -10,6 +10,7 @@ const ProductCard = ({ product }) => {
   const [isMobileOrTablet, setIsMobileOrTablet] = useState(false);
   const navigate = useNavigate();
 
+  // Detect screen size for responsiveness
   useEffect(() => {
     const checkScreen = () => {
       setIsMobileOrTablet(window.innerWidth < 1024);
@@ -19,6 +20,7 @@ const ProductCard = ({ product }) => {
     return () => window.removeEventListener("resize", checkScreen);
   }, []);
 
+  // Add product to cart and show success toast
   const handleAddToCart = () => {
     addToCart(product);
     Swal.fire({
@@ -34,6 +36,7 @@ const ProductCard = ({ product }) => {
     });
   };
 
+  // Handle image click (navigate to product details for mobile/tablet)
   const handleImageClick = () => {
     if (isMobileOrTablet) {
       navigate(`/item/${product.id}`); // Navigate to product detail
@@ -50,19 +53,18 @@ const ProductCard = ({ product }) => {
       transition={{ type: "spring", stiffness: 300 }}
       className="relative bg-white border rounded-xl overflow-hidden shadow-md group"
     >
-      {/* Image - click on mobile navigates */}
+      {/* Image - adjust size on mobile */}
       <img
         src={product.image}
         alt={product.title}
-        className="w-full h-80 object-cover cursor-pointer"
+        className={`w-full ${isMobileOrTablet ? "h-48" : "h-80"} object-cover cursor-pointer`}
         onClick={handleImageClick}
       />
 
       {/* Overlay icons - only show on desktop */}
       <div
-        className={`
-          absolute inset-0 transition duration-300 flex items-center justify-center gap-4
-          hidden md:flex md:opacity-0 md:group-hover:opacity-100 md:group-hover:bg-black/40
+        className={`absolute inset-0 transition duration-300 flex items-center justify-center gap-4
+          ${isMobileOrTablet ? "hidden" : "md:flex md:opacity-0 md:group-hover:opacity-100 md:group-hover:bg-black/40"}
         `}
       >
         <button
@@ -84,6 +86,7 @@ const ProductCard = ({ product }) => {
         </Link>
       </div>
 
+      {/* Product Info Section */}
       <div className="p-4">
         <h3 className="text-xl font-semibold text-gray-800">{product.title}</h3>
         <p className="text-sm text-gray-500 mt-1">{product.description}</p>

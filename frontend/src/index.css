@@ -145,3 +145,30 @@
     @apply bg-background text-foreground;
     }
 }
+/* index.css or inside <style> tag */
+
+/* Container to allow horizontal scrolling */
+.scroll-container {
+  display: flex;
+  overflow-x: auto; /* Horizontal scroll */
+  padding: 1rem 0; /* Add padding around the scroll */
+}
+
+.scroll-container::-webkit-scrollbar {
+  display: none; /* Hide scrollbar */
+}
+
+.scroll-content {
+  display: flex;
+  gap: 1rem;
+}
+
+.scroll-item {
+  flex-shrink: 0;
+  width: 8rem;  /* Set width for each category card */
+  height: 10rem; /* Set height for each category card */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}

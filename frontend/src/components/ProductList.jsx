@@ -1,7 +1,6 @@
-// components/ProductList.jsx
 import React, { useEffect, useState } from "react";
 import ProductCard from "./ProductCard";
-import { getProductServices } from "../../api/productService"; // Make sure this path is correct
+import { getProductServices } from "../../api/productService"; // Ensure this path is correct
 import { Link } from "react-router-dom"; // Import Link from react-router-dom
 import { Skeleton } from "@/components/ui/skeleton"; // Import Shadcn Skeleton
 
@@ -50,12 +49,12 @@ const ProductList = () => {
 
   if (loading) {
     return (
-      <section className="bg-white py-12 sm:py-16 md:py-20">
+      <section className="bg-white sm:py-16 md:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-4xl sm:text-5xl font-extrabold text-gray-900 text-center mb-12">
             Featured Products
           </h2>
-          <div className="grid gap-6 sm:gap-8 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4">
+          <div className="grid gap-6 sm:gap-8 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4">
             {/* Skeleton Loader for 8 product cards */}
             {Array.from({ length: 8 }).map((_, index) => (
               <div
@@ -98,11 +97,11 @@ const ProductList = () => {
 
   return (
     <section className="bg-white py-12 sm:py-16 md:py-20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
         <h2 className="text-4xl sm:text-5xl font-extrabold text-gray-900 text-center mb-12">
           Featured Products
         </h2>
-        <div className="grid gap-6 sm:gap-8 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4">
+        <div className="grid gap-2 sm:gap-8 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4">
           {products.map((product) => (
             <ProductCard
               key={product._id}
@@ -114,11 +113,13 @@ const ProductList = () => {
                 image:
                   product.portfolio && product.portfolio.length > 0
                     ? product.portfolio[0].url
-                    : "https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png",
+                    : "https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png", // Placeholder image
               }}
             />
           ))}
         </div>
+
+        {/* Button to see all products */}
         <div className="mt-12 text-center">
           <Link
             to="/browse"

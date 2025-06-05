@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { getAllCategoriesWithImages } from "../../api/categories";
 import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton"; // Import Shadcn Skeleton
@@ -7,6 +7,7 @@ const UserScrollSlider = () => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const scrollContainerRef = useRef(null);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -32,18 +33,38 @@ const UserScrollSlider = () => {
     fetchCategories();
   }, []);
 
+  const handleScroll = () => {
+    const scrollContainer = scrollContainerRef.current;
+    if (scrollContainer) {
+      // Check if the user has reached the end
+      if (scrollContainer.scrollLeft + scrollContainer.clientWidth >= scrollContainer.scrollWidth - 5) {
+        loadMoreCategories();
+      }
+    }
+  };
+
+  const loadMoreCategories = () => {
+    if (categories.length > 0) {
+      // Append the same categories again for infinite scrolling
+      const newCategories = categories.map((cat) => ({
+        ...cat,
+        _id: `${cat._id}-copy`, // Ensure unique _id for React rendering
+      }));
+      setCategories((prevCategories) => [...prevCategories, ...newCategories]);
+    }
+  };
+
   if (loading) {
     return (
-      <div className="overflow-hidden w-full py-4">
-        <div className="flex w-max">
-          {/* Skeleton Loader Items */}
-          {Array.from({ length: 20 }).map((_, index) => ( // Display 6 skeleton items
+      <div className="scroll-container">
+        <div className="flex w-max px-2">
+          {Array.from({ length: 6 }).map((_, index) => (
             <div
               key={index}
               className="w-32 h-40 flex flex-col items-center justify-start mx-2 shrink-0"
             >
-              <Skeleton className="w-28 h-28 rounded-full" /> {/* Skeleton for image */}
-              <Skeleton className="w-20 h-4 mt-2 rounded-md" /> {/* Skeleton for text */}
+              <Skeleton className="w-28 h-28 rounded-full" />
+              <Skeleton className="w-20 h-4 mt-2 rounded-md" />
             </div>
           ))}
         </div>
@@ -68,13 +89,13 @@ const UserScrollSlider = () => {
   }
 
   return (
-    <div className="overflow-hidden w-full py-4">
-      <div className="flex animate-scroll hover:animate-none w-max">
-        {[...categories, ...categories].map((item, idx) => (
+    <div className="scroll-container" ref={scrollContainerRef} onScroll={handleScroll}>
+      <div className="scroll-content">
+        {categories.map((item) => (
           <Link
             to={`/browse?categories=${item._id}`}
-            key={idx}
-            className="w-32 h-40 flex flex-col items-center justify-start mx-2 shrink-0"
+            key={item._id}
+            className="scroll-item"
           >
             <img
               src={item.img}
