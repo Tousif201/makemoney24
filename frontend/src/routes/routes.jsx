@@ -47,6 +47,10 @@ import { Toaster } from "sonner";
 import UsersDetailsPageAdmin from "../pages/Dashboard/Admin/UsersDetailsPageAdmin";
 import EmiSchedule from "../pages/Dashboard/Users/EmiSchedule";
 import Test from "../pages/Dashboard/test";
+import TermsAndConditions from "../pages/TermsAndConditions";
+import PrivacyPolicy from "../pages/PrivacyPolicy";
+import CompanyPolicy from "../pages/CompanyPolicy";
+import BusinessPlan from "../pages/BusinessPlan";
 
 const routes = [
   {
@@ -171,6 +175,40 @@ const routes = [
       </MainLayout>
     ),
   },
+
+  {
+    path: "/tnc",
+    element: (
+      <MainLayout>
+        <TermsAndConditions />
+      </MainLayout>
+    ),
+  },
+  {
+    path: "/privacy-policy",
+    element: (
+      <MainLayout>
+        <PrivacyPolicy />
+      </MainLayout>
+    ),
+  },
+  {
+    path: "/company-policy",
+    element: (
+      <MainLayout>
+        <CompanyPolicy />
+      </MainLayout>
+    ),
+  },
+  {
+    path: "/buisness-plan",
+    element: (
+      <MainLayout>
+        <BusinessPlan />
+      </MainLayout>
+    ),
+  },
+
   {
     path: "/cartdrawer",
     element: (
@@ -412,7 +450,7 @@ const routes = [
       </DashboardLayout>
     ),
   },
-   {
+  {
     path: "/dashboard/test",
     element: (
       <DashboardLayout>
@@ -420,6 +458,7 @@ const routes = [
       </DashboardLayout>
     ),
   },
+
   {
     path: "*",
     element: <h1>404 - Page Not Found</h1>,
