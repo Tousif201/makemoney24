@@ -1,6 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+// Import DnD components
+import {
+  DragDropContext,
+  Droppable,
+  Draggable,
+} from "@hello-pangea/dnd"; // Use @hello-pangea/dnd for React 18 compatibility
+
 import {
   Card,
   CardContent,
@@ -37,23 +44,27 @@ import {
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
-import { ImageIcon, Edit, Trash2, Loader2 } from "lucide-react"; // Added Loader2 for loading state
+import { ImageIcon, Edit, Trash2, Loader2, GripVertical } from "lucide-react"; // Added GripVertical for drag handle
 import CreateBannerDialog from "../../../components/Dialogs/CreateBannerDialog";
 import {
   deleteBanner,
   getAllBanners,
   updateBanner,
+  updateBannerOrder, // Import the new API function
 } from "../../../../api/banner";
 import { deleteFiles, uploadFiles } from "../../../../api/upload";
-import { toast } from "sonner"; // Assuming sonner for toasts
+import { toast } from "sonner";
+
+
 
 export default function BannersPage() {
   const [banners, setBanners] = useState([]);
   const [editingBanner, setEditingBanner] = useState(null);
-  const [editingFile, setEditingFile] = useState(null); // State for new file during edit
+  const [editingFile, setEditingFile] = useState(null);
   const [deletingBannerId, setDeletingBannerId] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isUpdating, setIsUpdating] = useState(false); // New state for update button loading
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isReordering, setIsReordering] = useState(false); // New state for reordering loader
 
   // --- Fetch Banners on Load ---
   useEffect(() => {
@@ -75,8 +86,8 @@ export default function BannersPage() {
 
   // --- Handlers ---
   const handleEditBanner = (banner) => {
-    setEditingBanner({ ...banner }); // Create a copy to avoid direct state mutation
-    setEditingFile(null); // Reset file selection on opening edit dialog
+    setEditingBanner({ ...banner });
+    setEditingFile(null);
   };
 
   const handleEditingFileChange = (e) => {
@@ -97,7 +108,6 @@ export default function BannersPage() {
       let imageUrl = editingBanner.image?.url;
       let imageKey = editingBanner.image?.key;
 
-      // If a new file is selected, upload it
       if (editingFile) {
         const uploaded = await uploadFiles([editingFile]);
         if (!uploaded || uploaded.length === 0) {
@@ -106,9 +116,7 @@ export default function BannersPage() {
         imageUrl = uploaded[0].url;
         imageKey = uploaded[0].key;
 
-        // If there was an old image, delete it from storage
         if (editingBanner.image?.key) {
-          console.log([editingBanner.image.key]);
           await deleteFiles([editingBanner.image.key]);
         }
       }
@@ -123,11 +131,11 @@ export default function BannersPage() {
 
       toast.success("Banner updated successfully!");
 
-      // Refresh banners list and close dialog
+      // Refresh banners list to get the latest data including sNo
       const data = await getAllBanners();
       setBanners(data);
       setEditingBanner(null);
-      setEditingFile(null); // Clear editing file after successful update
+      setEditingFile(null);
     } catch (error) {
       console.error("Failed to update banner:", error);
       toast.error("Failed to update banner. Please try again.");
@@ -140,19 +148,18 @@ export default function BannersPage() {
     if (!deletingBannerId) return;
 
     try {
-      // Find the banner to get its image key for deletion from storage
       const bannerToDelete = banners.find((b) => b._id === deletingBannerId);
 
       await deleteBanner(deletingBannerId);
 
-      // If the banner had an image, delete it from storage
       if (bannerToDelete && bannerToDelete.image?.key) {
         await deleteFiles([bannerToDelete.image.key]);
       }
 
       toast.success("Banner deleted successfully!");
-      // Refresh banners list
-      setBanners(banners.filter((b) => b._id !== deletingBannerId));
+      // Re-fetch all banners to ensure sNo re-indexing is reflected
+      const data = await getAllBanners();
+      setBanners(data);
     } catch (error) {
       console.error("Failed to delete banner:", error);
       toast.error("Failed to delete banner. Please try again.");
@@ -161,15 +168,46 @@ export default function BannersPage() {
     }
   };
 
+  // --- Drag and Drop Handler ---
+  const onDragEnd = async (result) => {
+    if (!result.destination) return; // Dropped outside a droppable area
+
+    const items = Array.from(banners);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+
+    // Update local state immediately for a smooth UX
+    setBanners(items);
+
+    setIsReordering(true); // Start reordering loader
+
+    try {
+      // Prepare the new order for the API call
+      const newOrderPayload = items.map((banner, index) => ({
+        _id: banner._id,
+        sNo: index + 1, // Assign new sequential sNo based on new order
+      }));
+
+      await updateBannerOrder(newOrderPayload);
+      toast.success("Banner order updated successfully!");
+    } catch (error) {
+      console.error("Failed to update banner order:", error);
+      toast.error("Failed to save banner order. Please try again.");
+      // Optionally, revert to original order if API call fails
+      // setBanners(originalOrderState);
+    } finally {
+      setIsReordering(false); // End reordering loader
+    }
+  };
+
   return (
     <div className="p-6 space-y-6">
-      {" "}
-      {/* Added space-y for consistent spacing */}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-2xl font-bold">Banners</h2>
           <p className="text-sm text-muted-foreground">
-            Create and manage promotional banners for your storefront.
+            Create and manage promotional banners for your storefront. Drag and
+            drop to reorder.
           </p>
         </div>
         <CreateBannerDialog />
@@ -184,13 +222,17 @@ export default function BannersPage() {
             <div className="text-2xl font-bold">{banners.length}</div>
           </CardContent>
         </Card>
-        {/* You can add more Stat Cards here if needed, e.g., for clicks, impressions etc. */}
       </div>
       <Card className="shadow-sm">
         <CardHeader>
           <CardTitle>All Banners</CardTitle>
           <CardDescription>
             View and manage all your existing banners.
+            {isReordering && (
+              <span className="ml-2 text-blue-600 flex items-center">
+                <Loader2 className="h-4 w-4 animate-spin mr-1" /> Saving order...
+              </span>
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -198,109 +240,147 @@ export default function BannersPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[100px]">Image</TableHead>{" "}
-                  {/* Added width for image column */}
+                  <TableHead className="w-[40px] text-center"></TableHead> {/* Drag Handle Column */}
+                  <TableHead className="w-[100px]">Image</TableHead>
                   <TableHead>Redirect URL</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
-              <TableBody>
-                {isLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={3} className="h-24 text-center">
-                      <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
-                      <p className="text-sm text-muted-foreground mt-2">
-                        Loading banners...
-                      </p>
-                    </TableCell>
-                  </TableRow>
-                ) : banners.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={3}
-                      className="h-24 text-center text-muted-foreground"
+              <DragDropContext onDragEnd={onDragEnd}>
+                <Droppable droppableId="banners">
+                  {(provided) => (
+                    <TableBody
+                      {...provided.droppableProps}
+                      ref={provided.innerRef}
                     >
-                      No banners found. Create one to get started!
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  banners.map((banner) => (
-                    <TableRow key={banner._id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <img
-                            src={banner.image?.url || "/placeholder-image.png"} // Fallback image
-                            alt={banner.redirectTo || "Banner image"}
-                            width={80} // Increased size for better preview
-                            height={50}
-                            className="rounded object-cover border"
-                          />
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="font-medium text-blue-600 hover:underline">
-                          <a
-                            href={banner.redirectTo}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                      {isLoading ? (
+                        <TableRow>
+                          <TableCell colSpan={4} className="h-24 text-center"> {/* Updated colSpan */}
+                            <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
+                            <p className="text-sm text-muted-foreground mt-2">
+                              Loading banners...
+                            </p>
+                          </TableCell>
+                        </TableRow>
+                      ) : banners.length === 0 ? (
+                        <TableRow>
+                          <TableCell
+                            colSpan={4} // Updated colSpan
+                            className="h-24 text-center text-muted-foreground"
                           >
-                            {banner.redirectTo}
-                          </a>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="outline" // Changed to outline for better visual cue
-                            size="sm"
-                            onClick={() => handleEditBanner(banner)}
-                            className="text-gray-600 hover:bg-gray-100"
+                            No banners found. Create one to get started!
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        banners.map((banner, index) => (
+                          <Draggable
+                            key={banner._id}
+                            draggableId={banner._id}
+                            index={index}
                           >
-                            <Edit className="h-4 w-4 mr-2" /> Edit
-                          </Button>
-
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                variant="destructive" // Changed to destructive variant
-                                size="sm"
-                                onClick={() => setDeletingBannerId(banner._id)}
+                            {(provided) => (
+                              <TableRow
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                className="relative group" // Added group class for hover effects
                               >
-                                <Trash2 className="h-4 w-4 mr-2" /> Delete
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>
-                                  Are you absolutely sure?
-                                </AlertDialogTitle>
-                                <div>
-                                  This action cannot be undone. This will
-                                  permanently delete the banner and remove its
-                                  data from our servers.
-                                </div>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel
-                                  onClick={() => setDeletingBannerId(null)}
+                                {/* Drag Handle */}
+                                <TableCell
+                                  {...provided.dragHandleProps}
+                                  className="w-[40px] text-center cursor-grab"
                                 >
-                                  Cancel
-                                </AlertDialogCancel>
-                                <AlertDialogAction
-                                  className="bg-red-600 hover:bg-red-700"
-                                  onClick={handleDeleteBanner}
-                                >
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
+                                  <GripVertical className="h-5 w-5 text-muted-foreground opacity-50 group-hover:opacity-100 transition-opacity" />
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-3">
+                                    <img
+                                      src={
+                                        banner.image?.url ||
+                                        "/placeholder-image.png"
+                                      }
+                                      alt={banner.redirectTo || "Banner image"}
+                                      width={80}
+                                      height={50}
+                                      className="rounded object-cover border"
+                                    />
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="font-medium text-blue-600 hover:underline">
+                                    <a
+                                      href={banner.redirectTo}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                    >
+                                      {banner.redirectTo}
+                                    </a>
+                                  </div>
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <div className="flex justify-end gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleEditBanner(banner)}
+                                      className="text-gray-600 hover:bg-gray-100"
+                                    >
+                                      <Edit className="h-4 w-4 mr-2" /> Edit
+                                    </Button>
+
+                                    <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <Button
+                                          variant="destructive"
+                                          size="sm"
+                                          onClick={() =>
+                                            setDeletingBannerId(banner._id)
+                                          }
+                                        >
+                                          <Trash2 className="h-4 w-4 mr-2" />{" "}
+                                          Delete
+                                        </Button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle>
+                                            Are you absolutely sure?
+                                          </AlertDialogTitle>
+                                          <div>
+                                            This action cannot be undone. This
+                                            will permanently delete the banner
+                                            and remove its data from our
+                                            servers.
+                                          </div>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel
+                                            onClick={() =>
+                                              setDeletingBannerId(null)
+                                            }
+                                          >
+                                            Cancel
+                                          </AlertDialogCancel>
+                                          <AlertDialogAction
+                                            className="bg-red-600 hover:bg-red-700"
+                                            onClick={handleDeleteBanner}
+                                          >
+                                            Delete
+                                          </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            )}
+                          </Draggable>
+                        ))
+                      )}
+                      {provided.placeholder}
+                    </TableBody>
+                  )}
+                </Droppable>
+              </DragDropContext>
             </Table>
           </div>
         </CardContent>
@@ -310,7 +390,7 @@ export default function BannersPage() {
         open={!!editingBanner}
         onOpenChange={() => {
           setEditingBanner(null);
-          setEditingFile(null); // Clear file state when closing dialog
+          setEditingFile(null);
         }}
       >
         <DialogContent className="max-w-[95vw] sm:max-w-2xl p-4 sm:p-6">

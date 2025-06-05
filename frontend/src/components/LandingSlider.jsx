@@ -19,9 +19,6 @@ const LandingSlider = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // No need for `api`, `current`, `count` state if only showing one slide.
-  // The autoplay plugin instance can be defined directly.
-
   useEffect(() => {
     const fetchBanners = async () => {
       try {
@@ -33,7 +30,9 @@ const LandingSlider = () => {
         } else if (Array.isArray(response)) {
           bannerData = response;
         } else {
-          throw new Error("Invalid response structure");
+          // If response is not an array, assume it's directly the array of banners
+          // This handles cases where the API might return the array directly or inside a 'data' field.
+          bannerData = response;
         }
 
         const validBanners = bannerData.filter((banner) => banner.image?.url);
@@ -42,7 +41,13 @@ const LandingSlider = () => {
           throw new Error("No valid banners available.");
         }
 
-        setBanners(validBanners.slice(0, 3)); // Still using the first 3 for content
+        // --- MODIFIED LOGIC HERE ---
+        // Calculate half the number of valid banners
+        const halfLength = Math.ceil(validBanners.length / 2);
+        // Slice the array to get exactly half of the banners
+        setBanners(validBanners.slice(0, halfLength));
+        // --- END MODIFIED LOGIC ---
+
       } catch (err) {
         console.error("Error fetching banners:", err);
         setError(

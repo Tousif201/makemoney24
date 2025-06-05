@@ -4,7 +4,7 @@
 import { Banner } from '../models/Banner.model.js';
 import mongoose from 'mongoose';
 
-// Helper function to validate ObjectId (though not directly used for Banner ID, good practice for related IDs if any)
+// Helper function to validate ObjectId
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
 /**
@@ -23,12 +23,17 @@ export const createBanner = async (req, res) => {
       return res.status(400).json({ message: 'Image URL and Key are required for a banner.' });
     }
 
+    // Find the current highest sNo and increment for the new banner
+    const latestBanner = await Banner.findOne().sort({ sNo: -1 }).limit(1);
+    const nextSNo = latestBanner ? latestBanner.sNo + 1 : 1; // Start from 1 if no banners exist
+
     const newBanner = new Banner({
       image: {
         url: image.url,
         key: image.key
       },
       redirectTo,
+      sNo: nextSNo, // Assign the calculated serial number
     });
 
     const savedBanner = await newBanner.save();
@@ -48,7 +53,8 @@ export const createBanner = async (req, res) => {
  */
 export const getBanners = async (req, res) => {
   try {
-    const banners = await Banner.find().sort({ createdAt: -1 }); // Sort by newest first
+    // Sort by sNo in ascending order for correct display order
+    const banners = await Banner.find().sort({ sNo: 1 });
     res.status(200).json(banners);
   } catch (error) {
     console.error('Error fetching banners:', error);
@@ -82,7 +88,7 @@ export const getBannerById = async (req, res) => {
 };
 
 /**
- * @desc Update an existing banner
+ * @desc Update an existing banner (excluding sNo here, handled by updateBannerOrder)
  * @route PUT /api/banners/:id
  * @access Public (or Private, e.g., Admin role)
  * @param {Object} req - Express request object (params: id, body: fields to update)
@@ -91,7 +97,7 @@ export const getBannerById = async (req, res) => {
 export const updateBanner = async (req, res) => {
   try {
     const { id } = req.params;
-    const { image, redirectTo } = req.body;
+    const { image, redirectTo } = req.body; // sNo is intentionally excluded here
 
     if (!isValidObjectId(id)) {
       return res.status(400).json({ message: 'Invalid Banner ID format.' });
@@ -111,10 +117,15 @@ export const updateBanner = async (req, res) => {
       updateFields.redirectTo = redirectTo;
     }
 
+    // Prevent direct sNo update through this route
+    // if (sNo !== undefined) {
+    //   return res.status(400).json({ message: 'sNo cannot be updated via this route. Use /api/banners/order instead.' });
+    // }
+
     const updatedBanner = await Banner.findByIdAndUpdate(
       id,
       { $set: updateFields },
-      { new: true, runValidators: true } // `new: true` returns the updated document, `runValidators` ensures schema validators run
+      { new: true, runValidators: true }
     );
 
     if (!updatedBanner) {
@@ -142,12 +153,94 @@ export const deleteBanner = async (req, res) => {
     }
 
     const deletedBanner = await Banner.findByIdAndDelete(id);
+
     if (!deletedBanner) {
       return res.status(404).json({ message: 'Banner not found.' });
     }
+
+    // After deleting a banner, you might want to re-index the sNo values
+    // of the remaining banners to maintain sequential order without gaps.
+    // This is optional but can keep your sNo values tidy.
+    await reindexBannerSNos();
+
     res.status(200).json({ message: 'Banner deleted successfully.' });
   } catch (error) {
     console.error('Error deleting banner:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+/**
+ * @desc Update the order of banners (for Drag and Drop)
+ * @route PUT /api/banners/order
+ * @access Public (or Private, e.g., Admin role)
+ * @param {Object} req - Express request object (body: [{_id: String, sNo: Number}, ...])
+ * @param {Object} res - Express response object
+ */
+export const updateBannerOrder = async (req, res) => {
+  try {
+    const { newOrder } = req.body; // Expects an array of { _id: 'bannerId', sNo: newSerialNo }
+
+    if (!Array.isArray(newOrder) || newOrder.length === 0) {
+      return res.status(400).json({ message: 'Invalid or empty array for newOrder.' });
+    }
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      const bulkOperations = newOrder.map(item => {
+        if (!isValidObjectId(item._id) || typeof item.sNo !== 'number') {
+          throw new Error('Invalid item format in newOrder array.');
+        }
+        return {
+          updateOne: {
+            filter: { _id: item._id },
+            update: { $set: { sNo: item.sNo } }
+          }
+        };
+      });
+
+      await Banner.bulkWrite(bulkOperations, { session });
+
+      await session.commitTransaction();
+      res.status(200).json({ message: 'Banner order updated successfully.' });
+    } catch (error) {
+      await session.abortTransaction();
+      console.error('Error updating banner order during transaction:', error);
+      res.status(500).json({ message: 'Failed to update banner order. Transaction aborted.', error: error.message });
+    } finally {
+      session.endSession();
+    }
+  } catch (error) {
+    console.error('Error updating banner order:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+
+/**
+ * Helper function to re-index sNo values after a deletion to maintain sequential order.
+ * This is an optional step but can prevent gaps in sNo values.
+ * Called internally after a banner is deleted.
+ */
+const reindexBannerSNos = async () => {
+  try {
+    const banners = await Banner.find().sort({ sNo: 1 }); // Get all banners sorted by current sNo
+    const bulkOperations = banners.map((banner, index) => ({
+      updateOne: {
+        filter: { _id: banner._id },
+        update: { $set: { sNo: index + 1 } } // Assign new sequential sNo starting from 1
+      }
+    }));
+
+    if (bulkOperations.length > 0) {
+      await Banner.bulkWrite(bulkOperations);
+      console.log('Banner sNos re-indexed successfully.');
+    }
+  } catch (error) {
+    console.error('Error re-indexing banner sNos:', error);
+    // You might want to log this but not necessarily return an error
+    // to the client, as it's a background maintenance task.
   }
 };

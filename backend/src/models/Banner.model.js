@@ -9,6 +9,7 @@ const bannerSchema = new Schema({
     key: { type: String, required: true }  // Key from Uploadthing for deletion
   },
   redirectTo: { type: String }, // Can link to a product/service/category/etc
+  sNo: { type: Number, unique: true, sparse: true }, // New field for serial number/order
   createdAt: { type: Date, default: Date.now }
 },{
   timestamps: true // <--- ADD THIS LINE

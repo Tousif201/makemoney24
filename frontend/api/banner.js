@@ -17,6 +17,7 @@ const apiClient = axios.create({
  * @property {string} image.url - Image URL
  * @property {string} image.key - Image storage key
  * @property {string} [redirectTo] - Optional redirect URL
+ * @property {number} sNo - Serial number for ordering // Added sNo field
  */
 
 /**
@@ -90,6 +91,21 @@ export const deleteBanner = async (id) => {
     return response.data;
   } catch (error) {
     console.error("Error deleting banner:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+/**
+ * Update the order of banners.
+ * @param {Array<{_id: string, sNo: number}>} newOrder - An array of banner objects with their updated _id and sNo.
+ * @returns {Promise<{ message: string }>}
+ */
+export const updateBannerOrder = async (newOrder) => {
+  try {
+    const response = await apiClient.put("/order", { newOrder });
+    return response.data;
+  } catch (error) {
+    console.error("Error updating banner order:", error.response?.data || error.message);
     throw error;
   }
 };
