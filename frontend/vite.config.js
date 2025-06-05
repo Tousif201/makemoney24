@@ -24,4 +24,13 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  server:{
+    port:7001,
+    allowedHosts:['makemoney24hrs.com','https://makemoney24hrs.com','www.makemoney24hrs.com','http://makemoney24hrs.com','makemoney24.smartchainstudio.in','https://makemoney24.smartchainstudio.in','www.makemoney24.smartchainstudio.in','http://makemoney24.smartchainstudio.in']
+  },
+  preview:{
+    port:7001,
+    allowedHosts:['makemoney24hrs.com','https://makemoney24hrs.com','www.makemoney24hrs.com','http://makemoney24hrs.com','makemoney24.smartchainstudio.in','https://makemoney24.smartchainstudio.in','www.makemoney24.smartchainstudio.in','http://makemoney24.smartchainstudio.in']
+  },
+  
 });
