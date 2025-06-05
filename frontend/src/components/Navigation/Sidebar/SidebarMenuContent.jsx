@@ -26,7 +26,8 @@ export default function SidebarMenuContent() {
   const [openCollapsibleIndex, setOpenCollapsibleIndex] = useState(null);
 
   const handleMenuClick = () => {
-    if (typeof window !== "undefined" && window.innerWidth < 768) toggleSidebar();
+    if (typeof window !== "undefined" && window.innerWidth < 768)
+      toggleSidebar();
   };
 
   const isActive = (href) => pathname === href;
@@ -63,15 +64,18 @@ export default function SidebarMenuContent() {
                   openCollapsibleIndex === idx ||
                   item.items.some((sub) => isActive(sub.href))
                 }
-                onOpenChange={(isOpen) => setOpenCollapsibleIndex(isOpen ? idx : null)}
+                onOpenChange={(isOpen) =>
+                  setOpenCollapsibleIndex(isOpen ? idx : null)
+                }
               >
                 <SidebarGroupLabel asChild>
                   <CollapsibleTrigger
                     className={`flex w-full items-center justify-between rounded-md px-3 py-2 transition
-                      ${openCollapsibleIndex === idx ||
+                      ${
+                        openCollapsibleIndex === idx ||
                         item.items.some((sub) => isActive(sub.href))
-                        ? "bg-purple-100 text-purple-700"
-                        : "hover:bg-gray-100 text-gray-600"
+                          ? "bg-purple-100 text-purple-700"
+                          : "hover:bg-gray-100 text-gray-600"
                       }`}
                   >
                     <div className="flex items-center space-x-3">
@@ -82,18 +86,23 @@ export default function SidebarMenuContent() {
                   </CollapsibleTrigger>
                 </SidebarGroupLabel>
 
-                <CollapsibleContent className="space-y-1 pl-8 pr-3 py-1">
+                <CollapsibleContent className="space-y-1 pl-8 pr-3 py-1 overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
                   {item.items.map((sub, subIdx) => (
                     <SidebarMenuItem key={subIdx}>
                       <SidebarMenuButton
                         asChild
                         className={`w-full rounded px-2 py-1.5 text-sm transition
-                          ${isActive(sub.href)
-                            ? "bg-purple-200 text-gray-800 font-semibold"
-                            : "hover:bg-gray-50 text-gray-600"
+                          ${
+                            isActive(sub.href)
+                              ? "bg-purple-200 text-gray-800 font-semibold"
+                              : "hover:bg-gray-50 text-gray-600"
                           }`}
                       >
-                        <Link to={sub.href} onClick={handleMenuClick} className="flex items-center space-x-2">
+                        <Link
+                          to={sub.href}
+                          onClick={handleMenuClick}
+                          className="flex items-center space-x-2"
+                        >
                           <sub.icon className="text-base" />
                           <span>{sub.label}</span>
                         </Link>
@@ -108,12 +117,17 @@ export default function SidebarMenuContent() {
                 <SidebarMenuButton
                   asChild
                   className={`w-full rounded-md px-3 py-2 text-base font-medium transition
-                    ${isActive(item.href)
-                      ? "bg-purple-300 text-purple-800 shadow-sm"
-                      : "hover:bg-gray-100 text-gray-700"
+                    ${
+                      isActive(item.href)
+                        ? "bg-purple-300 text-purple-800 shadow-sm"
+                        : "hover:bg-gray-100 text-gray-700"
                     }`}
                 >
-                  <Link to={item.href} onClick={handleMenuClick} className="flex items-center space-x-3">
+                  <Link
+                    to={item.href}
+                    onClick={handleMenuClick}
+                    className="flex items-center space-x-3"
+                  >
                     <item.icon className="text-lg" />
                     <span>{item.label}</span>
                   </Link>
@@ -124,8 +138,7 @@ export default function SidebarMenuContent() {
 
           {/* -------- Logout button -------- */}
 
-          <SidebarMenuItem>
-          </SidebarMenuItem>
+          <SidebarMenuItem></SidebarMenuItem>
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>
