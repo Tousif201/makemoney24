@@ -170,6 +170,33 @@ export const deleteBanner = async (req, res) => {
   }
 };
 
+
+/**
+ * Helper function to re-index sNo values after a deletion to maintain sequential order.
+ * This is an optional step but can prevent gaps in sNo values.
+ * Called internally after a banner is deleted.
+ */
+const reindexBannerSNos = async (session = null) => {
+  try {
+    const banners = await Banner.find().sort({ sNo: 1 }).session(session); // Get all banners sorted by current sNo
+    const bulkOperations = banners.map((banner, index) => ({
+      updateOne: {
+        filter: { _id: banner._id },
+        update: { $set: { sNo: index + 1 } } // Assign new sequential sNo starting from 1
+      }
+    }));
+
+    if (bulkOperations.length > 0) {
+      await Banner.bulkWrite(bulkOperations, { session });
+      console.log('Banner sNos re-indexed successfully.');
+    }
+  } catch (error) {
+    console.error('Error re-indexing banner sNos:', error);
+    // You might want to log this but not necessarily return an error
+    // to the client, as it's a background maintenance task.
+  }
+};
+
 /**
  * @desc Update the order of banners (for Drag and Drop)
  * @route PUT /api/banners/order
@@ -189,17 +216,29 @@ export const updateBannerOrder = async (req, res) => {
     session.startTransaction();
 
     try {
-      const bulkOperations = newOrder.map(item => {
+      // Step 1: Temporarily UNSET sNo for all banners involved in the update
+      // This is crucial to avoid unique index conflicts when re-assigning numbers.
+      // Unsetting the field makes it not exist, thus not being indexed by sparse unique index.
+      const bannerIdsToUpdate = newOrder.map(item => {
         if (!isValidObjectId(item._id) || typeof item.sNo !== 'number') {
           throw new Error('Invalid item format in newOrder array.');
         }
-        return {
-          updateOne: {
-            filter: { _id: item._id },
-            update: { $set: { sNo: item.sNo } }
-          }
-        };
+        return item._id;
       });
+
+      await Banner.updateMany(
+        { _id: { $in: bannerIdsToUpdate } },
+        { $unset: { sNo: 1 } }, // Use $unset to remove the field entirely
+        { session }
+      );
+
+      // Step 2: Assign the new sequential sNo values
+      const bulkOperations = newOrder.map(item => ({
+        updateOne: {
+          filter: { _id: item._id },
+          update: { $set: { sNo: item.sNo } }
+        }
+      }));
 
       await Banner.bulkWrite(bulkOperations, { session });
 
@@ -215,32 +254,5 @@ export const updateBannerOrder = async (req, res) => {
   } catch (error) {
     console.error('Error updating banner order:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
-  }
-};
-
-
-/**
- * Helper function to re-index sNo values after a deletion to maintain sequential order.
- * This is an optional step but can prevent gaps in sNo values.
- * Called internally after a banner is deleted.
- */
-const reindexBannerSNos = async () => {
-  try {
-    const banners = await Banner.find().sort({ sNo: 1 }); // Get all banners sorted by current sNo
-    const bulkOperations = banners.map((banner, index) => ({
-      updateOne: {
-        filter: { _id: banner._id },
-        update: { $set: { sNo: index + 1 } } // Assign new sequential sNo starting from 1
-      }
-    }));
-
-    if (bulkOperations.length > 0) {
-      await Banner.bulkWrite(bulkOperations);
-      console.log('Banner sNos re-indexed successfully.');
-    }
-  } catch (error) {
-    console.error('Error re-indexing banner sNos:', error);
-    // You might want to log this but not necessarily return an error
-    // to the client, as it's a background maintenance task.
   }
 };

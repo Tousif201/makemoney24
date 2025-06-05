@@ -2,11 +2,7 @@
 
 import { useEffect, useState } from "react";
 // Import DnD components
-import {
-  DragDropContext,
-  Droppable,
-  Draggable,
-} from "@hello-pangea/dnd"; // Use @hello-pangea/dnd for React 18 compatibility
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd"; // Use @hello-pangea/dnd for React 18 compatibility
 
 import {
   Card,
@@ -54,8 +50,6 @@ import {
 } from "../../../../api/banner";
 import { deleteFiles, uploadFiles } from "../../../../api/upload";
 import { toast } from "sonner";
-
-
 
 export default function BannersPage() {
   const [banners, setBanners] = useState([]);
@@ -190,6 +184,8 @@ export default function BannersPage() {
 
       await updateBannerOrder(newOrderPayload);
       toast.success("Banner order updated successfully!");
+      const data = await getAllBanners(); // <-- Refetches after order update
+      setBanners(data);
     } catch (error) {
       console.error("Failed to update banner order:", error);
       toast.error("Failed to save banner order. Please try again.");
@@ -230,7 +226,8 @@ export default function BannersPage() {
             View and manage all your existing banners.
             {isReordering && (
               <span className="ml-2 text-blue-600 flex items-center">
-                <Loader2 className="h-4 w-4 animate-spin mr-1" /> Saving order...
+                <Loader2 className="h-4 w-4 animate-spin mr-1" /> Saving
+                order...
               </span>
             )}
           </CardDescription>
@@ -240,7 +237,12 @@ export default function BannersPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[40px] text-center"></TableHead> {/* Drag Handle Column */}
+                  <TableHead className="w-[40px] text-center"></TableHead>{" "}
+                  {/* Drag Handle Column */}
+                  <TableHead className="w-[60px] text-center">
+                    S.No
+                  </TableHead>{" "}
+                  {/* New S.No Column */}
                   <TableHead className="w-[100px]">Image</TableHead>
                   <TableHead>Redirect URL</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -255,7 +257,9 @@ export default function BannersPage() {
                     >
                       {isLoading ? (
                         <TableRow>
-                          <TableCell colSpan={4} className="h-24 text-center"> {/* Updated colSpan */}
+                          <TableCell colSpan={5} className="h-24 text-center">
+                            {" "}
+                            {/* Updated colSpan */}
                             <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
                             <p className="text-sm text-muted-foreground mt-2">
                               Loading banners...
@@ -265,7 +269,7 @@ export default function BannersPage() {
                       ) : banners.length === 0 ? (
                         <TableRow>
                           <TableCell
-                            colSpan={4} // Updated colSpan
+                            colSpan={5} // Updated colSpan
                             className="h-24 text-center text-muted-foreground"
                           >
                             No banners found. Create one to get started!
@@ -290,6 +294,10 @@ export default function BannersPage() {
                                   className="w-[40px] text-center cursor-grab"
                                 >
                                   <GripVertical className="h-5 w-5 text-muted-foreground opacity-50 group-hover:opacity-100 transition-opacity" />
+                                </TableCell>
+                                {/* S.No Field */}
+                                <TableCell className="text-center font-medium">
+                                  {banner.sNo}
                                 </TableCell>
                                 <TableCell>
                                   <div className="flex items-center gap-3">
