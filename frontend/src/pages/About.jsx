@@ -10,6 +10,7 @@ import {
   Users,
 } from "lucide-react";
 import about from "../assets/about.jpg"
+import about2 from "../assets/about2.jpg"
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -44,7 +45,7 @@ export default function About() {
         {/* Right Image */}
         <div className="md:w-1/2">
           <img
-            src={about}
+            src={about2}
             alt="About Shree Laabh Enterprises"
             className="rounded-2xl shadow-lg w-full h-auto max-h-[500px] object-cover"
           />
@@ -85,11 +86,11 @@ export default function About() {
             </div>
           </div>
           <div className="relative h-80 md:h-96 rounded-lg overflow-hidden shadow-xl">
-            {/* <img
-              src={Image}
+            <img
+              src={about}
               alt="Shree Laabh Enterprises Team"
               className=" w-auto h-auto"
-            /> */}
+            />
           </div>
         </div>
       </section>

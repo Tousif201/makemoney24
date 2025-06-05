@@ -4,10 +4,11 @@ import frontImg from "../assets/cashback/card11.png";
 import logo from "../assets/makemoney.png";
 
 const CashbackCardFront = ({
-  userName ,date,cardNumber= Math.floor(Math.random() * 1e16)
-  .toString()
-  .replace(/(.{4})/g, "$1 ")
-  
+  userName,
+  date,
+  cardNumber = Math.floor(Math.random() * 1e16)
+    .toString()
+    .replace(/(.{4})/g, "$1 ")
 }) => {
   const createdDate = new Date(date);
 
@@ -25,23 +26,24 @@ const CashbackCardFront = ({
     month: "2-digit",
     year: "2-digit",
   });
+
   return (
-    <Card className="relative w-full max-w-[280px] xs:max-w-[320px] sm:max-w-[400px] md:max-w-[450px] lg:max-w-[500px] aspect-[10/7] rounded-2xl overflow-hidden shadow-xl bg-amber-600 text-white font-semibold mx-auto">
+    <Card className="relative w-full max-w-[280px] xs:max-w-[320px] sm:max-w-[400px] md:max-w-[420px] lg:max-w-[500px] aspect-[10/7] rounded-2xl overflow-hidden shadow-xl bg-amber-600 text-white font-semibold mx-auto">
       <img
         src={frontImg}
         alt="Card Front Background"
-        className="absolute inset-0 w-full h-full object-cover z-0"
+        className="absolute inset-0 w-full h-full object-cover object-center z-0"
       />
-      <div className="relative z-10 w-full h-full flex flex-col justify-between p-3 xs:p-4 sm:p-6 md:p-7 lg:p-4">
+      <div className="relative z-10 w-full h-full flex flex-col justify-between p-3 xs:p-4 sm:p-5 md:p-5 lg:p-4">
         {/* Logo Section */}
         <div>
-          <img 
-            src={logo} 
-            alt="Logo" 
-            className="h-8 w-8 xs:h-10 xs:w-10 sm:h-12 sm:w-12 md:h-14 md:w-14 lg:h-16 lg:w-16 relative bottom-4" 
+          <img
+            src={logo}
+            alt="Logo"
+            className="h-8 w-8 xs:h-10 xs:w-10 sm:h-12 sm:w-12 md:h-14 md:w-14 lg:h-16 lg:w-16 relative bottom-4"
           />
         </div>
-        
+
         {/* Main Card Content */}
         <div>
           <h2 className="text-lg xs:text-xl sm:text-2xl md:text-3xl lg:text-3xl font-bold mb-2 xs:mb-3 sm:mb-4">
@@ -54,9 +56,9 @@ const CashbackCardFront = ({
             {userName}
           </p>
         </div>
-        
+
         {/* Date Information */}
-        <div className="flex gap-4 xs:gap-5 sm:gap-6 text-xs xs:text-xs sm:text-sm md:text-sm ">
+        <div className="flex gap-4 xs:gap-5 sm:gap-6 text-xs xs:text-xs sm:text-sm md:text-sm">
           <div>
             <p className="text-gray-200 mb-1">VALID FROM</p>
             <p className="font-semibold">{validFrom}</p>
