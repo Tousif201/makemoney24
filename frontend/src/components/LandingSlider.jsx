@@ -9,6 +9,9 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel"; // Adjust path as per your setup
 
+// Import Shadcn Skeleton component
+import { Skeleton } from "@/components/ui/skeleton"; // <<<--- Import Skeleton
+
 import { getAllBanners } from "../../api/banner";
 import AutoplayPlugin from "embla-carousel-autoplay";
 
@@ -60,10 +63,25 @@ const LandingSlider = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center py-8">
-        <div className="flex items-center space-x-2">
-          <div className="w-5 h-5 border-2 border-t-2 border-gray-900 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-lg text-gray-700">Loading banners...</p>
+      <div className="flex flex-col gap-4 max-w-full">
+        <div className="w-full overflow-hidden rounded-lg">
+          <Carousel
+            opts={{
+              align: "start",
+            }}
+            className="w-full"
+          >
+            <CarouselContent className="-ml-4">
+              {/* Skeleton Loader Items using shadcn/ui Skeleton */}
+              {Array.from({ length: 3 }).map((_, index) => ( // Adjust length as needed
+                <CarouselItem key={index} className="pl-4 basis-full">
+                  <div className="p-1">
+                    <Skeleton className="w-full aspect-video md:aspect-[16/6] rounded-lg" /> {/* <<<--- Using Shadcn Skeleton */}
+                  </div>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+          </Carousel>
         </div>
       </div>
     );

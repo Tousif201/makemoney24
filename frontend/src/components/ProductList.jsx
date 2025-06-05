@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import ProductCard from "./ProductCard";
 import { getProductServices } from "../../api/productService"; // Make sure this path is correct
 import { Link } from "react-router-dom"; // Import Link from react-router-dom
+import { Skeleton } from "@/components/ui/skeleton"; // Import Shadcn Skeleton
 
 const ProductList = () => {
   const [products, setProducts] = useState([]);
@@ -49,12 +50,28 @@ const ProductList = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-48 sm:h-64 bg-gray-50 rounded-lg shadow-md p-4 m-4">
-        <div className="flex items-center space-x-2">
-          <div className="w-4 h-4 border-2 border-t-2 border-gray-900 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-lg text-gray-700">Loading products...</p>
+      <section className="bg-white py-12 sm:py-16 md:py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-4xl sm:text-5xl font-extrabold text-gray-900 text-center mb-12">
+            Featured Products
+          </h2>
+          <div className="grid gap-6 sm:gap-8 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4">
+            {/* Skeleton Loader for 8 product cards */}
+            {Array.from({ length: 8 }).map((_, index) => (
+              <div
+                key={index}
+                className="bg-gray-100 rounded-lg shadow-md overflow-hidden p-4 flex flex-col items-center"
+              >
+                <Skeleton className="w-full aspect-video rounded-md mb-4" /> {/* Image skeleton */}
+                <Skeleton className="h-6 w-3/4 rounded-md mb-2" /> {/* Title skeleton */}
+                <Skeleton className="h-4 w-full rounded-md mb-2" /> {/* Description line 1 skeleton */}
+                <Skeleton className="h-4 w-5/6 rounded-md mb-4" /> {/* Description line 2 skeleton */}
+                <Skeleton className="h-8 w-1/2 rounded-md" /> {/* Price/Button skeleton */}
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      </section>
     );
   }
 
