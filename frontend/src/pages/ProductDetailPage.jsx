@@ -579,234 +579,220 @@ export default function ProductDetailPage() {
                   <ShoppingCart className="mr-2 h-5 w-5" />
                   Add to Cart
                 </Button>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="w-1/2 border-blue-500 text-blue-600 hover:bg-blue-50 dark:border-blue-600 dark:text-blue-300 dark:hover:bg-gray-700 shadow-md transition-all duration-200 text-base py-3 rounded-lg"
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Heart className="mr-2 h-5 w-5" />
-                  Add to Wishlist
-                </Button>
               </div>
-              <Button
-                size="lg"
-                className="w-full bg-green-600 hover:bg-green-700 text-white shadow-lg transition-all duration-200 text-base py-3 rounded-lg"
-                whileTap={{ scale: 0.95 }}
-              >
-                Buy Now
-              </Button>
-            </motion.div>
-          </motion.div>
-        </motion.div>
-        {/* Product Details Tabs */}
-        <Card className="mb-12 rounded-xl shadow-lg dark:bg-gray-800 dark:border-gray-700">
-          {" "}
-          {/* Added shadow, more rounded */}
-          <CardContent className="p-6">
-            <Tabs defaultValue="description" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+
+              <Card className="mb-12 rounded-xl shadow-lg dark:bg-gray-800 dark:border-gray-700">
                 {" "}
-                {/* Styled TabList */}
-                <TabsTrigger
-                  value="description"
-                  className="data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-600 data-[state=active]:font-semibold rounded-md transition-all duration-200 dark:data-[state=active]:bg-gray-900 dark:data-[state=active]:text-white"
-                >
-                  Description
-                </TabsTrigger>
-                <TabsTrigger
-                  value="reviews"
-                  className="data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-600 data-[state=active]:font-semibold rounded-md transition-all duration-200 dark:data-[state=active]:bg-gray-900 dark:data-[state=active]:text-white"
-                >
-                  Reviews ({totalReviewsCount})
-                </TabsTrigger>
-                {/* Add other tabs if you have them, e.g., "Shipping", "Vendor Info" */}
-              </TabsList>
-              <TabsContent value="description" className="mt-6">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4 }}
-                  className="prose max-w-none dark:prose-invert" // Added prose-invert for dark mode
-                >
-                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-base">
-                    {product.description}
-                  </p>
-                </motion.div>
-              </TabsContent>
+                {/* Added shadow, more rounded */}
+                <CardContent className="p-6">
+                  <Tabs defaultValue="description" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2  bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+                      {" "}
+                      {/* Styled TabList */}
+                      <TabsTrigger
+                        value="description"
+                        className="data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-600 data-[state=active]:font-semibold rounded-md transition-all duration-200 dark:data-[state=active]:bg-gray-900 dark:data-[state=active]:text-white"
+                      >
+                        Description
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="reviews"
+                        className="data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-600 data-[state=active]:font-semibold rounded-md transition-all duration-200 dark:data-[state=active]:bg-gray-900 dark:data-[state=active]:text-white"
+                      >
+                        Reviews ({totalReviewsCount})
+                      </TabsTrigger>
+                      {/* Add other tabs if you have them, e.g., "Shipping", "Vendor Info" */}
+                    </TabsList>
+                    <TabsContent value="description" className="mt-6">
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.4 }}
+                        className="prose max-w-none dark:prose-invert" // Added prose-invert for dark mode
+                      >
+                        <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-base">
+                          {product.description}
+                        </p>
+                      </motion.div>
+                    </TabsContent>
 
-              <TabsContent value="reviews" className="mt-6">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4 }}
-                  className="space-y-8" // Increased space-y
-                >
-                  {/* Overall Review Summary */}
-                  <div className="flex items-center gap-8 bg-blue-50 dark:bg-blue-950 p-6 rounded-lg shadow-inner">
-                    {" "}
-                    {/* Styled summary */}
-                    <div className="text-center">
-                      <div className="text-4xl font-extrabold text-blue-700 dark:text-blue-200">
-                        {averageRating}
-                      </div>
-                      <div className="flex items-center justify-center mt-1">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            className={`h-5 w-5 ${
-                              i < Math.floor(averageRating)
-                                ? "fill-yellow-400 text-yellow-400"
-                                : "text-gray-300"
-                            }`}
-                          />
-                        ))}
-                      </div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                        {totalReviewsCount} reviews
-                      </div>
-                    </div>
-                    {/* Could add rating breakdown bars here (e.g., 5-star, 4-star, etc.) */}
-                    <div className="text-gray-700 dark:text-gray-300 text-lg font-medium">
-                      Customer satisfaction is key!
-                    </div>
-                  </div>
-                  <Separator className="bg-gray-200 dark:bg-gray-700" />
-
-                  {/* Leave a Review Section */}
-                  <LeaveReviewForm
-                    productId={productId}
-                    itemType={product.type}
-                    onReviewSubmitted={fetchProductDetails} // Pass the fetch function to re-fetch reviews
-                  />
-                  <Separator className="bg-gray-200 dark:bg-gray-700" />
-
-                  {/* Individual Reviews List */}
-                  <h3 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">
-                    Customer Reviews
-                  </h3>
-                  <div className="space-y-8">
-                    {" "}
-                    {/* Increased space-y */}
-                    {totalReviewsCount > 0 ? (
-                      product.reviews
-                        .sort(
-                          (a, b) =>
-                            new Date(b.createdAt) - new Date(a.createdAt)
-                        ) // Sort newest first
-                        .map((review, index) => (
-                          <motion.div
-                            key={review._id}
-                            className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700" // Styled individual review card
-                            variants={reviewItemVariants}
-                            initial="hidden"
-                            animate="visible"
-                            custom={index} // Pass index for staggered animation
-                          >
-                            <div className="flex items-center gap-3 mb-3">
-                              {review.userId?.avatar ? ( // Display user avatar if available
-                                <img
-                                  src={review.userId.avatar}
-                                  alt={review.userId.name || "User"}
-                                  className="h-10 w-10 rounded-full object-cover border-2 border-gray-100 dark:border-gray-700"
-                                />
-                              ) : (
-                                <UserCircle className="h-10 w-10 text-gray-400 dark:text-gray-500" /> // Fallback icon
-                              )}
-                              <div className="flex flex-col">
-                                <span className="font-semibold text-gray-900 dark:text-white text-lg">
-                                  {review.userId?.name || "Anonymous User"}
-                                </span>
-                                <span className="text-sm text-gray-500 dark:text-gray-400">
-                                  {" "}
-                                  •{" "}
-                                  {new Date(
-                                    review.createdAt
-                                  ).toLocaleDateString("en-US", {
-                                    year: "numeric",
-                                    month: "long",
-                                    day: "numeric",
-                                  })}
-                                </span>
-                              </div>
+                    <TabsContent value="reviews" className="mt-6">
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.4 }}
+                        className="space-y-8" // Increased space-y
+                      >
+                        {/* Overall Review Summary */}
+                        <div className="flex items-center gap-8 bg-blue-50 dark:bg-blue-950 p-6 rounded-lg shadow-inner">
+                          {" "}
+                          {/* Styled summary */}
+                          <div className="text-center">
+                            <div className="text-4xl font-extrabold text-blue-700 dark:text-blue-200">
+                              {averageRating}
                             </div>
-                            <div className="flex mb-3">
+                            <div className="flex items-center justify-center mt-1">
                               {[...Array(5)].map((_, i) => (
                                 <Star
                                   key={i}
                                   className={`h-5 w-5 ${
-                                    i < review.rating
+                                    i < Math.floor(averageRating)
                                       ? "fill-yellow-400 text-yellow-400"
                                       : "text-gray-300"
                                   }`}
                                 />
                               ))}
                             </div>
-                            <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-base mb-3">
-                              {review.comment}
-                            </p>
-                            {review.media && review.media.length > 0 && (
-                              <div className="flex flex-wrap gap-3 mt-4">
-                                {" "}
-                                {/* Use flex-wrap for responsiveness */}
-                                {review.media.map((mediaItem, idx) => (
-                                  <motion.button
-                                    key={idx}
-                                    onClick={() =>
-                                      openMediaViewer(
-                                        mediaItem.url,
-                                        mediaItem.type
-                                      )
-                                    }
-                                    className="w-24 h-24 sm:w-28 sm:h-28 overflow-hidden rounded-lg cursor-pointer relative group border border-gray-200 dark:border-gray-700 shadow-sm"
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                    transition={{
-                                      type: "spring",
-                                      stiffness: 400,
-                                      damping: 10,
-                                    }}
-                                  >
-                                    {mediaItem.type === "image" ? (
+                            <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                              {totalReviewsCount} reviews
+                            </div>
+                          </div>
+                          {/* Could add rating breakdown bars here (e.g., 5-star, 4-star, etc.) */}
+                          <div className="text-gray-700 dark:text-gray-300 text-lg font-medium">
+                            Customer satisfaction is key!
+                          </div>
+                        </div>
+                        <Separator className="bg-gray-200 dark:bg-gray-700" />
+
+                        {/* Leave a Review Section */}
+                        <LeaveReviewForm
+                          productId={productId}
+                          itemType={product.type}
+                          onReviewSubmitted={fetchProductDetails} // Pass the fetch function to re-fetch reviews
+                        />
+                        <Separator className="bg-gray-200 dark:bg-gray-700" />
+
+                        {/* Individual Reviews List */}
+                        <h3 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">
+                          Customer Reviews
+                        </h3>
+                        <div className="space-y-8">
+                          {" "}
+                          {/* Increased space-y */}
+                          {totalReviewsCount > 0 ? (
+                            product.reviews
+                              .sort(
+                                (a, b) =>
+                                  new Date(b.createdAt) - new Date(a.createdAt)
+                              ) // Sort newest first
+                              .map((review, index) => (
+                                <motion.div
+                                  key={review._id}
+                                  className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700" // Styled individual review card
+                                  variants={reviewItemVariants}
+                                  initial="hidden"
+                                  animate="visible"
+                                  custom={index} // Pass index for staggered animation
+                                >
+                                  <div className="flex items-center gap-3 mb-3">
+                                    {review.userId?.avatar ? ( // Display user avatar if available
                                       <img
-                                        src={mediaItem.url}
-                                        alt={`Review media ${idx + 1}`}
-                                        className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-110"
+                                        src={review.userId.avatar}
+                                        alt={review.userId.name || "User"}
+                                        className="h-10 w-10 rounded-full object-cover border-2 border-gray-100 dark:border-gray-700"
                                       />
                                     ) : (
-                                      <>
-                                        <video
-                                          src={mediaItem.url}
-                                          className="w-full h-full object-cover"
-                                          controls={false}
-                                          muted
-                                          loop
-                                          playsInline
-                                          preload="metadata" // Optimize video loading
-                                        />
-                                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 group-hover:bg-black/60 transition-colors duration-200">
-                                          <PlayCircle className="h-8 w-8 text-white" />
-                                        </div>
-                                      </>
+                                      <UserCircle className="h-10 w-10 text-gray-400 dark:text-gray-500" /> // Fallback icon
                                     )}
-                                  </motion.button>
-                                ))}
-                              </div>
-                            )}
-                          </motion.div>
-                        ))
-                    ) : (
-                      <p className="text-gray-600 dark:text-gray-400 text-lg py-4 text-center">
-                        No reviews yet for this product. Be the first to leave
-                        one!
-                      </p>
-                    )}
-                  </div>
-                </motion.div>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
+                                    <div className="flex flex-col">
+                                      <span className="font-semibold text-gray-900 dark:text-white text-lg">
+                                        {review.userId?.name ||
+                                          "Anonymous User"}
+                                      </span>
+                                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                                        {" "}
+                                        •{" "}
+                                        {new Date(
+                                          review.createdAt
+                                        ).toLocaleDateString("en-US", {
+                                          year: "numeric",
+                                          month: "long",
+                                          day: "numeric",
+                                        })}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <div className="flex mb-3">
+                                    {[...Array(5)].map((_, i) => (
+                                      <Star
+                                        key={i}
+                                        className={`h-5 w-5 ${
+                                          i < review.rating
+                                            ? "fill-yellow-400 text-yellow-400"
+                                            : "text-gray-300"
+                                        }`}
+                                      />
+                                    ))}
+                                  </div>
+                                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-base mb-3">
+                                    {review.comment}
+                                  </p>
+                                  {review.media && review.media.length > 0 && (
+                                    <div className="flex flex-wrap gap-3 mt-4">
+                                      {" "}
+                                      {/* Use flex-wrap for responsiveness */}
+                                      {review.media.map((mediaItem, idx) => (
+                                        <motion.button
+                                          key={idx}
+                                          onClick={() =>
+                                            openMediaViewer(
+                                              mediaItem.url,
+                                              mediaItem.type
+                                            )
+                                          }
+                                          className="w-24 h-24 sm:w-28 sm:h-28 overflow-hidden rounded-lg cursor-pointer relative group border border-gray-200 dark:border-gray-700 shadow-sm"
+                                          whileHover={{ scale: 1.05 }}
+                                          whileTap={{ scale: 0.95 }}
+                                          transition={{
+                                            type: "spring",
+                                            stiffness: 400,
+                                            damping: 10,
+                                          }}
+                                        >
+                                          {mediaItem.type === "image" ? (
+                                            <img
+                                              src={mediaItem.url}
+                                              alt={`Review media ${idx + 1}`}
+                                              className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-110"
+                                            />
+                                          ) : (
+                                            <>
+                                              <video
+                                                src={mediaItem.url}
+                                                className="w-full h-full object-cover"
+                                                controls={false}
+                                                muted
+                                                loop
+                                                playsInline
+                                                preload="metadata" // Optimize video loading
+                                              />
+                                              <div className="absolute inset-0 flex items-center justify-center bg-black/40 group-hover:bg-black/60 transition-colors duration-200">
+                                                <PlayCircle className="h-8 w-8 text-white" />
+                                              </div>
+                                            </>
+                                          )}
+                                        </motion.button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </motion.div>
+                              ))
+                          ) : (
+                            <p className="text-gray-600 dark:text-gray-400 text-lg py-4 text-center">
+                              No reviews yet for this product. Be the first to
+                              leave one!
+                            </p>
+                          )}
+                        </div>
+                      </motion.div>
+                    </TabsContent>
+                  </Tabs>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </motion.div>
+        </motion.div>
+        {/* Product Details Tabs */}
       </div>
 
       {/* Media Viewer Modal */}
