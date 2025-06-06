@@ -25,6 +25,7 @@ import razorpayRouter from "./razorpay.routes.js";
 import checkoutRouter from "./checkout.route.js";
 import emiRouter from "./emi.routes.js";
 import cahsFreeRouter from "./cashfree.routes.js";
+import membershipPackagesRouter from "./membershipPackages.routes.js";
 const router = express.Router();
 
 // Mount the routers
@@ -54,4 +55,5 @@ router.use("/razorpay", razorpayRouter);
 router.use("/checkout", checkoutRouter);
 router.use("/emi", emiRouter);
 router.use("/cashfree", cahsFreeRouter);
+router.use("/membership-packages", membershipPackagesRouter);
 export default router;
