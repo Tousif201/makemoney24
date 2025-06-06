@@ -22,6 +22,7 @@ import {
   Tag,
   ShieldCheck,
   Milestone,
+  Boxes,
 } from "lucide-react";
 
 export const sidebarConfig = {
@@ -223,6 +224,11 @@ export const sidebarConfig = {
       label: "Transactions",
       icon: Banknote,
       href: "/dashboard/admin/transactions",
+    },
+    {
+      label: "Packages",
+      icon: Boxes,
+      href: "/dashboard/admin/packages",
     },
     {
       label: "Banners",

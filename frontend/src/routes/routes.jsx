@@ -51,6 +51,7 @@ import TermsAndConditions from "../pages/TermsAndConditions";
 import PrivacyPolicy from "../pages/PrivacyPolicy";
 import CompanyPolicy from "../pages/CompanyPolicy";
 import BusinessPlan from "../pages/BusinessPlan";
+import PackagesPage from "../pages/Dashboard/Admin/PackagesPage";
 
 const routes = [
   {
@@ -431,6 +432,14 @@ const routes = [
     element: (
       <DashboardLayout>
         <TransactionsPage />
+      </DashboardLayout>
+    ),
+  },
+  {
+    path: "/dashboard/admin/packages",
+    element: (
+      <DashboardLayout>
+        <PackagesPage />
       </DashboardLayout>
     ),
   },
