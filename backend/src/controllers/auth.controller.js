@@ -70,7 +70,7 @@ export const registerUser = async (req, res) => {
       if (parentUser) {
         user.parent = parentUser._id;
         // Example: Increment parent's profile score for successful referral
-        parentUser.profileScore += 20;
+        // parentUser.profileScore += 20;
         await parentUser.save();
       } else {
         console.warn(`Referral code ${referredByCode} not found.`);

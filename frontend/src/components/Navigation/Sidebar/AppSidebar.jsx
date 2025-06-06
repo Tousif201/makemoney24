@@ -8,9 +8,10 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import SidebarMenuContent from "./SidebarMenuContent";
 import logo from "../../../assets/makemoney.png";
-import { logoutUser } from "../../../../api/auth";
+import { logoutUser } from "../../../../api/auth"; // Assuming this is your API call
 import { useEffect } from "react";
 import { useSession } from "../../../context/SessionContext";
+import { toast } from "sonner"; // Import toast from sonner
 
 // Sidebar Header Component
 function SidebarHeaderContent() {
@@ -24,6 +25,7 @@ function SidebarHeaderContent() {
           <img
             src={logo}
             className="h-20 w-20 text-gray-900 dark:text-purple rounded-2xl"
+            alt="Logo" // Added alt text for accessibility
           />
         </Link>
       </SidebarMenuButton>
@@ -33,17 +35,17 @@ function SidebarHeaderContent() {
 
 // Main AppSidebar Component
 export function AppSidebar() {
-  const role = "user";
   const navigate = useNavigate();
 
   const handleLogout = async () => {
     try {
-      // await logoutUser(); // API call to logout
-      localStorage.clear(); // Clear token or user data
+      localStorage.clear();
+
+      toast.success("Logged out successfully!"); // Sonner toast for success
       navigate("/login"); // Redirect to login page
     } catch (error) {
       console.error("Logout failed:", error);
-      alert("Logout failed. Please try again.");
+      toast.error("Logout failed. Please try again."); // Sonner toast for error
     }
   };
 
@@ -51,7 +53,7 @@ export function AppSidebar() {
     <Sidebar variant="floating" className="" collapsible="icon">
       <SidebarHeaderContent />
       <SidebarContent>
-        <SidebarMenuContent role={role} />
+        <SidebarMenuContent />
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenuButton

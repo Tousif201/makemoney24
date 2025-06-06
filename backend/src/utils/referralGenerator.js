@@ -1,18 +1,21 @@
-import { User } from "../models/User.model.js"
+import { User } from "../models/User.model.js";
 
 /**
- * Generates a unique and user-friendly referral code.
+ * Generates a referral code starting with "MM" followed by a series of numbers (or alphanumeric if desired).
  *
- * @param {number} length - The desired length of the referral code.  Defaults to 8.
+ * @param {number} length - Total length of the referral code including "MM". Defaults to 8.
  * @returns {string} - The generated referral code.
  */
 const generateReferralCode = (length = 8) => {
-  const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  let referralCode = "";
+  const prefix = "MM";
+  const numericCharacters = "0123456789";
+  // const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"; // Use this line if you want mixed alpha + numeric
 
-  for (let i = 0; i < length; i++) {
-    referralCode += characters.charAt(
-      Math.floor(Math.random() * characters.length)
+  let referralCode = prefix;
+
+  for (let i = 0; i < length - prefix.length; i++) {
+    referralCode += numericCharacters.charAt(
+      Math.floor(Math.random() * numericCharacters.length)
     );
   }
 
@@ -20,25 +23,33 @@ const generateReferralCode = (length = 8) => {
 };
 
 /**
- * * Generates a unique and user-friendly referral code, checking against the database.
- * @param {number} length - The desired length of the referral code. Defaults to 8.
+ * Generates a unique referral code starting with "MM", checking against the database.
+ *
+ * @param {number} length - Total length of the referral code including "MM". Defaults to 8.
  * @returns {Promise<string>} - A promise that resolves with the unique referral code.
  */
 const generateUniqueReferralCode = async (length = 8) => {
   let referralCode;
   let isUnique = false;
+  let retryCount = 0;
+  const MAX_RETRIES = 10; // Optional safeguard
 
   while (!isUnique) {
-    referralCode = generateReferralCode(length); // Use the basic generator
-    const existingUser = await User.findOne({ referralCode: referralCode }); // Check for duplicates
+    referralCode = generateReferralCode(length);
+    const existingUser = await User.findOne({ referralCode: referralCode });
+
     if (!existingUser) {
-      isUnique = true; // Exit the loop if the code is unique
+      isUnique = true;
     }
-    //  Optionally add a maximum number of retries to prevent infinite loops
-    //  if (retryCount > MAX_RETRIES) {
-    //    throw new Error("Failed to generate a unique referral code after too many attempts.");
-    //  }
+
+    retryCount++;
+    if (retryCount > MAX_RETRIES) {
+      throw new Error(
+        "Failed to generate a unique referral code after too many attempts."
+      );
+    }
   }
+
   return referralCode;
 };
 
