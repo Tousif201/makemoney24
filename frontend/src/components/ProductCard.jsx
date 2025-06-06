@@ -64,7 +64,7 @@ const ProductCard = ({ product }) => {
       {/* Overlay icons - only show on desktop */}
       <div
         className={`absolute inset-0 transition duration-300 flex items-center justify-center gap-4
-          ${isMobileOrTablet ? "hidden" : "md:flex md:opacity-0 md:group-hover:opacity-100 md:group-hover:bg-black/40"}
+          ${isMobileOrTablet ? "hidden" : "md:flex md:opacity-0 md:group-hover:opacity-100 md:group-hover:bg-black/10"}
         `}
       >
         <button
