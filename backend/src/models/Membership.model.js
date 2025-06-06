@@ -9,7 +9,7 @@ const membershipSchema = new Schema({
   transactionId: { type: Schema.Types.ObjectId, ref: "Transaction" },
 membershipPackageId: { type: Schema.Types.ObjectId, ref: "MembershipPackage" },
   purchasedAt: { type: Date, default: Date.now },
-  expiredAt: { type: Date, required: true }, // Expiry date of the membership
+  expiredAt: { type: Date }, // Expiry date of the membership
 },{
   timestamps: true // <--- ADD THIS LINE
 });

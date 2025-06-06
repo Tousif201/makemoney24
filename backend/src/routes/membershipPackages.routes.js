@@ -2,7 +2,7 @@ import express from "express";
 import {
   createMembershipPackage,
   updateMembershipPackage,
-  deleteMembershipPackage,
+//   deleteMembershipPackage,
   getMembershipPackagesWithStats
 } from "../controllers/membership.packages.controller.js";
 
