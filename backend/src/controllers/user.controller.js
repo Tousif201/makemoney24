@@ -6,7 +6,7 @@ import { RewardLog } from "../models/RewardLog.model.js";
 import { Order } from "../models/Order.model.js";
 import { Membership } from "../models/Membership.model.js"; // Import Membership model
 import { Transaction } from "../models/Transaction.model.js"; // Import Transaction model
-
+import { MembershipPackages } from "../models/MembershipPackages.model.js";
 import mongoose from "mongoose"; // Import mongoose for ObjectId conversion
 
 /**
@@ -174,96 +174,118 @@ export const getAdminDashboardData = async (req, res) => {
  * @route POST /api/users/upgrade/:userId
  * @access Private (e.g., Admin or system process after payment confirmation)
  */
+
+
+
+/**
+ * @desc    Upgrade a user to membership, record transaction & membership,
+ *          and distribute referral commissions up to 4 levels.
+ * @route   POST /api/users/upgrade/:userId
+ * @access  Admin / Private
+ */
 export const upgradeUser = async (req, res) => {
   const { userId } = req.params;
-  // Destructure Razorpay fields directly from req.body
-  const { membershipAmount, cashFreeOrderId } = req.body;
+  const { membershipAmount, cashFreeOrderId, membershipPackageId } = req.body;
 
+  // --- 1. Basic validations ---
   if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Invalid user ID provided." });
+    return res.status(400).json({ success: false, message: "Invalid user ID." });
   }
-
+  if (!membershipPackageId || !mongoose.Types.ObjectId.isValid(membershipPackageId)) {
+    return res.status(400).json({ success: false, message: "Invalid membershipPackageId." });
+  }
   if (typeof membershipAmount !== "number" || membershipAmount <= 0) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Invalid membership amount." });
+    return res.status(400).json({ success: false, message: "Invalid membership amount." });
   }
 
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-    // 1. Find the user
+    // --- 2. Fetch user & package ---
     const user = await User.findById(userId).session(session);
+    if (!user) throw new Error("User not found.");
+    if (user.isMember) throw new Error("User is already a member.");
 
-    if (!user) {
-      await session.abortTransaction();
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found." });
-    }
+    const membershipPackage = await MembershipPackages
+      .findById(membershipPackageId)
+      .session(session);
+    if (!membershipPackage) throw new Error("Membership package not found.");
 
-    if (user.isMember) {
-      await session.abortTransaction();
-      return res
-        .status(400)
-        .json({ success: false, message: "User is already a member." });
-    }
-
-    // 2. Update user's isMember status
+    // --- 3. Upgrade user flag ---
     user.isMember = true;
     await user.save({ session });
 
-    // 3. Create a new transaction record for the membership purchase
+    // --- 4. Record transaction ---
     const newTransaction = new Transaction({
-      userId: user._id,
+      userId:      user._id,
       transactionType: "purchase",
-      amount: membershipAmount,
+      amount:      membershipAmount,
       description: `Membership purchase for ${user.email}`,
-      status: "success", // Assuming payment is already verified before this step
-      cashFreeOrderId: cashFreeOrderId
-        ? cashFreeOrderId
-        : "Mannual_Enrollment ",
+      status:      "success",
+      cashFreeOrderId: cashFreeOrderId || "Manual_Enrollment",
     });
     await newTransaction.save({ session });
 
-    // 4. Create a new membership record
+    // --- 5. Create membership with expiry ---
+    const purchasedAt = new Date();
+    const expiredAt = membershipPackage.validityInDays
+      ? new Date(purchasedAt.getTime() + membershipPackage.validityInDays * 24*60*60*1000)
+      : null;
+
     const newMembership = new Membership({
-      userId: user._id,
-      amountPaid: membershipAmount,
-      transactionId: newTransaction._id,
-      purchasedAt: Date.now(),
+      userId:              user._id,
+      amountPaid:          membershipAmount,
+      transactionId:       newTransaction._id,
+      membershipPackageId: membershipPackage._id,
+      purchasedAt,
+      expiredAt,
     });
     await newMembership.save({ session });
 
-    // Commit the transaction if all operations succeed
+    // --- 6. Distribute referral commissions ---
+    const levels = [
+      { pct: 0.30 }, // Level 1: 30%
+      { pct: 0.10 }, // Level 2: 10%
+      { pct: 0.025}, // Level 3: 2.5%
+      { pct: 0.025}  // Level 4: 2.5%
+    ];
+    let currentParentId = user.parent;
+
+    for (let i = 0; i < levels.length && currentParentId; i++) {
+      const parentUser = await User.findById(currentParentId).session(session);
+      if (!parentUser) break;
+
+      const commission = membershipAmount * levels[i].pct;
+      parentUser.withdrawableWallet = (parentUser.withdrawableWallet || 0) + commission;
+      await parentUser.save({ session });
+
+      currentParentId = parentUser.parent;
+    }
+
+    // --- 7. Commit & respond ---
     await session.commitTransaction();
     session.endSession();
 
     res.status(200).json({
       success: true,
-      message:
-        "User successfully upgraded to member, membership and transaction recorded.",
+      message: "User upgraded and commissions distributed.",
       user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
+        id:     user._id,
+        name:   user.name,
+        email:  user.email,
         isMember: user.isMember,
       },
       transactionId: newTransaction._id,
-      membershipId: newMembership._id,
+      membershipId:  newMembership._id,
     });
-  } catch (error) {
-    // Abort the transaction if any error occurs
+  } catch (err) {
     await session.abortTransaction();
     session.endSession();
-    console.error("Error upgrading user to member:", error);
+    console.error("UpgradeUser Error:", err);
     res.status(500).json({
       success: false,
-      message: "An error occurred during user membership upgrade.",
-      error: error.message,
+      message: err.message || "Membership upgrade failed.",
     });
   }
 };
