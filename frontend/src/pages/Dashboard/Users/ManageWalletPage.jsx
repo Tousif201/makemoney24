@@ -23,13 +23,14 @@ import {
 } from "@/components/ui/dialog";
 import { useSession } from "../../../context/SessionContext";
 import { getUserWalletTransactionsApi } from "../../../../api/wallet";
+import WithadrawlDialog from "./WithadrawlDialog";
 // Make sure this path is correct based on your project structure and controller name
 
 export default function ManageWalletPage() {
   const [showWithdrawalBalance, setShowWithdrawalBalance] = useState(false);
   const [showDiscountBalance, setShowDiscountBalance] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState("");
-  const { user, loading: sessionLoading } = useSession(); // Renamed loading to sessionLoading to avoid conflict
+  const { user, loading: sessionLoading, refreshSession } = useSession(); // Renamed loading to sessionLoading to avoid conflict
   const [recentTransactions, setRecentTransactions] = useState([]);
   const [transactionsLoading, setTransactionsLoading] = useState(true);
   const [transactionsError, setTransactionsError] = useState(null);
@@ -128,45 +129,10 @@ export default function ManageWalletPage() {
                 ? `₹${withdrawalBalance.toLocaleString()}`
                 : "₹••••••"}
             </div>
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button className="w-full bg-purple-600 hover:bg-purple-700">
-                  <Download className="mr-2 h-4 w-4" />
-                  Withdraw Funds
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Withdraw Funds</DialogTitle>
-                  <DialogDescription>
-                    Enter the amount you want to withdraw to your bank account
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="amount">Withdrawal Amount</Label>
-                    <Input
-                      id="amount"
-                      type="number"
-                      placeholder="Enter amount"
-                      value={withdrawAmount}
-                      onChange={(e) => setWithdrawAmount(e.target.value)}
-                      className="mt-3"
-                    />
-                    <p className="text-sm text-gray-600 mt-2">
-                      Available: ₹{withdrawalBalance.toLocaleString()}
-                    </p>
-                  </div>
-                  <div>
-                    <Label htmlFor="bank">Bank Account</Label>
-                    <Input id="bank" value="HDFC Bank - ****1234" disabled />
-                  </div>
-                  <Button className="w-full bg-purple-500 hover:bg-purple-600">
-                    Confirm Withdrawal
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
+            <WithadrawlDialog
+              user={user}
+              onWithdrawalSuccess={refreshSession}
+            />
           </CardContent>
         </Card>
 

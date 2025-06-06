@@ -39,7 +39,7 @@ export default function MembershipPage() {
     );
   }
 
-  const isMember = false;
+  const isMember = user.isMember;
 
   const benefits = [
     "PayLater options on orders above ₹500",

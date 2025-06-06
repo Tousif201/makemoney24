@@ -6,7 +6,7 @@ const backendOriginUrl = backendConfig.base;
 
 // Create a dedicated axios instance for Cashfree API calls
 const cashfreeClient = axios.create({
-  baseURL: backendOriginUrl + "/cashfree", // Assuming your Cashfree backend routes start with /api/cashfree
+  baseURL: backendOriginUrl + "/cashfree", // Assuming your Cashfree backend routes start with /cashfree
   headers: {
     "Content-Type": "application/json",
   },
@@ -61,5 +61,53 @@ export const verifyCashfreePayment = async (orderId) => {
   }
 };
 
-// Note: The handleWebhook function is a server-side controller and does not have
-// a corresponding frontend API call. It's meant to receive notifications from Cashfree.
+/**
+ * Calls the backend to get the Cashfree Payout account balance.
+ * @returns {Promise<Object>} - Promise resolving to { success: boolean, balance: number, currency: string }
+ */
+export const getCashfreePayoutBalance = async () => {
+  try {
+    const response = await cashfreeClient.get("/payouts/balance");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching Cashfree Payout balance:", error);
+    throw (
+      error.response?.data || { message: "Failed to fetch payout balance" }
+    );
+  }
+};
+
+/**
+ * Calls the backend to verify bank account details for Cashfree Payouts.
+ * @param {Object} payload - Object containing bank account details.
+ * Expected: { bankAccount: string, ifsc: string }
+ * @returns {Promise<Object>} - Promise resolving to { success: boolean, account_status: string, message: string, payeeName?: string }
+ */
+export const verifyCashfreeBankAccount = async (payload) => {
+  try {
+    const response = await cashfreeClient.post(
+      "/payouts/verify-bank-account",
+      payload
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error verifying bank account:", error);
+    throw error.response?.data || { message: "Failed to verify bank account" };
+  }
+};
+
+/**
+ * Calls the backend to initiate a Cashfree Payout (bank transfer).
+ * @param {Object} payload - Object containing payout details.
+ * Expected: { amount: number, bankAccount: string, ifsc: string, name: string, transferId: string, remarks?: string }
+ * @returns {Promise<Object>} - Promise resolving to { success: boolean, transfer_status: string, utr?: string, referenceId: string, message?: string }
+ */
+export const sendCashfreePayout = async (payload) => {
+  try {
+    const response = await cashfreeClient.post("/payouts/transfer", payload);
+    return response.data;
+  } catch (error) {
+    console.error("Error sending Cashfree Payout:", error);
+    throw error.response?.data || { message: "Failed to send payout" };
+  }
+};

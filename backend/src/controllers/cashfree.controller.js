@@ -4,8 +4,8 @@ import {
   cashfreePayoutClient,
   getPayoutAuthToken,
 } from "../utils/cashfreePaymentUtils.js";
-import {User} from "../models/User.model.js";
-import { Transaction} from "../models/Transaction.model.js"
+import { User } from "../models/User.model.js";
+import { Transaction } from "../models/Transaction.model.js";
 import axios from "axios";
 // -----------------------------------------------------------------------------
 // HELPER FUNCTIONS
@@ -624,6 +624,7 @@ export const sendPayout = async (req, res) => {
     beneficiary_postal_code,
     transfer_amount,
     transfer_id,
+    transfer_mode,
   } = req.body;
 
   const CASHFREE_BASE_URL = "https://sandbox.cashfree.com/payout"; // Change for production
@@ -631,9 +632,15 @@ export const sendPayout = async (req, res) => {
   const CASHFREE_CLIENT_SECRET = process.env.CASHFREE_PAYOUT_CLIENT_SECRET;
   const CASHFREE_API_VERSION = "2024-01-01";
 
-  if (!beneficiary_id || !transfer_amount || !transfer_id || !processing_fee_rate) {
+  if (
+    !beneficiary_id ||
+    !transfer_amount ||
+    !transfer_id ||
+    !processing_fee_rate
+  ) {
     return res.status(400).json({
-      error: "Missing required fields: beneficiary_id, transfer_amount, transfer_id, and processing_fee_rate are required."
+      error:
+        "Missing required fields: beneficiary_id, transfer_amount, transfer_id, and processing_fee_rate are required.",
     });
   }
 
@@ -664,38 +671,58 @@ export const sendPayout = async (req, res) => {
     const final_transfer_amount = transfer_amount - fee_amount;
 
     if (final_transfer_amount <= 0) {
-      return res.status(400).json({ error: "Transfer amount after fees is zero or less." });
+      return res
+        .status(400)
+        .json({ error: "Transfer amount after fees is zero or less." });
     }
 
     // STEP 3: Deduct Amount from User's Wallet
     // The requested amount is subtracted from the wallet
     user.withdrawableWallet -= transfer_amount;
     await user.save();
-    console.log(`Deducted ${transfer_amount} from user ${user._id}'s wallet. New balance: ${user.withdrawableWallet}`);
-
+    console.log(
+      `Deducted ${transfer_amount} from user ${user._id}'s wallet. New balance: ${user.withdrawableWallet}`
+    );
 
     // STEP 4: Create Beneficiary in Cashfree (if it doesn't exist)
     const beneficiaryPayload = {
       beneficiary_id,
       beneficiary_name,
       beneficiary_instrument_details: { bank_account_number, bank_ifsc, vpa },
-      beneficiary_contact_details: { beneficiary_email, beneficiary_phone, beneficiary_country_code, beneficiary_address, beneficiary_city, beneficiary_state, beneficiary_postal_code },
+      beneficiary_contact_details: {
+        beneficiary_email,
+        beneficiary_phone,
+        beneficiary_country_code,
+        beneficiary_address,
+        beneficiary_city,
+        beneficiary_state,
+        beneficiary_postal_code,
+      },
     };
-
+console.log(beneficiaryPayload)
     try {
-      await axios.post(`${CASHFREE_BASE_URL}/beneficiary`, beneficiaryPayload, { headers });
+      await axios.post(`${CASHFREE_BASE_URL}/beneficiary`, beneficiaryPayload, {
+        headers,
+      });
       console.log(`Beneficiary ${beneficiary_id} created in Cashfree.`);
     } catch (err) {
       const cfError = err.response?.data;
       if (cfError?.code === "conflict_with_existing_beneficiary") {
-        console.log("Beneficiary already exists in Cashfree, proceeding to transfer.");
+        console.log(
+          "Beneficiary already exists in Cashfree, proceeding to transfer."
+        );
       } else {
-        console.error("Error creating/updating beneficiary in Cashfree:", cfError || err.message);
+        console.error(
+          "Error creating/updating beneficiary in Cashfree:",
+          cfError || err.message
+        );
         // CRITICAL: Revert wallet deduction if Cashfree beneficiary creation fails
         user.withdrawableWallet += transfer_amount;
         await user.save();
         console.log(`Reverted wallet deduction for user ${user._id}.`);
-        return res.status(500).json({ error: "Failed to create beneficiary", details: cfError });
+        return res
+          .status(500)
+          .json({ error: "Failed to create beneficiary", details: cfError });
       }
     }
 
@@ -704,10 +731,15 @@ export const sendPayout = async (req, res) => {
       transfer_id,
       transfer_amount: final_transfer_amount,
       beneficiary_details: { beneficiary_id },
+      transfer_mode: transfer_mode,
     };
-
-    const transferRes = await axios.post(`${CASHFREE_BASE_URL}/transfers`, transferPayload, { headers });
-
+console.log(transferPayload)
+    const transferRes = await axios.post(
+      `${CASHFREE_BASE_URL}/transfers`,
+      transferPayload,
+      { headers }
+    );
+console.log(transferRes)
     // STEP 6: Create a transaction document after successful transfer initiation
     try {
       const newTransaction = new Transaction({
@@ -718,9 +750,14 @@ export const sendPayout = async (req, res) => {
         description: `Payout of ${transfer_amount} initiated. Fee: ${fee_amount}.`,
       });
       await newTransaction.save();
-      console.log(`Transaction record created with txnId: ${newTransaction.txnId}`);
+      console.log(
+        `Transaction record created with txnId: ${newTransaction.txnId}`
+      );
     } catch (dbError) {
-      console.error("CRITICAL: Failed to save transaction record after successful payout.", dbError);
+      console.error(
+        "CRITICAL: Failed to save transaction record after successful payout.",
+        dbError
+      );
     }
 
     return res.status(200).json({
@@ -730,16 +767,17 @@ export const sendPayout = async (req, res) => {
       transferred_amount: final_transfer_amount,
       transfer: transferRes.data,
     });
-
   } catch (error) {
-     // If the transfer initiation fails, we should revert the wallet deduction.
-     // We need to fetch the user again if the error occurred after the initial save.
-     const userToRevert = await User.findById(beneficiary_id);
-     if (userToRevert) {
-         userToRevert.withdrawableWallet += transfer_amount;
-         await userToRevert.save();
-         console.log(`Reverted wallet deduction for user ${userToRevert._id} due to transfer failure.`);
-     }
+    // If the transfer initiation fails, we should revert the wallet deduction.
+    // We need to fetch the user again if the error occurred after the initial save.
+    const userToRevert = await User.findById(beneficiary_id);
+    if (userToRevert) {
+      userToRevert.withdrawableWallet += transfer_amount;
+      await userToRevert.save();
+      console.log(
+        `Reverted wallet deduction for user ${userToRevert._id} due to transfer failure.`
+      );
+    }
 
     console.error("Payout process failed:", error.message);
     return res.status(500).json({
@@ -748,4 +786,3 @@ export const sendPayout = async (req, res) => {
     });
   }
 };
-
