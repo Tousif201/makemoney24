@@ -20,34 +20,49 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Plus } from "lucide-react"
-
+import { CreateMembershipPackage } from "../../../api/membershipPackage"
+import toast from "react-hot-toast"
 const CreatePackageDialog = ({ packages, setPackages }) => {
   const [isOpen, setIsOpen] = useState(false)
   const [formData, setFormData] = useState({
     name: "",
-    price: "",
+    packageAmount: "",
+    miscellaneousAmount: "",
     description: "",
-    validity: "",
+    validityInDays: "",
   })
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async(e) => {
     e.preventDefault()
-    const newPackage = {
-      id: Date.now().toString(),
-      name: formData.name,
-      price: parseFloat(formData.price),
-      description: formData.description,
-      validity: formData.validity,
+    try {
+        const packageData = { ...formData};
+        const result = await CreateMembershipPackage(packageData);
+        console.log(result)
+        setFormData({
+            name: "",
+            packageAmount: "",
+            miscellaneousAmount: "",
+            price: "",
+            description: "",
+            validityInDays: "",
+          })
+        toast.success("membership package created successfully");
+        setIsOpen(false)
+    } catch (error) {
+        console.error("error creating membership package",error);
+        toast.error(err?.message || "Failed to create vendor");
     }
+    // const newPackage = {
+    //   id: Date.now().toString(),
+    //   name: formData.name,
+    //   packageAmount: parseFloat(formData.packageAmount),
+    //   miscellaneousAmount: parseFloat(formData.miscellaneousAmount),
+    //   description: formData.description,
+    //   validityInDays: formData.validityInDays,
+    // }
 
-    setPackages([...packages, newPackage])
-    setIsOpen(false)
-    setFormData({
-      name: "",
-      price: "",
-      description: "",
-      validity: "",
-    })
+    // setPackages([...packages, newPackage])
+   
   }
 
   return (
@@ -90,11 +105,20 @@ const CreatePackageDialog = ({ packages, setPackages }) => {
             </div> */}
 
             <div className="grid gap-2">
-              <Label>Price (INR)</Label>
+              <Label>PackageAmount (INR)</Label>
               <Input
                 type="number"
-                value={formData.price}
-                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                value={formData.packageAmount}
+                onChange={(e) => setFormData({ ...formData, packageAmount: e.target.value })}
+                required
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label>MiscellaneousAmount (INR)</Label>
+              <Input
+                type="number"
+                value={formData.miscellaneousAmount}
+                onChange={(e) => setFormData({ ...formData, miscellaneousAmount: e.target.value })}
                 required
               />
             </div>
@@ -102,10 +126,11 @@ const CreatePackageDialog = ({ packages, setPackages }) => {
             <div className="grid gap-2">
               <Label>Validity</Label>
               <Input
-                value={formData.validity}
-                onChange={(e) => setFormData({ ...formData, validity: e.target.value })}
+                value={formData.validityInDays}
+                onChange={(e) => setFormData({ ...formData, validityInDays: e.target.value })}
                 required
                 type = "number"
+                placeholder = "e.g., 1 for 1 day,  30 for 1 month,  365 for 1 year"
               />
             </div>
 
@@ -129,7 +154,7 @@ const CreatePackageDialog = ({ packages, setPackages }) => {
           </div>
 
           <DialogFooter className="mt-4">
-            <Button type="button" variant="outline" onClick={() => setIsOpen(false)} className="bg-red-500">
+            <Button type="button" variant="outline" onClick={() => setIsOpen(false)} className="bg-gray-800 text-white">
               Cancel
             </Button>
             <Button type="submit" className="bg-purple-600">Create</Button>

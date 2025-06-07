@@ -462,6 +462,7 @@ export const getUserDetails = async (req, res) => {
       name : user.name,
       email: user.email,
       phone: user.phone,
+      referralCode:user.referralCode,
       joiningDate: user.createdAt,
       profileScore: user.profileScore,
       totalReferrals: totalReferralsCount,

@@ -362,7 +362,7 @@ function UsersDetailsPageAdmin() {
                 <p className="font-semibold">{new Date(userData.joiningDate).toLocaleDateString()}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Profile Score</p>
+                <p className="text-sm text-gray-600">Salary Score</p>
                 <div className="flex items-center gap-2">
                   <p
                     className={`font-semibold ${getProfileScoreColor(
@@ -428,7 +428,8 @@ function UsersDetailsPageAdmin() {
             <CardContent  className="p-6">
                <CashbackCardFront  
                  userName={userData?.name || "Default User"}      
-                 date ={userData?.createdAt || "2023-08-01"} />     
+                 date ={userData?.createdAt || "2023-08-01"}  
+                 />  
             </CardContent>
           </Card>
 

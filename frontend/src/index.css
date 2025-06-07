@@ -172,3 +172,10 @@
   align-items: center;
   justify-content: center;
 }
+/* Add this CSS to your global stylesheet or inline styles */
+.table-cell-truncate {
+  max-width: 200px; /* Adjust as needed */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

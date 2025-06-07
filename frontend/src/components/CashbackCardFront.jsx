@@ -4,8 +4,7 @@ import frontImg from "../assets/cashback/card11.png";
 import logo from "../assets/makemoney.png";
 
 const CashbackCardFront = ({
-  userName ,date,cardNumber= Math.floor(Math.random() * 1e16)
-  .toString()
+  userName ,date,cardNumber= `MM24   ${Math.floor(Math.random() * 1e9)}`
   .replace(/(.{4})/g, "$1 ")
   
 }) => {

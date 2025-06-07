@@ -91,7 +91,7 @@ const HomePageAnimation = () => {
   }
 
   return (
-    <div className="relative w-full min-h-[20rem] md:min-h-[35rem] overflow-hidden rounded-lg">
+    <div className="relative w-full min-h-[10rem] md:min-h-[35rem] overflow-hidden rounded-lg">
       <AnimatePresence mode="wait">
         {banners.length > 0 && (
           <motion.img

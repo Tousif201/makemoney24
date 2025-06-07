@@ -100,7 +100,7 @@ export default function UpgradeUserDialog({ userId, name, onUpgradeSuccess }) {
       // Call the upgradeUser API function
       const response = await upgradeUser(userId, {
         membershipPackageId: selectedPackageId,
-        membershipAmount: selectedPackage.amount, // Pass the amount from the selected package
+        membershipAmount: selectedPackage.packageAmount + selectedPackage.miscellaneousAmount, // Pass the amount from the selected package
       });
 
       if (response.success) {
@@ -178,7 +178,7 @@ export default function UpgradeUserDialog({ userId, name, onUpgradeSuccess }) {
                   ) : (
                     membershipPackages.map((pkg) => (
                       <SelectItem key={pkg._id} value={pkg._id}>
-                        {pkg.name} - ₹{pkg.amount} ({pkg.validityInDays} days)
+                        {pkg.name} - ₹{pkg.packageAmount} ({pkg.validityInDays} days)
                       </SelectItem>
                     ))
                   )}
