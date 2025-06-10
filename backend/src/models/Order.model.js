@@ -34,7 +34,7 @@ const orderSchema = new Schema(
     },
     orderStatus: {
       type: String,
-      enum: ["placed", "confirmed", "in-progress", "delivered", "cancelled"],
+      enum: ["placed", "confirmed", "in-progress", "delivered", "cancelled","replaced"],
       default: "placed",
     },
     address: { type: Schema.Types.Mixed },

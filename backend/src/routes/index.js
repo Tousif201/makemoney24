@@ -28,6 +28,7 @@ import salesRepRouter from "./salesRep.routes.js";
 import ticketRouter from "./ticket.routes.js";
 import couponCodeRouter from "./couponCode.routes.js";
 import cahsFreeRouter from "./cashfree.routes.js";
+import adminVendorRouter from "./adminVendor.routes.js";
 import membershipPackagesRouter from "./membershipPackages.routes.js";
 const router = express.Router();
 
@@ -60,6 +61,7 @@ router.use("/emi", emiRouter);
 router.use("/cashfree", cahsFreeRouter);
 router.use("/sales-rep", salesRepRouter);
 router.use("/ticket", ticketRouter);
+router.use("/admin-vendor", adminVendorRouter);
 router.use("/coupon-code", couponCodeRouter);
 router.use("/membership-packages", membershipPackagesRouter);
 export default router;

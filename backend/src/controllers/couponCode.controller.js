@@ -5,7 +5,7 @@ import { Coupon } from "../models/CouponCode.model.js";
 // ==============================
 export const createCoupon = async (req, res) => {
   try {
-    const { name, couponCode, discountPercent, expiryDate } = req.body;
+    const { name, couponCode, discountPercent, expiryDate,isActive } = req.body;
 
     // Basic validation
     if (!couponCode || !discountPercent) {
@@ -28,6 +28,7 @@ export const createCoupon = async (req, res) => {
       couponCode,
       discountPercent,
       expiryDate,
+      isActive: isActive || "active", // Default to "active" if not provided   
     });
 
     res.status(201).json({ success: true, message: "Coupon created.", coupon });
