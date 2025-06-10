@@ -72,13 +72,22 @@ export const getVendor = async (salesRepId) => {
  * @returns {Promise<Object[]>} A promise that resolves to an array of vendor data.
  * @throws {Error} Throws an error if the API call fails.
  */
-export const getAllVendors = async () => {
+export const getAllVendors = async (sortByRevenue = null) => {
   try {
     // The interceptor already handles adding the token, but we ensure it exists.
     const token = localStorage.getItem("authToken");
     if (!token) throw new Error("Token not found");
 
-    const response = await apiClient.get("/"); // Corresponds to GET /api/vendors
+    // Build query parameters
+    const params = new URLSearchParams();
+    if (sortByRevenue) {
+      params.append('sortByRevenue', sortByRevenue);
+    }
+
+    const queryString = params.toString();
+    const url = queryString ? `/?${queryString}` : "/";
+
+    const response = await apiClient.get(url); // Corresponds to GET /api/vendors
     return response.data;
   } catch (error) {
     console.error("Error fetching all vendors:", error);
