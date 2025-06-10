@@ -1,4 +1,4 @@
-import { Plus, Trash2, DollarSign, TrendingUp, Calendar } from "lucide-react";
+import { Plus, Trash2, DollarSign, TrendingUp, Calendar, IndianRupee } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -102,7 +102,7 @@ export default function VendorProfile() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div className="p-4 rounded-lg bg-purple-50 border border-purple-200">
                   <div className="flex items-center gap-2 mb-2">
-                    <DollarSign className="h-5 w-5 text-purple-600" />
+                    <IndianRupee className="h-5 w-5 text-purple-600" />
                     <span className="font-medium text-sm sm:text-base">
                       Base Commission
                     </span>

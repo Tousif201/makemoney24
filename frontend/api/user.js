@@ -152,4 +152,18 @@ export const updateAccountStatus = async (userId, status) => {
     );
     throw error; // Re-throw the error for the calling component to handle
   }
+};  
+
+export const uploadProfileImage = async (data) => {
+  try {
+    const response = await apiClient.post(`/upload-profile-image`, data);
+    console.log("response of upgrade user api",response)
+    return response.data;
+  } catch (error) {
+    console.error(
+      `Error upgrading user ${userId} to member:`,
+      error.response?.data || error.message
+    );
+    throw error; // Re-throw the error for the calling component to handle
+  }
 };

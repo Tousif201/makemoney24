@@ -24,7 +24,8 @@ import {
   DollarSign,
   Loader2,
   PlusCircle,
-  XCircle, // Ensure XCircle is imported for variant removal
+  XCircle,
+  IndianRupee, // Ensure XCircle is imported for variant removal
 } from "lucide-react";
 
 // Shadcn Dialog Imports (for new category creation)
@@ -684,7 +685,7 @@ export default function EditProduct() {
           <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center gap-2 text-xl">
-                <DollarSign className="h-5 w-5 text-green-600" />
+                <IndianRupee className="h-5 w-5 text-green-600" />
                 Pricing & Variants
               </CardTitle>
             </CardHeader>

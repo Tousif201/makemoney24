@@ -13,7 +13,7 @@ const router = express.Router();
 router.post("/", createCoupon);
 router.get("/", getAllCoupons);
 router.get("/:id", getCouponById);
-router.put("update/:id", updateCoupon);
-router.delete("delete/:id", deleteCoupon);
+router.put("/update/:id", updateCoupon);
+router.delete("/delete/:id", deleteCoupon);
 
 export default router;

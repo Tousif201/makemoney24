@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { CreateVendorDialog } from "../../../components/Dashboad/SalesRep/CreateVendorDialog";
 import { getAllVendors } from "../../../../api/Vendors"; // Ensure this path is correct
+import { Link } from "react-router-dom";
 
 export default function AdminVendorsPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -175,7 +176,9 @@ export default function AdminVendorsPage() {
                         {" "}
                         {/* Use _id from MongoDB */}
                         <TableCell className="font-medium">
-                          {vendor._id}
+                          <Link to={`${vendor._id}`}>
+                            {vendor._id}
+                          </Link>
                         </TableCell>
                         <TableCell className="max-w-[180px] truncate">
                           <div className="font-medium truncate">
