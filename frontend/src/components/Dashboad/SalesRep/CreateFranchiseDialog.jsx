@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { CreateFranchise } from "../../../../api/Franchise";
+import { CreateFranchise } from "../../../../api/Franchise"; // Your API call for franchise
 import { useSession } from "../../../context/SessionContext";
-import { toast } from "react-hot-toast";
+import { toast } from "react-hot-toast"; // For notifications
 import {
   Dialog,
   DialogContent,
@@ -14,39 +14,109 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-// import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Paperclip, X, Loader2 } from "lucide-react"; // Icons for files and loading
+import { uploadFiles } from "../../../../api/upload"; // Import your file upload API
 
 export function CreateFranchiseDialog({ children }) {
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
-   franchiseName: "",
-        location: "",
-        ownerName: "",
-        ownerEmail: "",
-        ownerPhone: "",
-        ownerPassword: "",
-        ownerPincode: "",
-        referredByCode: ""
+    franchiseName: "",
+    location: "",
+    ownerName: "",
+    ownerEmail: "",
+    ownerPhone: "",
+    ownerPassword: "",
+    ownerPincode: "",
+    referredByCode: "",
   });
+
+  // States for document files
+  const [aadhaarFile, setAadhaarFile] = useState(null);
+  const [panFile, setPanFile] = useState(null);
+
+  const [isSubmitting, setIsSubmitting] = useState(false); // New loading state
 
   const { session } = useSession();
   const salesRepId = session?.id;
 
+  // Generic handler for single file inputs
+  const handleFileChange = (setter) => (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setter(e.target.files[0]);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      const payload = { ...formData, salesRepId };
-      const result = await CreateFranchise(payload);
-      toast.success("Franchise created successfully");
+    setIsSubmitting(true);
+    toast.loading("Creating franchise and uploading documents...", {
+      id: "createFranchiseToast",
+    });
 
-      // Reset form fields
+    try {
+      // --- 1. Validate mandatory files ---
+      if (!aadhaarFile || !panFile) {
+        throw new Error("Aadhaar and PAN documents are mandatory.");
+      }
+
+      // --- 2. Collect all files for upload ---
+      const filesToUpload = [];
+      const documentMap = new Map(); // To associate uploaded file with its documentName
+
+      if (aadhaarFile) {
+        filesToUpload.push(aadhaarFile);
+        documentMap.set(aadhaarFile, "AADHAR");
+      }
+      if (panFile) {
+        filesToUpload.push(panFile);
+        documentMap.set(panFile, "PAN");
+      }
+
+      let uploadedDocuments = [];
+      if (filesToUpload.length > 0) {
+        const uploadResult = await uploadFiles(filesToUpload);
+        // Assuming uploadFiles returns an array of { key, url, type }
+        if (
+          uploadResult &&
+          uploadResult.length > 0
+        ) {
+          uploadedDocuments = uploadResult.map((uploadedFile) => ({
+            key: uploadedFile.key,
+            url: uploadedFile.url,
+            // Find the original file to get its documentName
+            documentName:
+              documentMap.get(
+                filesToUpload.find(
+                  (f) =>
+                    f.name === uploadedFile.key ||
+                    (uploadedFile.key && f.name.includes(uploadedFile.key))
+                )
+              ) || "Other Document",
+          }));
+        } else {
+          toast.error(
+            "Document upload failed or returned empty. Please try again.",
+            { id: "createFranchiseToast" }
+          );
+          setIsSubmitting(false);
+          return; // Stop submission if documents failed to upload
+        }
+      }
+
+      // --- 3. Prepare franchise payload ---
+      const payload = {
+        ...formData,
+        salesRepId,
+        kycDocuments: uploadedDocuments, // Attach the uploaded documents
+      };
+
+      // --- 4. Create the franchise ---
+      const result = await CreateFranchise(payload);
+      toast.success("Franchise created successfully!", {
+        id: "createFranchiseToast",
+      });
+
+      // --- 5. Reset form fields and close dialog ---
       setFormData({
         franchiseName: "",
         location: "",
@@ -55,12 +125,20 @@ export function CreateFranchiseDialog({ children }) {
         ownerPhone: "",
         ownerPassword: "",
         ownerPincode: "",
-        referredByCode: ""
+        referredByCode: "",
       });
+      setAadhaarFile(null);
+      setPanFile(null);
       setOpen(false);
     } catch (err) {
-      console.error(err);
-      toast.error(err?.message || "Failed to create franchise");
+      console.error("Franchise creation error:", err);
+      const errorMessage =
+        err.message ||
+        err.response?.data?.message ||
+        "Failed to create franchise. Please check details and try again.";
+      toast.error(errorMessage, { id: "createFranchiseToast" });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -69,120 +147,241 @@ export function CreateFranchiseDialog({ children }) {
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="max-w-[80vw] md:max-w-[550px] max-h-screen overflow-y-auto rounded-xl py-4 px-6 shadow-lg border">
         <DialogHeader>
-          <DialogTitle className="text-xl font-semibold">Create New Franchise</DialogTitle>
+          <DialogTitle className="text-xl font-semibold">
+            Create New Franchise
+          </DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
-            Add a new franchise account to your portfolio. Fill in the details below.
+            Add a new franchise account to your portfolio. All mandatory fields
+            are marked with an asterisk (*).
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-6 py-2">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="franchise-name">Franchise Name</Label>
+                <Label htmlFor="franchise-name">
+                  Franchise Name <span className="text-red-500">*</span>
+                </Label>
                 <Input
                   id="franchiseName"
                   value={formData.franchiseName}
-                  onChange={(e) => setFormData({ ...formData, franchiseName: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, franchiseName: e.target.value })
+                  }
                   placeholder="Enter franchise name"
                   required
+                  disabled={isSubmitting}
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="owner">Owner Name</Label>
+                <Label htmlFor="owner">
+                  Owner Name <span className="text-red-500">*</span>
+                </Label>
                 <Input
                   id="owner"
                   value={formData.ownerName}
-                  onChange={(e) => setFormData({ ...formData, ownerName: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, ownerName: e.target.value })
+                  }
                   placeholder="Enter owner's full name"
                   required
+                  disabled={isSubmitting}
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="franchise-email">Email</Label>
+                <Label htmlFor="franchise-email">
+                  Email <span className="text-red-500">*</span>
+                </Label>
                 <Input
                   id="franchise-email"
                   type="email"
                   value={formData.ownerEmail}
-                  onChange={(e) => setFormData({ ...formData, ownerEmail: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, ownerEmail: e.target.value })
+                  }
                   placeholder="owner@franchise.com"
                   required
+                  disabled={isSubmitting}
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="ownerPhone">Phone</Label>
+                <Label htmlFor="ownerPhone">
+                  Phone <span className="text-red-500">*</span>
+                </Label>
                 <Input
                   id="franchise-phone"
                   value={formData.ownerPhone}
-                  onChange={(e) => setFormData({ ...formData, ownerPhone: e.target.value })}
-                  placeholder="+1 234-567-8900"
+                  onChange={(e) =>
+                    setFormData({ ...formData, ownerPhone: e.target.value })
+                  }
+                  placeholder="+91 9876543210"
                   required
+                  disabled={isSubmitting}
                 />
               </div>
             </div>
-
-          
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="ownerpassword">OwnerPassword</Label>
-              <input type="password"
-                id="ownerPassword"
-                value={formData.ownerPassword}
-                onChange={(e) => setFormData({ ...formData, ownerPassword: e.target.value })}
-                placeholder="password"
-                className="border rounded-sm"
-              
-              />
-            </div>
-              {/* <div className="grid gap-2 w-full">
-                <Label htmlFor="franchise-status">Status</Label> */}
-                {/* <Select
-                  value={formData.status}
-                  onValueChange={(value) => setFormData({ ...formData, status: value })}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="under-review">Under Review</SelectItem>
-                  </SelectContent>
-                </Select> */}
-              {/* </div> */}
               <div className="grid gap-2">
-                <Label htmlFor="ownerPincode">OwnerPincode</Label>
+                <Label htmlFor="ownerPassword">
+                  Owner Password <span className="text-red-500">*</span>
+                </Label>
                 <Input
-                  id="investment"
+                  id="ownerPassword"
+                  type="password"
+                  value={formData.ownerPassword}
+                  onChange={(e) =>
+                    setFormData({ ...formData, ownerPassword: e.target.value })
+                  }
+                  placeholder="password"
+                  required
+                  disabled={isSubmitting}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="ownerPincode">
+                  Owner Pincode <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="ownerPincode"
+                  type="number"
                   value={formData.ownerPincode}
-                  onChange={(e) => setFormData({ ...formData, ownerPincode: e.target.value })}
-                  placeholder=""
+                  onChange={(e) =>
+                    setFormData({ ...formData, ownerPincode: e.target.value })
+                  }
+                  placeholder="e.g., 452001"
+                  required
+                  disabled={isSubmitting}
                 />
               </div>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="franchise-location">Location</Label>
+              <Label htmlFor="franchise-location">
+                Location <span className="text-red-500">*</span>
+              </Label>
               <Input
                 id="franchise-location"
                 value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, location: e.target.value })
+                }
                 placeholder="City, State"
                 required
+                disabled={isSubmitting}
               />
             </div>
-           
+            <div className="grid gap-2">
+              <Label htmlFor="referredByCode">Referred By Code</Label>
+              <Input
+                id="referredByCode"
+                value={formData.referredByCode}
+                onChange={(e) =>
+                  setFormData({ ...formData, referredByCode: e.target.value })
+                }
+                placeholder="Optional referral code"
+                disabled={isSubmitting}
+              />
+            </div>
           </div>
 
-          <DialogFooter className="w-full px-0">
+          {/* --- Document Upload Fields --- */}
+          <h3 className="text-lg font-semibold mt-4 mb-2">
+            Required Documents
+          </h3>
+          <div className="grid gap-4 py-2">
+            {/* Aadhaar Card */}
+            <div className="grid gap-2">
+              <Label htmlFor="aadhaarFile">
+                Aadhaar Card <span className="text-red-500">*</span>
+              </Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="aadhaarFile"
+                  type="file"
+                  onChange={handleFileChange(setAadhaarFile)}
+                  accept="image/*,.pdf"
+                  required // Make mandatory
+                  disabled={isSubmitting}
+                  className="pr-2"
+                />
+                {aadhaarFile && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setAadhaarFile(null)}
+                    disabled={isSubmitting}
+                  >
+                    <X className="h-4 w-4 text-red-500" />
+                  </Button>
+                )}
+              </div>
+              {aadhaarFile && (
+                <span className="text-sm text-muted-foreground">
+                  {aadhaarFile.name}
+                </span>
+              )}
+            </div>
+
+            {/* PAN Card */}
+            <div className="grid gap-2">
+              <Label htmlFor="panFile">
+                PAN Card <span className="text-red-500">*</span>
+              </Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="panFile"
+                  type="file"
+                  onChange={handleFileChange(setPanFile)}
+                  accept="image/*,.pdf"
+                  required // Make mandatory
+                  disabled={isSubmitting}
+                  className="pr-2"
+                />
+                {panFile && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setPanFile(null)}
+                    disabled={isSubmitting}
+                  >
+                    <X className="h-4 w-4 text-red-500" />
+                  </Button>
+                )}
+              </div>
+              {panFile && (
+                <span className="text-sm text-muted-foreground">
+                  {panFile.name}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter className="w-full px-0 mt-6">
             <div className="flex w-full justify-between">
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+                disabled={isSubmitting}
+              >
                 Cancel
               </Button>
-              <Button type="submit" className="bg-purple-700 hover:bg-purple-400">
-                Create Franchise
+              <Button
+                type="submit"
+                className="bg-purple-700 hover:bg-purple-500"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
+                    Creating...
+                  </>
+                ) : (
+                  "Create Franchise"
+                )}
               </Button>
             </div>
           </DialogFooter>

@@ -25,6 +25,7 @@ import {
   Boxes,
   TicketPercent,
   IndianRupee,
+  Ticket,
 } from "lucide-react";
 
 export const sidebarConfig = {
@@ -86,6 +87,11 @@ export const sidebarConfig = {
       icon: ShoppingCart,
       href: "/dashboard/orders",
     },
+    {
+      label: "Tickets",
+      icon: Ticket,
+      href: "/dashboard/tickets",
+    },
     // {
     //   label: "Profile Settings",
     //   icon: Settings,
@@ -104,7 +110,11 @@ export const sidebarConfig = {
       icon: ShoppingCart,
       href: "/dashboard/orders",
     },
-
+    {
+      label: "Tickets",
+      icon: Ticket,
+      href: "/dashboard/tickets",
+    },
     // {
     //   label: "Profile Settings",
     //   icon: Settings,
@@ -122,6 +132,11 @@ export const sidebarConfig = {
       label: "Franchises",
       icon: Building2,
       href: "/dashboard/sales-rep/franchises",
+    },
+    {
+      label: "Tickets",
+      icon: Ticket,
+      href: "/dashboard/tickets",
     },
   ],
   "franchise-admin": [
@@ -155,6 +170,11 @@ export const sidebarConfig = {
           icon: Settings,
         },
       ],
+    },
+    {
+      label: "Tickets",
+      icon: Ticket,
+      href: "/dashboard/tickets",
     },
   ],
   admin: [
@@ -227,7 +247,7 @@ export const sidebarConfig = {
       icon: Users,
       href: "/dashboard/admin/users",
     },
-   
+
     {
       label: "Transactions",
       icon: Banknote,
@@ -247,6 +267,11 @@ export const sidebarConfig = {
       label: "Coupon",
       icon: TicketPercent,
       href: "/dashboard/admin/coupon",
+    },
+    {
+      label: "Tickets",
+      icon: Ticket,
+      href: "/dashboard/tickets",
     },
   ],
 };
