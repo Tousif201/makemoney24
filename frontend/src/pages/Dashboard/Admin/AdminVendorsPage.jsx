@@ -19,17 +19,23 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-// Removed Select components as status filter is no longer applicable based on schema
-// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
 import {
   Search,
   Plus,
-  Filter, // Keeping Filter icon but removing its functionality without the select
+  Filter,
   MoreHorizontal,
   Eye,
   Edit,
   Trash2,
-  Loader2, // Added for loading state
+  Loader2,
+  ArrowUpDown,
 } from "lucide-react";
 import { CreateVendorDialog } from "../../../components/Dashboad/SalesRep/CreateVendorDialog";
 import { getAllVendors } from "../../../../api/Vendors"; // Ensure this path is correct
@@ -37,8 +43,7 @@ import { Link } from "react-router-dom";
 
 export default function AdminVendorsPage() {
   const [searchTerm, setSearchTerm] = useState("");
-  // Removed statusFilter as it's not applicable based on the schema
-  // const [statusFilter, setStatusFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("revenue-high-low"); // Default high to low
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -47,13 +52,16 @@ export default function AdminVendorsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch data on component mount
+  // Fetch data when component mounts or sort changes
   useEffect(() => {
     const fetchVendors = async () => {
       setLoading(true);
       setError(null); // Clear previous errors
       try {
-        const data = await getAllVendors();
+        // Map frontend sort values to backend expected values
+        const sortParam = sortBy === "revenue-low-high" ? "lowToHigh" : "highToLow";
+        const data = await getAllVendors(sortParam);
+        console.log("frontend data console of vendors",data);
         setVendors(data);
       } catch (err) {
         console.error("Error fetching vendors:", err);
@@ -64,26 +72,28 @@ export default function AdminVendorsPage() {
     };
 
     fetchVendors();
-  }, []); // Empty dependency array means this runs once on mount
+  }, [sortBy]); // Re-fetch when sort changes
 
   // Filter vendors based on search term (only name, email, pincode, owner name)
   const filteredVendors = vendors.filter((vendor) => {
     const matchesSearch =
       (vendor.name &&
         vendor.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (vendor.userId?.email &&
-        vendor.userId.email.toLowerCase().includes(searchTerm.toLowerCase())) || // Search by owner email
-      (vendor.userId?.name &&
-        vendor.userId.name.toLowerCase().includes(searchTerm.toLowerCase())) || // Search by owner name
+      (vendor.userEmail &&
+        vendor.userEmail.toLowerCase().includes(searchTerm.toLowerCase())) || // Search by owner email (flattened)
+      (vendor.userName &&
+        vendor.userName.toLowerCase().includes(searchTerm.toLowerCase())) || // Search by owner name (flattened)
       (vendor.pincode &&
         vendor.pincode.toLowerCase().includes(searchTerm.toLowerCase()));
-    // Removed status filter logic
     return matchesSearch;
   });
 
-  const totalPages = Math.ceil(filteredVendors.length / itemsPerPage);
+  // Since sorting is now handled by backend, we don't need to sort here
+  const sortedVendors = filteredVendors;
+
+  const totalPages = Math.ceil(sortedVendors.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedVendors = filteredVendors.slice(
+  const paginatedVendors = sortedVendors.slice(
     startIndex,
     startIndex + itemsPerPage
   );
@@ -96,6 +106,44 @@ export default function AdminVendorsPage() {
       month: "short",
       day: "numeric",
     });
+  };
+
+  // Helper to format currency
+  const formatCurrency = (amount) => {
+    if (!amount && amount !== 0) return "₹0";
+    return `₹${amount.toLocaleString("en-IN")}`;
+  };
+
+  // Helper to get rank badge
+  const getRankBadge = (rank) => {
+    switch (rank) {
+      case 1:
+        return (
+          <div className="flex items-center">
+            <Badge className=" bg-white text-xl">
+              🥇 
+            </Badge>
+          </div>
+        );
+      case 2:
+        return (
+          <div className="flex items-center ">
+            <Badge className=" bg-white text-white text-xl">
+              🥈 
+            </Badge>
+          </div>
+        );
+      case 3:
+        return (
+          <div className="flex items-center ">
+            <Badge className=" bg-white text-white text-xl">
+              🥉
+            </Badge>
+          </div>
+        );
+      default:
+        return <span className="font-medium">{rank}</span>;
+    }
   };
 
   // Render loading state
@@ -153,28 +201,45 @@ export default function AdminVendorsPage() {
                   className="pl-10"
                 />
               </div>
+              
+              {/* Sort Dropdown */}
+              <div className="w-full md:w-auto md:min-w-[200px]">
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className="w-full">
+                    <ArrowUpDown className="mr-2 h-4 w-4" />
+                    <SelectValue placeholder="Sort by..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="revenue-high-low">Revenue: High to Low</SelectItem>
+                    <SelectItem value="revenue-low-high">Revenue: Low to High</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <div className="overflow-x-auto rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>S.No</TableHead>
                     <TableHead>Vendor ID</TableHead>
                     <TableHead>Name</TableHead>
-                    <TableHead>Owner Contact</TableHead>{" "}
-                    {/* Renamed to Owner Contact */}
+                    <TableHead>Total Orders</TableHead>
+                    <TableHead>Owner Contact</TableHead>
+                    <TableHead>Total Revenue</TableHead>
                     <TableHead>Pincode</TableHead>
                     <TableHead>Commission Rate</TableHead>
-                    <TableHead>Sales Rep</TableHead> {/* Added Sales Rep */}
-                    <TableHead>Join Date</TableHead> {/* Using createdAt */}
+                    <TableHead>Sales Rep</TableHead>
+                    <TableHead>Join Date</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {paginatedVendors.length > 0 ? (
-                    paginatedVendors.map((vendor) => (
+                    paginatedVendors.map((vendor, index) => (
                       <TableRow key={vendor._id}>
-                        {" "}
-                        {/* Use _id from MongoDB */}
+                        <TableCell className="font-medium">
+                          {getRankBadge(startIndex + index + 1)}
+                        </TableCell>
                         <TableCell className="font-medium">
                           <Link to={`${vendor._id}`}>
                             {vendor._id}
@@ -184,15 +249,24 @@ export default function AdminVendorsPage() {
                           <div className="font-medium truncate">
                             {vendor.name}
                           </div>
-                          {/* Displaying owner name under vendor name */}
                           <div className="text-sm text-muted-foreground truncate">
-                            Owner: {vendor.userId?.name || "N/A"}
+                            Owner: {vendor.userName || "N/A"}
                           </div>
                         </TableCell>
                         <TableCell className="whitespace-nowrap">
-                          <div>{vendor.userId?.email || "N/A"}</div>
+                          <Badge variant="outline">
+                            {vendor.totalOrders || 0}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          <div>{vendor.userEmail || "N/A"}</div>
                           <div className="text-sm text-muted-foreground">
-                            {vendor.userId?.phone || "N/A"}
+                            {vendor.userPhone || "N/A"}
+                          </div>
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          <div className="font-medium text-green-600">
+                            {formatCurrency(vendor.totalRevenue)}
                           </div>
                         </TableCell>
                         <TableCell className="whitespace-nowrap">
@@ -224,9 +298,7 @@ export default function AdminVendorsPage() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={8} className="h-24 text-center">
-                        {" "}
-                        {/* Adjusted colspan */}
+                      <TableCell colSpan={10} className="h-24 text-center">
                         No vendor data available.
                       </TableCell>
                     </TableRow>
@@ -238,8 +310,8 @@ export default function AdminVendorsPage() {
             <div className="flex flex-col sm:flex-row items-center justify-between mt-4 gap-2">
               <div className="text-sm text-muted-foreground">
                 Showing {startIndex + 1} to{" "}
-                {Math.min(startIndex + itemsPerPage, filteredVendors.length)} of{" "}
-                {filteredVendors.length} vendors
+                {Math.min(startIndex + itemsPerPage, sortedVendors.length)} of{" "}
+                {sortedVendors.length} vendors
               </div>
               <div className="flex items-center gap-2">
                 <Button
