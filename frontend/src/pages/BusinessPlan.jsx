@@ -7,6 +7,7 @@ import {
   TrendingUp,
   Globe,
   AlertTriangle,
+  IndianRupee,
 } from "lucide-react";
 
 export default function BusinessPlan() {
@@ -47,7 +48,7 @@ export default function BusinessPlan() {
     {
       id: "revenue",
       title: "Revenue Model",
-      icon: <DollarSign className="h-5 w-5" />,
+      icon: <IndianRupee className="h-5 w-5" />,
       content: [
         "Monthly/Annual subscription fees from sellers",
         "Commission on each sale",
@@ -201,7 +202,7 @@ export default function BusinessPlan() {
         <Card className="mb-8 border-green-200 bg-gradient-to-r from-green-50 to-emerald-50">
           <CardHeader>
             <CardTitle className="flex items-center gap-3">
-              <DollarSign className="h-5 w-5 text-green-600" />
+              <IndianRupee className="h-5 w-5 text-green-600" />
               Financial Projections (Year 1)
             </CardTitle>
           </CardHeader>

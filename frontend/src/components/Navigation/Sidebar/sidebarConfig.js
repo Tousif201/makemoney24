@@ -23,6 +23,8 @@ import {
   ShieldCheck,
   Milestone,
   Boxes,
+  TicketPercent,
+  IndianRupee,
 } from "lucide-react";
 
 export const sidebarConfig = {
@@ -170,12 +172,17 @@ export const sidebarConfig = {
           href: "/dashboard/admin/vendors/franchises",
           icon: UserPlus,
         },
+        {
+          label: "SalesRep",
+          icon: Users,
+          href: "/dashboard/admin/salesrep",
+        },
       ],
     },
 
     {
       label: "Reports",
-      icon: DollarSign,
+      icon: IndianRupee,
       items: [
         {
           label: "Sales",
@@ -220,6 +227,7 @@ export const sidebarConfig = {
       icon: Users,
       href: "/dashboard/admin/users",
     },
+   
     {
       label: "Transactions",
       icon: Banknote,
@@ -234,6 +242,11 @@ export const sidebarConfig = {
       label: "Banners",
       icon: Tag,
       href: "/dashboard/admin/banners",
+    },
+    {
+      label: "Coupon",
+      icon: TicketPercent,
+      href: "/dashboard/admin/coupon",
     },
   ],
 };

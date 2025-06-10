@@ -17,7 +17,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Search, Users, UserPlus, DollarSign } from "lucide-react"; // Removed Filter, Ban
+import { Search, Users, UserPlus, DollarSign, IndianRupee } from "lucide-react"; // Removed Filter, Ban
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getAdminDashboard } from "../../../../api/user"; // Adjust this path if necessary
 import { Link } from "react-router-dom";
@@ -159,7 +159,7 @@ export default function UsersPage() {
               <CardTitle className="text-sm font-medium">
                 Referral Earnings
               </CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
+              <IndianRupee className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">

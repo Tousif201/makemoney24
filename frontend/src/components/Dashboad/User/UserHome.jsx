@@ -1,5 +1,3 @@
-"use client";
-
 import {
   BarChart3,
   Gift,
@@ -9,12 +7,14 @@ import {
   UserPlus,
   Users,
   Wallet,
-  Star,
-  BadgeIndianRupee, // Imported Star icon
+  BadgeIndianRupee,
+  BanknoteArrowDown,
+  ReceiptIndianRupee,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 
+// Assuming these are available from a UI library like Shadcn UI
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -23,47 +23,56 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+
+// Assuming these are custom contexts/APIs
 import { useSession } from "../../../context/SessionContext";
-import { getUserHomeAnalytics } from "../../../../api/analytics"; // Correct import for our new API function
+import { getUserHomeAnalytics } from "../../../../api/analytics";
 
 export default function UserHome() {
-  const { session, loading: sessionLoading, user } = useSession(); // Renamed loading to sessionLoading
-  const [analyticsData, setAnalyticsData] = useState(null); // State for fetched analytics data
-  const [dataLoading, setDataLoading] = useState(true); // Loading state for API call
-  const [error, setError] = useState(null); // Error state for API call
+  // Destructure session, sessionLoading (renamed from loading for clarity), and user from useSession hook
+  const { session, loading: sessionLoading, user } = useSession();
 
+  // State to store fetched analytics data
+  const [analyticsData, setAnalyticsData] = useState(null);
+  // State to manage loading status of the API call
+  const [dataLoading, setDataLoading] = useState(true);
+  // State to store any error messages from the API call
+  const [error, setError] = useState(null);
+
+  // useEffect hook to fetch analytics data when session or user ID changes
   useEffect(() => {
     const fetchAnalytics = async () => {
       // Fetch data only if session is loaded and user._id is available
       if (!sessionLoading && user?._id) {
         try {
-          setDataLoading(true);
+          setDataLoading(true); // Set loading to true before fetching
           setError(null); // Clear any previous errors
-          const response = await getUserHomeAnalytics(user._id);
+          const response = await getUserHomeAnalytics(user._id); // Call the API
           setAnalyticsData(response); // Set the fetched data
         } catch (err) {
           console.error("Error fetching user home analytics:", err);
-          setError("Failed to load dashboard data. Please try again.");
+          setError("Failed to load dashboard data. Please try again."); // Set error message
         } finally {
-          setDataLoading(false); // Stop loading
+          setDataLoading(false); // Stop loading regardless of success or failure
         }
       } else if (!sessionLoading && !user?._id) {
-        // If session is loaded but no user ID (e.g., not logged in)
+        // If session is loaded but no user ID (e.g., not logged in), stop loading and set error
         setDataLoading(false);
         setError("Please log in to view your dashboard.");
       }
     };
 
-    fetchAnalytics();
-  }, [sessionLoading, user?._id]); // Dependencies: re-run when session or user ID changes
+    fetchAnalytics(); // Execute the fetch function
+  }, [sessionLoading, user?._id]); // Dependencies: re-run when session loading or user ID changes
 
-  // Default stats for loading/error states or if data isn't fully loaded yet
+  // Define default stats. These will display "Loading..." until analyticsData is fetched.
+  // They also handle cases where analyticsData might be null or specific properties are undefined.
   const defaultStats = [
     {
       title: "Total Earnings",
       value:
-        analyticsData?.totalLevelEarning !== undefined
-          ? `₹${analyticsData.totalLevelEarning.toLocaleString()}`
+        analyticsData?.totalEarning != null // Check for both null and undefined
+          ? `₹${analyticsData.totalEarning.toLocaleString()}`
           : "Loading...",
       change: "From Referral Levels",
       icon: TrendingUp,
@@ -71,32 +80,65 @@ export default function UserHome() {
     {
       title: "Active Referrals",
       value:
-        analyticsData?.activeReffrals !== undefined
-          ? analyticsData.activeReffrals.toLocaleString()
+        analyticsData?.referralJoins.total != null // Check for both null and undefined
+          ? analyticsData.referralJoins.total.toLocaleString()
           : "Loading...",
       change: "Active Members",
       icon: Users,
     },
     {
-      title: "Available Balance", // More specific title
+      title: "Available Balance",
       value:
-        analyticsData?.walletBalance !== undefined
-          ? `₹${analyticsData.walletBalance.toLocaleString()}`
+        analyticsData?.withdrawableWallet != null // Check for both null and undefined
+          ? `₹${analyticsData.withdrawableWallet.toLocaleString()}`
           : "Loading...",
       change: "Withdrawable",
       icon: Wallet,
     },
     {
+      title: "Total Withdrawal",
+      value:
+        analyticsData?.totalWithdrawal != null // Check for both null and undefined
+          ? `₹${analyticsData.totalWithdrawal.toLocaleString()}`
+          : "Loading...",
+      icon: BanknoteArrowDown,
+    },
+    {
+      title: "Today Earning",
+      value:
+        analyticsData?.todayEarning != null // Check for both null and undefined
+          ? `₹${analyticsData.todayEarning.toLocaleString()}`
+          : "Loading...",
+      icon: ReceiptIndianRupee,
+    },
+    {
+      title: "Monthly Earning",
+      value:
+        analyticsData?.monthlyEarning != null // Check for both null and undefined
+          ? `₹${analyticsData.monthlyEarning.toLocaleString()}`
+          : "Loading...",
+      icon: ReceiptIndianRupee,
+    },
+    {
+      title: "Weekly Earning",
+      value:
+        analyticsData?.weeklyEarning != null // Check for both null and undefined
+          ? `₹${analyticsData.weeklyEarning.toLocaleString()}`
+          : "Loading...",
+      icon: ReceiptIndianRupee,
+    },
+    {
       title: "Total Orders",
       value:
-        analyticsData?.totalOrders !== undefined
+        analyticsData?.totalOrders != null // Check for both null and undefined
           ? analyticsData.totalOrders.toLocaleString()
           : "Loading...",
       change: "Lifetime",
       icon: ShoppingCart,
     },
   ];
-
+  console.log(analyticsData);
+  // Quick actions array for easy navigation
   const quickActions = [
     {
       title: "View Membership",
@@ -130,14 +172,14 @@ export default function UserHome() {
     },
     {
       title: "Emi Repayment",
-      description: "Track your Emi repaymaent schedule",
-      href: "/dashboard/emi-schedule", // Assuming this links to a page showing income reports
+      description: "Track your Emi repayment schedule",
+      href: "/dashboard/emi-schedule",
       icon: BarChart3,
-      // Removed 'animate: true' as we're directly applying animate-pulse
     },
   ];
 
   // Conditional Rendering for Loading/Error states
+  // This block prevents rendering the main content until session and data are loaded
   if (sessionLoading || dataLoading) {
     return (
       <div className="flex-1 flex items-center justify-center p-6 text-xl text-gray-700">
@@ -146,6 +188,7 @@ export default function UserHome() {
     );
   }
 
+  // If there's an error, display it centrally
   if (error) {
     return (
       <div className="flex-1 flex items-center justify-center p-6 text-xl text-red-600">
@@ -154,7 +197,8 @@ export default function UserHome() {
     );
   }
 
-  const userDisplayName = user?.name || "User"; // Display user's name
+  // Get user display name, defaulting to "User" if not available
+  const userDisplayName = user?.name || "User";
 
   return (
     <div className="flex-1 space-y-6 p-6">
@@ -178,7 +222,7 @@ export default function UserHome() {
               Salary Score
             </p>
             <span className="text-2xl font-extrabold text-yellow-700">
-              {user.profileScore}
+              {user.profileScore !== undefined ? user.profileScore : "N/A"}
             </span>
           </div>
 
@@ -190,11 +234,9 @@ export default function UserHome() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid gap-4 grid-cols-2 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-1 md:gap-4 grid-cols-3 md:grid-cols-2 lg:grid-cols-4">
         {defaultStats.map(
-          (
-            stat // Use defaultStats which now contains dynamic data
-          ) => (
+          (stat) => (
             <Card key={stat.title} className="border-purple-100">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium ">
@@ -204,7 +246,9 @@ export default function UserHome() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold ">{stat.value}</div>
-                <p className="text-xs text-green-600">{stat.change}</p>
+                {stat.change && ( // Conditionally render change text if it exists
+                  <p className="text-xs text-green-600">{stat.change}</p>
+                )}
               </CardContent>
             </Card>
           )
@@ -261,23 +305,22 @@ export default function UserHome() {
             <CardTitle className="">Recent Referrals</CardTitle>
           </CardHeader>
           <CardContent>
+            {/* Check if recentReffrals exists and has items before mapping */}
             {analyticsData?.recentReffrals &&
               analyticsData.recentReffrals.length > 0 ? (
               <div className="space-y-3">
-                {analyticsData.recentReffrals.map((referral) => (
+                {analyticsData.recentReffrals.map((referral, index) => (
                   <div
-                    key={referral.name} // Assuming name is unique enough for key, or add an id from backend
+                    key={referral.name || index} // Use name or index as key for stability
                     className="flex items-center justify-between"
                   >
                     <div>
                       <p className="font-medium ">{referral.name}</p>
-                      <p className="text-sm ">{referral.joinDate}</p>{" "}
-                      {/* Use joinDate */}
+                      <p className="text-sm ">
+                        {referral.joinDate || "N/A"}
+                      </p>{" "}
+                      {/* Use joinDate, provide fallback */}
                     </div>
-                    {/* Commission is not directly in recentReffrals from controller, you might need to add it */}
-                    {/* <span className="font-medium text-green-600">
-                      ₹{referral.commission}
-                    </span> */}
                     <span className="text-sm text-gray-500">New Referral</span>
                   </div>
                 ))}
@@ -301,29 +344,34 @@ export default function UserHome() {
             <CardTitle className="">Recent Transactions</CardTitle>
           </CardHeader>
           <CardContent>
+            {/* Check if recentTransaction exists and has items before mapping */}
             {analyticsData?.recentTransaction &&
               analyticsData.recentTransaction.length > 0 ? (
               <div className="space-y-3">
                 {analyticsData.recentTransaction.map((transaction, index) => (
                   <div
-                    key={transaction.txnId || index}
+                    key={transaction.txnId || index} // Use txnId as key, or index if not available
                     className="flex items-center justify-between"
                   >
-                    {" "}
-                    {/* Use txnId as key */}
                     <div>
-                      <p className="font-medium ">{transaction.type}</p>
-                      <p className="text-sm ">{transaction.date}</p>
+                      <p className="font-medium ">
+                        {transaction.type || "N/A"}
+                      </p>
+                      <p className="text-sm ">
+                        {transaction.date || "N/A"}
+                      </p>
                     </div>
                     <span
                       className={`font-medium ${transaction.amount < 0 // Check if amount is negative
-                          ? "text-red-600"
-                          : "text-green-600"
+                        ? "text-red-600"
+                        : "text-green-600"
                         }`}
                     >
-                      {transaction.amount < 0
-                        ? `-₹${Math.abs(transaction.amount).toLocaleString()}`
-                        : `₹${transaction.amount.toLocaleString()}`}
+                      {transaction.amount !== undefined
+                        ? transaction.amount < 0
+                          ? `-₹${Math.abs(transaction.amount).toLocaleString()}`
+                          : `₹${transaction.amount.toLocaleString()}`
+                        : "N/A"}
                     </span>
                   </div>
                 ))}

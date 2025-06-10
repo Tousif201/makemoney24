@@ -51,7 +51,11 @@ import TermsAndConditions from "../pages/TermsAndConditions";
 import PrivacyPolicy from "../pages/PrivacyPolicy";
 import CompanyPolicy from "../pages/CompanyPolicy";
 import BusinessPlan from "../pages/BusinessPlan";
+import EmiPlan from "../pages/EmiPlan"
 import PackagesPage from "../pages/Dashboard/Admin/PackagesPage";
+import SalesRepsPage from "../pages/Dashboard/Admin/SalesRepPage";
+import CouponManager from "../pages/Dashboard/Admin/Coupon";
+import VendorDetailsPage from "../components/Dashboad/Admin/vendorDetailsPage";
 
 const routes = [
   {
@@ -209,6 +213,14 @@ const routes = [
       </MainLayout>
     ),
   },
+  {
+    path: "/emi-plan",
+    element: (
+      <MainLayout>
+        <EmiPlan />
+      </MainLayout>
+    ),
+  },
 
   {
     path: "/cartdrawer",
@@ -356,10 +368,34 @@ const routes = [
     ),
   },
   {
+    path: "/dashboard/admin/vendors/:vendorId",
+    element: (
+      <DashboardLayout>
+        <VendorDetailsPage />
+      </DashboardLayout>
+    ),
+  },
+  {
     path: "/dashboard/admin/vendors/franchises",
     element: (
       <DashboardLayout>
         <AdminFranchisePage />
+      </DashboardLayout>
+    ),
+  },
+  {
+    path: "/dashboard/admin/salesrep",
+    element: (
+      <DashboardLayout>
+        <SalesRepsPage />
+      </DashboardLayout>
+    ),
+  },
+  {
+    path: "/dashboard/admin/coupon",
+    element: (
+      <DashboardLayout>
+        <CouponManager />
       </DashboardLayout>
     ),
   },

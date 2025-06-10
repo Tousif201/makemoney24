@@ -8,6 +8,7 @@ import {
   Twitter,
   Youtube,
   Mail,
+  HandCoins,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -25,8 +26,8 @@ const MobileBottomNav = () => {
           <Grid3X3 size={22} />
         </Link>
 
-        <Link to="/dashboard/orders" className="p-2 text-gray-600">
-          <ShoppingBag size={22} />
+        <Link to="/emi-plan" className="p-2 text-gray-600">
+          <HandCoins size={24} />
         </Link>
 
         <Link to="/help" className="p-2 text-gray-600">
