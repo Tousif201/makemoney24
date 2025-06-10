@@ -1,7 +1,16 @@
 "use client";
 
-import { Package, Truck, CheckCircle, Clock, Eye, XCircle } from "lucide-react"; // Added XCircle for cancelled
-import { useState, useEffect } from "react"; // Import useEffect
+import {
+  Package,
+  Truck,
+  CheckCircle,
+  Clock,
+  Eye,
+  XCircle,
+  Hand,
+} from "lucide-react";
+import { useState, useEffect } from "react";
+import { toast } from "sonner"; // Import toast for notifications
 
 import { Button } from "@/components/ui/button";
 import {
@@ -26,8 +35,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-}
- from "@/components/ui/select";
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -36,21 +44,27 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { getOrdersApi } from "../../../../api/order"; // Corrected import path for API
+
+import { getOrdersApi } from "../../../../api/order";
 import { useSession } from "../../../context/SessionContext";
+import { CreateTicketDialog } from "../../../components/Tickets/CreateTicketDialog";
 
 export default function UserOrders() {
   const [statusFilter, setStatusFilter] = useState("all");
-  const [userOrders, setUserOrders] = useState([]); // State to store fetched orders
-  const [isLoading, setIsLoading] = useState(true); // State to manage loading status
-  const [error, setError] = useState(null); // State to manage potential errors
-  const { session, loading: sessionLoading } = useSession(); // Renamed session 'loading' to avoid conflict
+  const [userOrders, setUserOrders] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { session, loading: sessionLoading } = useSession();
+
+  // New states for Create Ticket Dialog
+  const [isCreateTicketDialogOpen, setIsCreateTicketDialogOpen] =
+    useState(false);
+  const [createTicketForOrder, setCreateTicketForOrder] = useState(null); // Stores the order object for ticket creation
 
   // --- Fetch Orders on Component Mount or Session ID Change ---
   useEffect(() => {
     const fetchOrders = async () => {
       if (sessionLoading || !session?.id) {
-        // Wait for session to load, or if no session ID, don't fetch
         if (!sessionLoading && !session?.id) {
           setIsLoading(false);
           setError("User not logged in or session expired.");
@@ -61,7 +75,6 @@ export default function UserOrders() {
       setIsLoading(true);
       setError(null);
       try {
-        // Fetch orders for the current user ID
         const fetchedOrders = await getOrdersApi({ userId: session.id });
         setUserOrders(fetchedOrders);
       } catch (err) {
@@ -73,7 +86,7 @@ export default function UserOrders() {
     };
 
     fetchOrders();
-  }, [session, sessionLoading]); // Re-run effect when session or sessionLoading changes
+  }, [session, sessionLoading]);
 
   // --- Mapping Backend Status to Display Names ---
   const mapOrderStatusToDisplay = (status) => {
@@ -95,8 +108,9 @@ export default function UserOrders() {
 
   const filteredOrders = userOrders.filter((order) => {
     if (statusFilter === "all") return true;
-    // Filter by the mapped display status
-    return mapOrderStatusToDisplay(order.orderStatus).toLowerCase() === statusFilter;
+    return (
+      mapOrderStatusToDisplay(order.orderStatus).toLowerCase() === statusFilter
+    );
   });
 
   const getStatusIcon = (status) => {
@@ -109,7 +123,7 @@ export default function UserOrders() {
       case "placed":
         return <Clock className="h-4 w-4 text-orange-600" />;
       case "cancelled":
-        return <XCircle className="h-4 w-4 text-red-600" />; // Changed to XCircle
+        return <XCircle className="h-4 w-4 text-red-600" />;
       default:
         return <Package className="h-4 w-4 text-gray-600" />;
     }
@@ -132,14 +146,47 @@ export default function UserOrders() {
   };
 
   const totalOrders = userOrders.length;
-  const deliveredOrders = userOrders.filter((o) => o.orderStatus === "delivered").length;
+  const deliveredOrders = userOrders.filter(
+    (o) => o.orderStatus === "delivered"
+  ).length;
   const totalSpent = userOrders
     .filter((o) => o.orderStatus !== "cancelled")
-    .reduce(
-      (sum, order) =>
-        sum + order.totalAmount, // Use totalAmount directly
-      0
-    );
+    .reduce((sum, order) => sum + order.totalAmount, 0);
+
+  // --- Handler for Raising a Replacement Ticket ---
+  const handleRaiseReplacementTicket = (order) => {
+    // IMPORTANT: Ensure order.vendorId is populated and has a 'userId' field.
+    // If order.vendorId is just an ID, you need to adjust your backend to populate it,
+    // or fetch the vendor's user ID separately.
+    const assignedToUserId = order.vendorId?.userId;
+
+    if (!assignedToUserId) {
+      toast.error(
+        "Vendor user information not available to assign ticket. Cannot raise ticket."
+      );
+      return;
+    }
+
+    setCreateTicketForOrder({
+      title: `Replacement/Return Request for Order #${order._id
+        .slice(-6)
+        .toUpperCase()}`,
+      description: `This ticket is for a replacement/return request for Order ID: ${order._id
+        .slice(-6)
+        .toUpperCase()}.
+
+Product(s) affected: ${order.items
+        .map((item) => item.productServiceId?.title || "Unknown Product")
+        .join(", ")}.
+
+`,
+      category: "item_replacement", // Consider adding this category in your Ticket model
+      assignedTo: assignedToUserId, // Pre-assign to the vendor's user ID
+      priority: "high", // Default to high priority for such requests
+      status: "open", // New tickets should typically be open
+    });
+    setIsCreateTicketDialogOpen(true);
+  };
 
   if (sessionLoading || isLoading) {
     return (
@@ -207,11 +254,13 @@ export default function UserOrders() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-gray-900">
-              ₹{totalSpent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              ₹
+              {totalSpent.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
             </div>
-            <p className="text-xs text-gray-600">
-              Excluding cancelled orders
-            </p>
+            <p className="text-xs text-gray-600">Excluding cancelled orders</p>
           </CardContent>
         </Card>
       </div>
@@ -226,10 +275,7 @@ export default function UserOrders() {
                 Complete details of all your orders
               </CardDescription>
             </div>
-            <Select
-              value={statusFilter}
-              onValueChange={setStatusFilter}
-            >
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
@@ -258,22 +304,22 @@ export default function UserOrders() {
                   <TableHead>Vendor</TableHead>
                   <TableHead>Items</TableHead>
                   <TableHead>Total</TableHead>
-                  <TableHead>Payment Status</TableHead> {/* Changed to Payment Status */}
-                  <TableHead>Order Status</TableHead> {/* Changed to Order Status */}
+                  <TableHead>Payment Status</TableHead>
+                  <TableHead>Order Status</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredOrders.map((order) => (
-                  <TableRow key={order._id}> {/* Use _id from MongoDB */}
+                  <TableRow key={order._id}>
                     <TableCell className="font-medium text-gray-900">
-                      {order._id.slice(-6).toUpperCase()} {/* Display last 6 chars of ID */}
+                      {order._id.slice(-6).toUpperCase()}
                     </TableCell>
                     <TableCell className="text-gray-700">
                       {new Date(order.placedAt).toLocaleDateString()}
                     </TableCell>
-                     <TableCell className="text-gray-700">
-                      {order.vendorId?.name || 'N/A'} {/* Access vendor name from populated field */}
+                    <TableCell className="text-gray-700">
+                      {order.vendorId?.name || "N/A"}
                     </TableCell>
                     <TableCell>
                       <div className="max-w-48">
@@ -281,7 +327,9 @@ export default function UserOrders() {
                           {order.items
                             .map(
                               (item) =>
-                                `${item.productServiceId?.title || 'Unknown Item'} (x${item.quantity})`
+                                `${
+                                  item.productServiceId?.title || "Unknown Item"
+                                } (x${item.quantity})`
                             )
                             .join(", ")}
                         </p>
@@ -291,10 +339,14 @@ export default function UserOrders() {
                       </div>
                     </TableCell>
                     <TableCell className="font-medium text-gray-900">
-                      ₹{order.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      ₹
+                      {order.totalAmount.toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
                     </TableCell>
                     <TableCell className="text-gray-700 capitalize">
-                      {order.paymentStatus} {/* Display actual payment status */}
+                      {order.paymentStatus}
                     </TableCell>
                     <TableCell>
                       <Badge
@@ -307,7 +359,9 @@ export default function UserOrders() {
                         </div>
                       </Badge>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="flex gap-2">
+                      {" "}
+                      {/* Use flex to space out buttons */}
                       <Dialog>
                         <DialogTrigger asChild>
                           <Button
@@ -321,7 +375,10 @@ export default function UserOrders() {
                         </DialogTrigger>
                         <DialogContent className="max-w-md">
                           <DialogHeader>
-                            <DialogTitle>Order Details - {order._id.slice(-6).toUpperCase()}</DialogTitle>
+                            <DialogTitle>
+                              Order Details -{" "}
+                              {order._id.slice(-6).toUpperCase()}
+                            </DialogTitle>
                             <DialogDescription>
                               Complete information about your order
                             </DialogDescription>
@@ -333,8 +390,20 @@ export default function UserOrders() {
                               </h4>
                               <ul className="list-disc list-inside text-gray-700 text-sm">
                                 {order.items.map((item) => (
-                                  <li key={item.productServiceId?._id || Math.random()}>
-                                    {item.productServiceId?.title || 'Unknown Item'} (x{item.quantity}) - ₹{item.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} each
+                                  <li
+                                    key={
+                                      item.productServiceId?._id ||
+                                      Math.random()
+                                    }
+                                  >
+                                    {item.productServiceId?.title ||
+                                      "Unknown Item"}{" "}
+                                    (x{item.quantity}) - ₹
+                                    {item.price.toLocaleString(undefined, {
+                                      minimumFractionDigits: 2,
+                                      maximumFractionDigits: 2,
+                                    })}{" "}
+                                    each
                                   </li>
                                 ))}
                               </ul>
@@ -353,15 +422,17 @@ export default function UserOrders() {
                                   Total Amount:
                                 </span>
                                 <p className="font-medium text-gray-900">
-                                  ₹{order.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                  ₹
+                                  {order.totalAmount.toLocaleString(undefined, {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2,
+                                  })}
                                 </p>
                               </div>
                               <div>
-                                <span className="text-gray-600">
-                                  Vendor:
-                                </span>
+                                <span className="text-gray-600">Vendor:</span>
                                 <p className="font-medium text-gray-900">
-                                  {order.vendorId?.name || 'N/A'}
+                                  {order.vendorId?.name || "N/A"}
                                 </p>
                               </div>
                               <div>
@@ -373,7 +444,9 @@ export default function UserOrders() {
                                 </p>
                               </div>
                               <div>
-                                <span className="text-gray-600">Order Status:</span>
+                                <span className="text-gray-600">
+                                  Order Status:
+                                </span>
                                 <Badge
                                   variant="outline"
                                   className={getStatusColor(order.orderStatus)}
@@ -381,12 +454,25 @@ export default function UserOrders() {
                                   {mapOrderStatusToDisplay(order.orderStatus)}
                                 </Badge>
                               </div>
-                              {/* Removed trackingId and deliveryDate as they are not in the model */}
-                              {/* If you need these, add them to your Order model */}
                             </div>
                           </div>
                         </DialogContent>
                       </Dialog>
+                      {/* New "Raise Ticket" Button */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-orange-200 text-orange-700 hover:bg-orange-50"
+                        onClick={() => handleRaiseReplacementTicket(order)}
+                        // Example: Disable for cancelled or delivered orders
+                        disabled={
+                          order.orderStatus === "cancelled" ||
+                          order.orderStatus === "delivered"
+                        }
+                      >
+                        <Hand className="mr-1 h-3 w-3" />
+                        Raise Ticket
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -395,6 +481,26 @@ export default function UserOrders() {
           )}
         </CardContent>
       </Card>
+
+      {/* Create Ticket Dialog (for replacement requests) */}
+      <CreateTicketDialog
+        open={isCreateTicketDialogOpen}
+        onOpenChange={(open) => {
+          setIsCreateTicketDialogOpen(open);
+          if (!open) {
+            setCreateTicketForOrder(null); // Clear data when dialog closes
+          }
+        }}
+        initialValues={createTicketForOrder} // Pass the pre-filled data
+        onTicketCreated={() => {
+          toast.success("Replacement ticket raised successfully!");
+          setIsCreateTicketDialogOpen(false); // Close dialog on success
+          setCreateTicketForOrder(null); // Clear data
+          // Optionally, you might want to refresh orders here if ticket creation
+          // somehow impacts order status on the frontend.
+          // fetchOrders(); // If you want to re-fetch orders
+        }}
+      />
     </div>
   );
 }

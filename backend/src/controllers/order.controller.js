@@ -172,8 +172,8 @@ export const getOrders = async (req, res) => {
     const orders = await Order.find(filter)
       .sort({ placedAt: -1 })
       .populate("userId", "name email phone") // Populate user details (assuming User model has name, email)
-      .populate("vendorId", "name") // Populate vendor details (assuming Vendor model has name)
-      .populate("items.productServiceId", "title type price"); // Populate product/service details
+      .populate("items.productServiceId", "title type price") // Populate product/service details
+      .populate("vendorId") 
 
     res.status(200).json(orders);
   } catch (error) {

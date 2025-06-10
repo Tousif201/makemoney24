@@ -52,6 +52,8 @@ import PrivacyPolicy from "../pages/PrivacyPolicy";
 import CompanyPolicy from "../pages/CompanyPolicy";
 import BusinessPlan from "../pages/BusinessPlan";
 import PackagesPage from "../pages/Dashboard/Admin/PackagesPage";
+import TicketListPage from "../pages/Dashboard/Ticket/TicketListPage";
+import MessagingPage from "../pages/Dashboard/Ticket/MessagingPage";
 
 const routes = [
   {
@@ -468,6 +470,24 @@ const routes = [
     ),
   },
 
+
+
+    {
+    path: "/dashboard/tickets",
+    element: (
+      <DashboardLayout>
+        <TicketListPage />
+      </DashboardLayout>
+    ),
+  },
+   {
+    path: "/dashboard/tickets/:ticketId",
+    element: (
+      <DashboardLayout>
+        <MessagingPage />
+      </DashboardLayout>
+    ),
+  },
   {
     path: "*",
     element: <h1>404 - Page Not Found</h1>,

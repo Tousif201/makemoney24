@@ -4,7 +4,7 @@ import { getProductServices } from "../../api/productService"; // Ensure this pa
 import { Link } from "react-router-dom"; // Import Link from react-router-dom
 import { Skeleton } from "@/components/ui/skeleton"; // Import Shadcn Skeleton
 
-const ProductList = () => {
+const ServiesList = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -20,7 +20,7 @@ const ProductList = () => {
           sortBy: "createdAt", // Sort by creation date
           order: "desc", // Get the newest first
           page: 1, // Ensure we get the first page
-          type: "product",
+          type: "service",
         };
 
         const response = await getProductServices(params);
@@ -95,7 +95,8 @@ const ProductList = () => {
           Latest Products
         </h2>
         <p className="text-lg text-gray-600">
-          No products available at the moment. Please check back soon!
+          No services available at the moment. Please check back
+          soon!
         </p>
       </div>
     );
@@ -128,7 +129,7 @@ const ProductList = () => {
         {/* Button to see all products */}
         <div className="mt-12 text-center">
           <Link
-            to="/browse?type=product"
+            to="/browse?type=service"
             className="inline-flex items-center justify-center px-8 py-3 border border-transparent  font-medium rounded-full text-white bg-indigo-600 hover:bg-indigo-700 md:py-4 md:px-10 text-lg shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105"
           >
             See All Products
@@ -157,4 +158,4 @@ const ProductList = () => {
   );
 };
 
-export default ProductList;
+export default ServiesList;

@@ -196,76 +196,93 @@ export default function MembershipPage() {
   // temp fix
   if (!isMember) {
     return (
-      <div className="flex-1 space-y-6 p-6">
-        <div className="flex items-center gap-4">
+      <div className="flex-1 space-y-8 p-8">
+        {/* Header */}
+        <div className="flex items-center justify-center text-center">
           <div>
-            <h1 className="text-3xl font-bold text-purple-900">
+            <h1 className="text-4xl font-extrabold text-purple-900 mb-2">
               Become a Member
             </h1>
-            <p className="text-purple-600">
+            <p className="text-lg text-purple-600">
               Unlock exclusive benefits and features
             </p>
           </div>
         </div>
 
+        {/* Membership Card */}
         <div className="max-w-2xl mx-auto">
-          <Card className="border-purple-200">
-            <CardHeader className="text-center">
+          <Card className="border-purple-200 shadow-md">
+            <CardHeader className="text-center space-y-2">
               <div className="mx-auto h-16 w-16 rounded-full bg-purple-100 flex items-center justify-center mb-4">
                 <Star className="h-8 w-8 text-purple-600" />
               </div>
-              <CardTitle className="text-2xl text-purple-900">
+              <CardTitle className="text-3xl text-purple-900 font-bold">
                 Premium Membership
               </CardTitle>
-              <CardDescription className="text-purple-600">
-                Join our exclusive membership program and enjoy premium benefits
+              <CardDescription className="text-purple-600 text-base">
+                Join our exclusive membership program and enjoy premium
+                benefits.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+
+            <CardContent className="space-y-8 px-6 pb-6">
+              {/* Price */}
               <div className="text-center">
-                <div className="text-4xl font-bold text-purple-900">₹1,200</div>
-                <p className="text-purple-600">One-time payment</p>
+                <div className="text-5xl font-extrabold text-purple-900 mb-2">
+                  ₹1,200
+                </div>
+                <p className="text-purple-600 text-base">One-time payment</p>
               </div>
 
-              <div className="space-y-3">
-                <h3 className="font-semibold text-purple-900">
+              {/* Benefits */}
+              <div className="space-y-4">
+                <h3 className="font-semibold text-xl text-purple-900">
                   What you'll get:
                 </h3>
                 {benefits.map((benefit, index) => (
                   <div key={index} className="flex items-center gap-3">
                     <Check className="h-5 w-5 text-green-600" />
-                    <span className="text-purple-700">{benefit}</span>
+                    <span className="text-purple-700 text-base">{benefit}</span>
                   </div>
                 ))}
               </div>
 
-              {/* === QR CODE PAYMENT SECTION === */}
-              <div className="mt-6 p-4 border rounded-lg bg-purple-50 text-center">
-                <h3 className="text-lg font-semibold text-purple-800 mb-3 flex items-center justify-center gap-2">
+              {/* QR Code Payment Section */}
+              <div className="mt-8 p-6 border rounded-lg bg-purple-50 text-center space-y-4">
+                <h3 className="text-lg font-semibold text-purple-800 flex items-center justify-center gap-2">
                   <QrCode className="h-6 w-6 text-purple-700" />
                   Auto Membership Enrollment Coming Soon!
                 </h3>
-                <p className="text-purple-700 mb-4">
+                <p className="text-purple-700">
                   For immediate access, make a payment via QR code:
                 </p>
-                <div className="flex justify-center mb-4">
+                <div className="flex justify-center">
                   <img
                     src={qrCodeImageUrl}
                     alt="Payment QR Code"
                     className="w-48 h-48 border border-gray-300 rounded-lg shadow-sm object-contain"
                   />
                 </div>
-                <p className="text-sm font-medium text-purple-800 mb-2">
-                  Scan this QR code and pay ₹1,200
+
+                <p className="text-sm text-purple-700 mt-2">
+                  If the scanner does not detect the QR code,{" "}
+                  <Link
+                    to={`upi://pay?pa=pooja2jadhav4554@ybl&pn=POOJA%20VIJAY%20JADHAV&mc=0000&mode=02&purpose=00`}
+                    className="text-purple-600 underline font-medium"
+                  >
+                    click here
+                  </Link>{" "}
+                  to process the payment.
                 </p>
-                <p className="text-sm text-gray-700">
-                  Then, WhatsApp a screenshot of your payment to:
+
+                <p className="text-sm font-medium text-purple-800">
+                  After payment, please WhatsApp your payment screenshot to:
                 </p>
                 <a
                   href={`https://wa.me/${whatsappNumber}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-purple-600 hover:underline font-bold text-lg flex items-center justify-center mt-2"
+                  className="inline-flex items-center justify-center text-purple-600 hover:underline font-bold text-lg mt-1"
                 >
                   <img
                     src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg"
@@ -274,11 +291,11 @@ export default function MembershipPage() {
                   />
                   {whatsappNumber}
                 </a>
-                <p className="text-xs text-gray-500 mt-2">
+
+                <p className="text-xs text-gray-500">
                   Admin will upgrade your membership shortly after verification.
                 </p>
               </div>
-              {/* === END QR CODE PAYMENT SECTION === */}
             </CardContent>
           </Card>
         </div>

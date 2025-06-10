@@ -6,7 +6,6 @@ import ProductList from "../components/ProductList";
 import UserScrollSlider from "../components/UserScrollSlider";
 import UserScrollslider from "../components/UserScrollSlider";
 import HomePageAnimation from "./HomePageAnimation";
-import Services from "./Services";
 
 export default function Home() {
   return (

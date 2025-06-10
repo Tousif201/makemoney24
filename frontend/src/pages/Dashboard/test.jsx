@@ -1,157 +1,418 @@
-// src/Test.jsx
-import React, { useState, useEffect } from "react";
-import { load } from "@cashfreepayments/cashfree-js";
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  createTicket,
+  getTickets,
+  getTicketById,
+  updateTicket,
+  deleteTicket,
+  getTicketMessages,
+} from "../../../api/ticket"; // Adjust path as needed
+import { io } from "socket.io-client"; // For WebSocket
+import { backendConfig } from "../../../constant/config"; // To get backend URL for Socket.IO
+import { useSession } from "../../context/SessionContext"; // Assuming useSession provides session.id
 
-// Console log to confirm file loading
-console.log("Test.jsx component file loaded and executed.");
+const Test = () => {
+  const [tickets, setTickets] = useState([]); // State to hold all tickets
+  const [selectedTicketId, setSelectedTicketId] = useState(null); // ID of the currently viewed ticket
+  const [selectedTicket, setSelectedTicket] = useState(null); // Details of the currently viewed ticket
+  const [messages, setMessages] = useState([]); // Messages for the selected ticket
+  const [newMessage, setNewMessage] = useState(""); // Input for new chat message
+  const [loading, setLoading] = useState(true); // Global loading state
+  const [ticketFormLoading, setTicketFormLoading] = useState(false); // Loading for ticket creation/update
+  const [error, setError] = useState(null); // Global error state
+  const [socket, setSocket] = useState(null); // Socket.IO instance
 
-function Test() {
-  const [loading, setLoading] = useState(false);
-  const [paymentStatus, setPaymentStatus] = useState(null);
+  // Form states for creating a new ticket
+  const [newTicketTitle, setNewTicketTitle] = useState("");
+  const [newTicketDescription, setNewTicketDescription] = useState("");
+  const [newTicketCategory, setNewTicketCategory] = useState("general_inquiry");
+  const [newTicketPriority, setNewTicketPriority] = useState("medium");
+  const [newTicketAssignedTo, setNewTicketAssignedTo] = useState(""); // Optional: to assign to a specific user
 
-  // useEffect to run once on initial mount for debugging
-  useEffect(() => {
-    console.log("Test component rendered/re-rendered.");
+  const { session, loading: sessionLoading } = useSession();
+  const currentUserId = session?.id; // Get user ID from session context
+
+  // Fetch all tickets when the component mounts or `currentUserId` becomes available
+  const fetchAllTickets = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await getTickets();
+      setTickets(response.tickets);
+    } catch (err) {
+      setError(err.message || "Failed to fetch all tickets.");
+      console.error("Error fetching all tickets:", err);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  // === Re-enabled useEffect for handling redirect from Cashfree ===
+  // Effect to fetch all tickets initially
   useEffect(() => {
-    console.log("[useEffect] Checking URL for payment status after redirect...");
-    const urlParams = new URLSearchParams(window.location.search);
-    const orderId = urlParams.get('order_id');
-    const cashfreeOrderStatus = urlParams.get('order_status'); // This is the status from Cashfree's redirect
-
-    if (orderId && cashfreeOrderStatus) {
-      console.log(`[useEffect] Payment returned for Order ID: ${orderId}, Status from Cashfree: ${cashfreeOrderStatus}`);
-      setPaymentStatus(`Payment for Order ID: ${orderId} is ${cashfreeOrderStatus}. Verifying on backend...`);
-      setLoading(true); // Set loading while verifying on backend
-
-      // It's crucial to verify the payment status on your backend
-      // for security and reliability, as frontend data can be manipulated.
-      console.log(`[useEffect] Initiating backend verification for Order ID: ${orderId}`);
-      fetch(`http://localhost:5000/api/cashfree/verify-payment/${orderId}`)
-        .then(res => {
-          console.log(`[useEffect] Backend verification raw response status: ${res.status}`);
-          return res.json();
-        })
-        .then(data => {
-          console.log('[useEffect] Backend verification response data:', data);
-          const actualStatus = data.order_details[0].payment_status; // Get the actual status from your backend
-          if (data.success && (actualStatus === 'PAID' || actualStatus === 'SUCCESS')) {
-            setPaymentStatus(`Payment for Order ID: ${orderId} **SUCCESSFUL** (Verified by Backend)`);
-            console.log(`[useEffect] Payment successfully verified by backend.`);
-            // Handle successfpayment_statusul payment, e.g., update user's order history, send confirmation email.
-          } else {
-            setPaymentStatus(`Payment for Order ID: ${orderId} **${actualStatus || 'FAILED'}** (Verified by Backend). Details: ${data.details || data.message || 'N/A'}`);
-            console.error(`[useEffect] Backend verification failed for Order ID: ${orderId}. Actual status: ${actualStatus}. Details:`, data.details || data.message);
-          }
-        })
-        .catch(error => {
-          console.error('[useEffect] Error verifying payment on backend:', error);
-          setPaymentStatus(`Error verifying payment for Order ID: ${orderId}. Network/Backend error.`);
-        })
-        .finally(() => {
-          console.log('[useEffect] Resetting loading state after backend verification.');
-          setLoading(false); // ALWAYS reset loading here
-          // Optional: Clear URL parameters to prevent re-triggering on refresh
-          // window.history.replaceState({}, document.title, window.location.pathname);
-        });
-    } else {
-        console.log("[useEffect] No Cashfree payment parameters found in URL.");
+    if (!sessionLoading && currentUserId) {
+      fetchAllTickets();
     }
-  }, []); // Run only once on component mount for initial URL check
+  }, [sessionLoading, currentUserId, fetchAllTickets]);
 
+  // Effect to fetch selected ticket details and set up WebSocket
+  useEffect(() => {
+    if (!selectedTicketId || !currentUserId) {
+      // Clean up socket if no ticket is selected
+      if (socket) {
+        socket.disconnect();
+        setSocket(null);
+      }
+      setSelectedTicket(null);
+      setMessages([]);
+      return;
+    }
 
-  const initiatePayment = async () => {
-    console.log("[initiatePayment] Button clicked. Setting loading to true.");
-    setLoading(true);
-    setPaymentStatus(null); // Clear previous status
+    const fetchSelectedTicketData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        // Fetch ticket details
+        const ticketResponse = await getTicketById(selectedTicketId);
+        setSelectedTicket(ticketResponse.ticket);
 
-    try {
-      console.log("[initiatePayment] Calling backend to create Cashfree order...");
-      const requestBody = {
-        order_amount: 10.0, // Example amount
-        customer_details: {
-          customer_id: "user_123",
-          customer_name: "John Doe",
-          customer_email: "john.doe@example.com",
-          customer_phone: "9988776655",
-        },
-      };
-      console.log("[initiatePayment] Request body for backend:", requestBody);
+        // Fetch initial messages for the ticket
+        const messagesResponse = await getTicketMessages(selectedTicketId);
+        setMessages(messagesResponse.messages);
 
-      const response = await fetch("http://localhost:5000/api/cashfree/create-order", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody),
-      });
-
-      const data = await response.json();
-      console.log("[initiatePayment] Response from backend:", data);
-
-      if (response.ok && data.payment_session_id) {
-        const paymentSessionId = data.payment_session_id;
-        console.log(`[initiatePayment] Received payment_session_id: ${paymentSessionId}. Loading Cashfree SDK...`);
-
-        const cashfree = await load({
-          mode: "sandbox", // "sandbox" for testing, "production" for live
+        // --- WebSocket Setup ---
+        const token = localStorage.getItem("authToken");
+        // Disconnect existing socket before creating a new one
+        if (socket) {
+          socket.disconnect();
+        }
+        const newSocket = io(backendConfig.origin, {
+          auth: { token: token },
+          transports: ["websocket", "polling"],
         });
 
-        console.log("[initiatePayment] Cashfree SDK loaded. Initiating checkout with redirect...");
-        let checkoutOptions = {
-          paymentSessionId: paymentSessionId,
-          redirectTarget: "_self", // === KEY CHANGE: Redirect to same tab ===
-          onScriptLoad: () => console.log('[Cashfree SDK] script loaded successfully for redirect.'),
-          onScriptError: (error) => console.error('[Cashfree SDK] script load error:', error),
-          // Removed onSuccess, onFailure, onCancel as they are for modal flow
-        };
+        newSocket.on("connect", () => {
+          console.log("Socket Connected!");
+          newSocket.emit("joinTicket", selectedTicketId);
+        });
 
-        cashfree.checkout(checkoutOptions);
-        // After cashfree.checkout() with _self, the page will redirect.
-        // The loading state will be handled by the useEffect after redirection.
-        console.log("[initiatePayment] Redirecting to Cashfree. Frontend loading state will be managed by useEffect on return.");
+        newSocket.on("joinedTicket", (data) => {
+          console.log(data.message);
+        });
 
-      } else {
-        console.error("[initiatePayment] Error creating order on backend. Details:", data.error || data.message);
-        setPaymentStatus(`Error: ${data.error || data.message || "Failed to create order"}`);
-        console.log("[initiatePayment] Resetting loading state due to backend order creation error.");
-        setLoading(false); // Reset loading on backend error
+        newSocket.on("ticketMessage", (message) => {
+          console.log("Received new message via socket:", message);
+          setMessages((prevMessages) => [...prevMessages, message]);
+        });
+
+        newSocket.on("messageError", (err) => {
+          console.error("Socket message error:", err.message);
+          alert(`Error sending message: ${err.message}`);
+        });
+
+        newSocket.on("connect_error", (err) => {
+          console.error("Socket connection error:", err.message);
+          setError(`Socket connection failed: ${err.message}`);
+        });
+
+        newSocket.on("disconnect", () => {
+          console.log("Socket Disconnected!");
+        });
+
+        setSocket(newSocket);
+      } catch (err) {
+        setError(err.message || "Failed to fetch selected ticket data.");
+        console.error("Error fetching selected ticket data:", err);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error("[initiatePayment] Network or unexpected error during order creation:", error);
-      setPaymentStatus(`Network Error: ${error.message}. Please check console for details.`);
-      console.log("[initiatePayment] Resetting loading state due to network/unexpected error.");
-      setLoading(false); // Reset loading on network/unexpected error
+    };
+
+    fetchSelectedTicketData();
+
+    // Clean up socket on component unmount or when selectedTicketId changes
+    return () => {
+      if (socket) {
+        socket.disconnect();
+      }
+    };
+  }, [selectedTicketId, currentUserId]); // Dependency array for selected ticket and socket
+
+  // --- Handlers for Ticket Management ---
+
+  const handleCreateTicket = async (e) => {
+    e.preventDefault();
+    if (!newTicketTitle || !newTicketDescription || !newTicketCategory || !currentUserId) {
+      alert("Please fill in all required ticket fields (Title, Description, Category).");
+      return;
+    }
+    setTicketFormLoading(true);
+    setError(null);
+    try {
+      const ticketData = {
+        title: newTicketTitle,
+        description: newTicketDescription,
+        category: newTicketCategory,
+        priority: newTicketPriority,
+        requesterId: currentUserId,
+        assignedToId: newTicketAssignedTo || undefined, // Send undefined if empty
+        attachments: [], // Add logic for attachments if needed
+      };
+      const response = await createTicket(ticketData);
+      alert("Ticket created successfully!");
+      setNewTicketTitle("");
+      setNewTicketDescription("");
+      setNewTicketCategory("general_inquiry");
+      setNewTicketPriority("medium");
+      setNewTicketAssignedTo("");
+      fetchAllTickets(); // Refresh the list of tickets
+    } catch (err) {
+      setError(err.response?.data?.message || err.message || "Failed to create ticket.");
+      alert(`Error creating ticket: ${error}`);
+      console.error("Error creating ticket:", err);
+    } finally {
+      setTicketFormLoading(false);
     }
   };
 
+  const handleDeleteTicket = async (id) => {
+    if (window.confirm("Are you sure you want to delete this ticket and all its messages?")) {
+      setLoading(true); // Global loading for delete operation
+      setError(null);
+      try {
+        await deleteTicket(id);
+        alert("Ticket deleted successfully!");
+        if (selectedTicketId === id) {
+          setSelectedTicketId(null); // Deselect if the current ticket was deleted
+        }
+        fetchAllTickets(); // Refresh the list
+      } catch (err) {
+        setError(err.response?.data?.message || err.message || "Failed to delete ticket.");
+        alert(`Error deleting ticket: ${error}`);
+        console.error("Error deleting ticket:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  const handleUpdateTicketStatus = async (status) => {
+    if (!selectedTicketId) return;
+    setTicketFormLoading(true);
+    setError(null);
+    try {
+      const response = await updateTicket(selectedTicketId, { status });
+      alert(`Ticket status updated to ${status}!`);
+      setSelectedTicket(response.ticket); // Update local state
+      fetchAllTickets(); // Refresh all tickets list to show updated status
+    } catch (err) {
+      setError(err.response?.data?.message || err.message || "Failed to update ticket status.");
+      alert(`Error updating ticket status: ${error}`);
+      console.error("Error updating ticket status:", err);
+    } finally {
+      setTicketFormLoading(false);
+    }
+  };
+
+  // --- Chat Messaging Handler ---
+  const handleSendMessage = async (e) => {
+    e.preventDefault();
+    if (!newMessage.trim() || !socket || !selectedTicketId || !currentUserId) return;
+
+    const messageData = {
+      ticketId: selectedTicketId,
+      senderId: currentUserId,
+      message: newMessage,
+      attachments: [],
+      isInternalNote: false, // Could be toggled with a checkbox for agents
+    };
+
+    socket.emit("newTicketMessage", messageData);
+    setNewMessage(""); // Clear input immediately
+  };
+
+  if (sessionLoading) {
+    return <div>Loading session...</div>;
+  }
+  if (!currentUserId) {
+    return <div>Please log in to use the ticket system.</div>;
+  }
+  if (loading && !selectedTicketId) return <div>Loading tickets...</div>; // Only show global loading if no ticket is selected yet
+  if (error) return <div style={{ color: "red" }}>Error: {error}</div>;
+
   return (
-    <div>
-      <h1>Cashfree Payment Integration Test</h1>
-      <button onClick={initiatePayment} disabled={loading}>
-        {loading ? "Processing..." : "Pay with Cashfree"}
-      </button>
+    <div style={{ display: "flex", gap: "20px", padding: "20px" }}>
+      {/* Left Panel: Create Ticket & Ticket List */}
+      <div style={{ flex: 1, borderRight: "1px solid #eee", paddingRight: "20px" }}>
+        <h2>Create New Ticket</h2>
+        <form onSubmit={handleCreateTicket} style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "30px" }}>
+          <input type="text" placeholder="Title" value={newTicketTitle} onChange={(e) => setNewTicketTitle(e.target.value)} required />
+          <textarea placeholder="Description" value={newTicketDescription} onChange={(e) => setNewTicketDescription(e.target.value)} required />
+          <select value={newTicketCategory} onChange={(e) => setNewTicketCategory(e.target.value)} required>
+            <option value="general_inquiry">General Inquiry</option>
+            <option value="technical_support">Technical Support</option>
+            <option value="glitch_report">Glitch Report</option>
+            <option value="bug_report">Bug Report</option>
+            <option value="feature_request">Feature Request</option>
+            <option value="billing_inquiry">Billing Inquiry</option>
+            <option value="payment_issue">Payment Issue</option>
+            <option value="membership_issue">Membership Issue</option>
+            <option value="item_replacement">Item Replacement</option>
+            <option value="other">Other</option>
+          </select>
+          <select value={newTicketPriority} onChange={(e) => setNewTicketPriority(e.target.value)}>
+            <option value="low">Low Priority</option>
+            <option value="medium">Medium Priority</option>
+            <option value="high">High Priority</option>
+            <option value="urgent">Urgent Priority</option>
+          </select>
+          <input type="text" placeholder="Assign To (User ID - Optional)" value={newTicketAssignedTo} onChange={(e) => setNewTicketAssignedTo(e.target.value)} />
+          <button type="submit" disabled={ticketFormLoading}>
+            {ticketFormLoading ? "Creating..." : "Create Ticket"}
+          </button>
+        </form>
 
-      {paymentStatus && (
-        <p
-          style={{
-            marginTop: "20px",
-            color: paymentStatus.includes("SUCCESSFUL") ? "green" : (paymentStatus.includes("cancelled") || paymentStatus.includes("FAILED") ? "red" : "blue"), // Added blue for 'Verifying...'
-          }}
-        >
-          {paymentStatus}
-        </p>
-      )}
+        <hr />
 
-      <p style={{ marginTop: "30px", fontSize: "0.8em", color: "#555" }}>
-        **Note:** After clicking "Pay with Cashfree", you will be redirected to
-        the Cashfree checkout page. After completing the payment, you will be
-        redirected back to this page (or the specified return_url).
-      </p>
+        <h2>All Tickets</h2>
+        {loading && !tickets.length ? (
+          <div>Loading tickets...</div>
+        ) : tickets.length === 0 ? (
+          <p>No tickets found. Create one!</p>
+        ) : (
+          <ul style={{ listStyleType: "none", padding: 0 }}>
+            {tickets.map((t) => (
+              <li
+                key={t._id}
+                style={{
+                  padding: "10px",
+                  border: "1px solid #ccc",
+                  marginBottom: "5px",
+                  cursor: "pointer",
+                  backgroundColor: selectedTicketId === t._id ? "#e6f7ff" : "white",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+                onClick={() => setSelectedTicketId(t._id)}
+              >
+                <div>
+                  <strong>{t.title}</strong> - <small>{t.status}</small> ({t.category})
+                  <br />
+                  <small>Req: {t.requester?.name || "N/A"} | Assigned: {t.assignedTo?.name || "N/A"}</small>
+                </div>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation(); // Prevent selecting ticket when deleting
+                    handleDeleteTicket(t._id);
+                  }}
+                  style={{ background: "red", color: "white", border: "none", padding: "5px 10px", cursor: "pointer" }}
+                  disabled={loading}
+                >
+                  Delete
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* Right Panel: Selected Ticket Details & Chat */}
+      <div style={{ flex: 2, paddingLeft: "20px" }}>
+        {selectedTicket ? (
+          <>
+            <h2>Ticket Details: {selectedTicket.title}</h2>
+            <p><strong>Description:</strong> {selectedTicket.description}</p>
+            <p><strong>Status:</strong> {selectedTicket.status}</p>
+            <p><strong>Category:</strong> {selectedTicket.category}</p>
+            <p><strong>Priority:</strong> {selectedTicket.priority}</p>
+            <p><strong>Requester:</strong> {selectedTicket.requester?.name || "N/A"}</p>
+            <p><strong>Assigned To:</strong> {selectedTicket.assignedTo?.name || "N/A"}</p>
+            <p><strong>Created At:</strong> {new Date(selectedTicket.createdAt).toLocaleString()}</p>
+
+            {/* Update Status Buttons */}
+            <div style={{ marginBottom: "20px" }}>
+              <button onClick={() => handleUpdateTicketStatus("open")} disabled={ticketFormLoading || selectedTicket.status === "open"}>
+                Set Open
+              </button>
+              <button onClick={() => handleUpdateTicketStatus("in_progress")} disabled={ticketFormLoading || selectedTicket.status === "in_progress"} style={{ marginLeft: "10px" }}>
+                Set In Progress
+              </button>
+              <button onClick={() => handleUpdateTicketStatus("resolved")} disabled={ticketFormLoading || selectedTicket.status === "resolved"} style={{ marginLeft: "10px" }}>
+                Set Resolved
+              </button>
+              <button onClick={() => handleUpdateTicketStatus("closed")} disabled={ticketFormLoading || selectedTicket.status === "closed"} style={{ marginLeft: "10px" }}>
+                Set Closed
+              </button>
+              <button onClick={() => handleUpdateTicketStatus("reopened")} disabled={ticketFormLoading || selectedTicket.status === "reopened"} style={{ marginLeft: "10px" }}>
+                Set Reopened
+              </button>
+            </div>
+
+            <hr />
+            <h3>Chat Messages</h3>
+            <div
+              style={{
+                maxHeight: "400px",
+                overflowY: "auto",
+                border: "1px solid #ccc",
+                padding: "10px",
+                borderRadius: "5px",
+                marginBottom: "10px",
+                backgroundColor: "#f9f9f9",
+              }}
+            >
+              {messages.length === 0 ? (
+                <p>No messages yet. Be the first to send one!</p>
+              ) : (
+                <ul style={{ listStyleType: "none", padding: 0 }}>
+                  {messages.map((msg) => (
+                    <li
+                      key={msg._id}
+                      style={{
+                        marginBottom: "8px",
+                        padding: "8px",
+                        borderRadius: "5px",
+                        backgroundColor: msg.sender?._id === currentUserId ? "#dcf8c6" : "#e9e9eb",
+                        alignSelf: msg.sender?._id === currentUserId ? "flex-end" : "flex-start",
+                        maxWidth: "80%",
+                        wordBreak: "break-word",
+                      }}
+                    >
+                      <strong>{msg.sender?.name || "Unknown"}:</strong> {msg.message}{" "}
+                      (<small>{new Date(msg.createdAt).toLocaleString()}</small>)
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <form onSubmit={handleSendMessage} style={{ display: "flex", gap: "10px" }}>
+              <input
+                type="text"
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                placeholder="Type your message..."
+                style={{ flex: 1, padding: "10px", borderRadius: "5px", border: "1px solid #ccc" }}
+                disabled={loading}
+              />
+              <button
+                type="submit"
+                style={{ padding: "10px 20px", borderRadius: "5px", border: "none", background: "#007bff", color: "white", cursor: "pointer" }}
+                disabled={loading}
+              >
+                Send
+              </button>
+            </form>
+          </>
+        ) : (
+          <div>
+            <h3>Select a Ticket to View Details and Chat</h3>
+            <p>Click on a ticket from the left panel to see its details and participate in the chat.</p>
+          </div>
+        )}
+      </div>
     </div>
   );
-}
+};
 
 export default Test;

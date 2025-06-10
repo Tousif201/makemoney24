@@ -126,6 +126,10 @@ export default function Navbar() {
 
         {/* Desktop Nav Links */}
         <nav className="hidden sm:flex items-center space-x-8">
+
+          <NavLinkItem to="/">Products</NavLinkItem>
+
+          <NavLinkItem to="/services">Services</NavLinkItem>
           {/* Browse Dropdown Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -211,8 +215,8 @@ export default function Navbar() {
               )} */}
             </DropdownMenuContent>
           </DropdownMenu>
-
           <NavLinkItem to="/about">About</NavLinkItem>
+
           {/* Add more desktop links here if needed */}
         </nav>
 
