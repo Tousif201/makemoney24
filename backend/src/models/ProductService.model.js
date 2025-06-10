@@ -10,7 +10,7 @@ const productServiceSchema = new Schema({
   title: { type: String, required: true, trim: true },
   description: { type: String, trim: true },
   price: { type: Number, required: true, min: 0 },
-
+ isAdminApproved:{type:String,enum:["approved","pending","rejected"],default : "pending"},
   // Portfolio with media type
   portfolio: [
     {
