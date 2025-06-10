@@ -30,7 +30,7 @@ const MobileBottomNav = () => {
           <HandCoins size={24} />
         </Link>
 
-        <Link to="/help" className="p-2 text-gray-600">
+        <Link to="/dashboard/tickets" className="p-2 text-gray-600">
           <HelpCircle size={22} />
         </Link>
 

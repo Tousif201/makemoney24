@@ -83,7 +83,8 @@ export function CreateSalesRepDialog({ open, onOpenChange, onSubmit, loading, se
 
     const kycDocuments = Object.entries(documents)
       .filter(([, value]) => value.uploaded && value.url && value.key)
-      .map(([, value]) => ({
+      .map(([type, value]) => ({ // Changed here: destructure type from the entry
+        documentName: type, // Add the documentType
         url: value.url,
         key: value.key,
       }))
