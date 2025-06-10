@@ -22,7 +22,8 @@ export const createVendor = async (req, res) => {
     pincode,
     commissionRate,
     referredByCode, // For the new vendor user's referral
-    salesRepId, // NEW: ID of the existing sales representative user
+    salesRepId, // ID of the existing sales representative user
+    kycDocumentImage, // NEW: kycDocumentImage from the payload
   } = req.body;
 
   try {
@@ -62,10 +63,11 @@ export const createVendor = async (req, res) => {
       phone,
       password: hashedPassword,
       pincode,
-      isMember: false, // Vendors are typically members
+      isMember: false, // Vendors are typically not members by default
       referralCode,
       referredByCode: referredByCode || null,
       roles: ["vendor"], // Explicitly set the role to 'vendor'
+      kycDocumentImage: kycDocumentImage || [], // NEW: Assign kycDocumentImage here
     });
 
     // 1.6 If referred, link to parent and update parent's profileScore
@@ -84,7 +86,7 @@ export const createVendor = async (req, res) => {
 
     await user.save(); // Save the new user document
 
-    // --- Step 2: Handle Sales Representative Link (NEW) ---
+    // --- Step 2: Handle Sales Representative Link ---
 
     let salesRepUser = null;
     if (salesRepId) {
@@ -140,10 +142,14 @@ export const createVendor = async (req, res) => {
         email: user.email,
         roles: user.roles,
         referralCode: user.referralCode,
+        kycDocumentImage: user.kycDocumentImage, // NEW: Include kycDocumentImage in user response
       },
     });
   } catch (error) {
     console.error("Error creating vendor and user:", error);
+    // You might want to add more specific error handling here,
+    // e.g., if user creation succeeded but vendor creation failed,
+    // consider rolling back the user creation.
     res
       .status(500)
       .json({ message: "Server error during vendor and user creation" });
@@ -155,16 +161,123 @@ export const createVendor = async (req, res) => {
  * @access Private/Admin, Franchise-Admin
  */
 export const getVendors = async (req, res) => {
-  try {
-    const vendors = await Vendor.find({}).populate(
-      "userId",
-      "name email phone"
-    ); // Populate user details
-    res.status(200).json(vendors);
-  } catch (error) {
-    console.error("Error fetching vendors:", error);
-    res.status(500).json({ message: "Server error fetching vendors" });
-  }
+    try {
+        const { sortByRevenue } = req.query; // 'highToLow' or 'lowToHigh'
+
+        // 1. Initial lookup to get vendor details and their associated user details
+        let pipeline = [
+            {
+                $lookup: {
+                    from: 'users', // The collection name for your User model (usually pluralized)
+                    localField: 'userId',
+                    foreignField: '_id',
+                    as: 'userDetails'
+                }
+            },
+            {
+                $unwind: {
+                    path: '$userDetails',
+                    preserveNullAndEmptyArrays: true // Keep vendors even if no userDetails found
+                }
+            },
+            {
+                $project: {
+                    _id: 1,
+                    name: 1,
+                    pincode: 1,
+                    commissionRate: 1,
+                    createdAt: 1,
+                    updatedAt: 1,
+                    'userId': '$userDetails._id',
+                    'userName': '$userDetails.name',
+                    'userEmail': '$userDetails.email',
+                    'userPhone': '$userDetails.phone'
+                    // You can add more vendor or user fields here if needed
+                }
+            },
+            // 2. Lookup orders for each vendor
+            {
+                $lookup: {
+                    from: 'orders', // The collection name for your Order model
+                    localField: '_id',
+                    foreignField: 'vendorId',
+                    as: 'orders'
+                }
+            },
+            // 3. Unwind orders to filter and group
+            {
+                $unwind: {
+                    path: '$orders',
+                    preserveNullAndEmptyArrays: true // Keep vendors even if they have no orders
+                }
+            },
+            // 4. Filter for delivered orders and group by vendor to calculate totals
+            {
+                $group: {
+                    _id: '$_id',
+                    name: { $first: '$name' },
+                    pincode: { $first: '$pincode' },
+                    commissionRate: { $first: '$commissionRate' },
+                    createdAt: { $first: '$createdAt' },
+                    updatedAt: { $first: '$updatedAt' },
+                    userId: { $first: '$userId' },
+                    userName: { $first: '$userName' },
+                    userEmail: { $first: '$userEmail' },
+                    userPhone: { $first: '$userPhone' },
+                    totalRevenue: {
+                        $sum: {
+                            $cond: {
+                                if: { $eq: ['$orders.orderStatus', 'delivered'] },
+                                then: '$orders.totalAmount',
+                                else: 0
+                            }
+                        }
+                    },
+                    totalOrders: {
+                        $sum: {
+                            $cond: {
+                                if: { $eq: ['$orders.orderStatus', 'placed'] },
+                                then: 1, // Count 1 for each delivered order
+                                else: 0
+                            }
+                        }
+                    }
+                }
+            },
+            // 5. Project the final desired fields (optional, but good for cleanliness)
+            {
+                $project: {
+                    _id: 1,
+                    name: 1,
+                    pincode: 1,
+                    commissionRate: 1,
+                    createdAt: 1,
+                    updatedAt: 1,
+                    userId: 1,
+                    userName: 1,
+                    userEmail: 1,
+                    userPhone: 1,
+                    totalRevenue: 1,
+                    totalOrders: 1
+                }
+            }
+        ];
+
+        // 6. Apply sorting based on sortByRevenue query parameter
+        if (sortByRevenue === 'lowToHigh') {
+            pipeline.push({ $sort: { totalRevenue: 1 } }); // Ascending
+        } else {
+            pipeline.push({ $sort: { totalRevenue: -1 } }); // Default: Descending
+        }
+
+        const vendorsWithStats = await Vendor.aggregate(pipeline);
+
+        res.status(200).json(vendorsWithStats);
+
+    } catch (error) {
+        console.error("Error fetching vendors with analytics:", error);
+        res.status(500).json({ message: "Server error fetching vendors with analytics" });
+    }
 };
 
 /**

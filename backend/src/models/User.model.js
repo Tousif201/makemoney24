@@ -32,7 +32,7 @@ const userSchema = new Schema(
     kycDocumentImage:[{
       url:{type:String},
       key:{type:String},
-      // documentType :{type :String}
+      documentName :{type :String}
     }],
 
     // Wallets for purchases and withdrawals

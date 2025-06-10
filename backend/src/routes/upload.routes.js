@@ -16,14 +16,15 @@ const upload = multer({
     files: 5, // Max 5 files per upload request
   },
   fileFilter: (req, file, cb) => {
-    // Accept images and videos only
+    // Accept images, videos, and PDFs
     if (
       file.mimetype.startsWith("image/") ||
-      file.mimetype.startsWith("video/")
+      file.mimetype.startsWith("video/") ||
+      file.mimetype === "application/pdf"
     ) {
       cb(null, true);
     } else {
-      cb(new Error("Only image and video files are allowed!"), false);
+      cb(new Error("Only image, video, and PDF files are allowed!"), false);
     }
   },
 });

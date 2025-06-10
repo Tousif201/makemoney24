@@ -12,14 +12,17 @@ import { generateUniqueReferralCode } from "../utils/referralGenerator.js";
 export const createFranchise = async (req, res) => {
   const {
     franchiseName,
-    location,
-    ownerName, // Name for the new franchise-admin user
-    ownerEmail, // Email for the new franchise-admin user
+    location,      // This is the location string for the franchise
+    address,       // NEW: Specific address for the franchise
+    franchisePincode, // NEW: Pincode specific to the franchise
+    ownerName,
+    ownerEmail,
     ownerPhone,
     ownerPassword,
-    ownerPincode, // Pincode for the new franchise-admin user
-    referredByCode, // For the new franchise-admin user's referral
-    salesRepId, // NEW: ID of the sales representative associating with this franchise
+    ownerPincode,  // Pincode for the franchise-admin user
+    referredByCode,
+    salesRepId,
+    kycDocumentImage, // NEW: kycDocumentImage for the ownerUser
   } = req.body;
 
   try {
@@ -29,6 +32,8 @@ export const createFranchise = async (req, res) => {
     if (
       !franchiseName ||
       !location ||
+      !address || // Added address validation
+      !franchisePincode || // Added franchisePincode validation
       !ownerName ||
       !ownerEmail ||
       !ownerPassword ||
@@ -36,7 +41,7 @@ export const createFranchise = async (req, res) => {
     ) {
       return res.status(400).json({
         message:
-          "Franchise name, location, owner name, email, password, and pincode are required for the new franchise.",
+          "Franchise name, location, address, franchise pincode, owner name, email, password, and owner pincode are required for the new franchise.",
       });
     }
 
@@ -61,12 +66,13 @@ export const createFranchise = async (req, res) => {
       email: ownerEmail,
       phone: ownerPhone,
       password: hashedPassword,
-      pincode: ownerPincode,
-      otp: { verified: true },
-      isMember: false, // Franchise admins are typically not regular members
+      pincode: ownerPincode, // This is the owner's personal pincode
+      otp: { verified: true }, // Assuming OTP is verified for franchise admins
+      isMember: false,
       referralCode,
       referredByCode: referredByCode || null,
-      roles: ["franchise-admin"], // Explicitly set the role to 'franchise-admin'
+      roles: ["franchise-admin"],
+      kycDocumentImage: kycDocumentImage || [], // NEW: Assign kycDocumentImage here
     });
 
     // 1.6 If referred, link to parent and update parent's profileScore
@@ -74,7 +80,7 @@ export const createFranchise = async (req, res) => {
       const parentUser = await User.findOne({ referralCode: referredByCode });
       if (parentUser) {
         ownerUser.parent = parentUser._id;
-        parentUser.profileScore += 10; // Example: Increment parent's profile score for referral
+        parentUser.profileScore += 10;
         await parentUser.save();
       } else {
         console.warn(
@@ -85,15 +91,17 @@ export const createFranchise = async (req, res) => {
 
     await ownerUser.save(); // Save the new user document
 
-    // --- Step 2: Handle Sales Representative Link (NEW) ---
+    // --- Step 2: Handle Sales Representative Link ---
 
     let salesRepUser = null;
     if (salesRepId) {
+      if (!mongoose.Types.ObjectId.isValid(salesRepId)) {
+        await User.findByIdAndDelete(ownerUser._id); // Rollback user creation
+        return res.status(400).json({ message: "Invalid sales representative ID format." });
+      }
       salesRepUser = await User.findById(salesRepId);
-      // Optional: Add a check to ensure salesRepUser actually has the 'sales-rep' role
       if (!salesRepUser || !salesRepUser.roles.includes("sales-rep")) {
-        // Rollback user creation if salesRepId is invalid/not a sales rep
-        await User.findByIdAndDelete(ownerUser._id);
+        await User.findByIdAndDelete(ownerUser._id); // Rollback user creation
         return res.status(400).json({
           message:
             "Invalid sales representative ID or user is not a sales rep. User creation rolled back.",
@@ -106,8 +114,6 @@ export const createFranchise = async (req, res) => {
     // 3.1 Check if a franchise with this name already exists
     const existingFranchise = await Franchise.findOne({ franchiseName });
     if (existingFranchise) {
-      // If franchise name exists, consider rolling back the user creation or handling differently.
-      // For now, we'll return an error.
       await User.findByIdAndDelete(ownerUser._id); // Rollback user creation
       return res.status(400).json({
         message:
@@ -119,10 +125,12 @@ export const createFranchise = async (req, res) => {
     const franchise = new Franchise({
       franchiseName: franchiseName,
       location: location,
+      address: address, // NEW: Assign address to the franchise
+      pincode: franchisePincode, // NEW: Assign franchisePincode to the franchise
       ownerId: ownerUser._id, // Link to the newly created user (franchise admin)
       vendors: [], // Initially empty
       users: [], // Initially empty
-      salesRep: salesRepUser ? salesRepUser._id : null, // Assign sales rep if found
+      salesRep: salesRepUser ? salesRepUser._id : null,
     });
 
     await franchise.save(); // Save the new franchise document
@@ -133,26 +141,27 @@ export const createFranchise = async (req, res) => {
         _id: franchise._id,
         franchiseName: franchise.franchiseName,
         location: franchise.location,
+        address: franchise.address,     // Include address in response
+        pincode: franchise.pincode,     // Include franchise pincode in response
         ownerId: franchise.ownerId,
-        salesRep: franchise.salesRep, // Include salesRep in the response
+        salesRep: franchise.salesRep,
       },
       ownerUser: {
         _id: ownerUser._id,
         email: ownerUser.email,
         roles: ownerUser.roles,
         referralCode: ownerUser.referralCode,
+        kycDocumentImage: ownerUser.kycDocumentImage, // Include kycDocumentImage in ownerUser response
       },
     });
   } catch (error) {
     console.error("Error creating franchise and owner user:", error);
-    // If an error occurs after user creation but before franchise creation,
-    // you might want to consider rolling back the user creation to prevent orphaned users.
-    // However, for more robust handling, consider transactions.
     res
       .status(500)
       .json({ message: "Server error during franchise and user creation" });
   }
 };
+
 
 /**
  * @desc Get all franchises based on sales representative ID
