@@ -115,7 +115,7 @@ export default function MembershipPage() {
 
   // This QR code should encode the payment request (e.g., UPI QR code).
   const qrCodeImageUrl = "/scanner.jpeg";
-  const whatsappNumber = "+918237301130"; // Replace with your actual WhatsApp number
+  const whatsappNumber = "+919545827264"; // Replace with your actual WhatsApp number
 
   // permanent needs cashfree integration
   // if (!isMember) {

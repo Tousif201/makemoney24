@@ -109,6 +109,7 @@ export const getAdminDashboard = async (page = 1, limit = 10, search = "") => {
 export const upgradeUser = async (userId, data) => {
   try {
     const response = await apiClient.post(`/upgrade/${userId}`, data);
+    console.log("response of upgrade user api",response)
     return response.data;
   } catch (error) {
     console.error(

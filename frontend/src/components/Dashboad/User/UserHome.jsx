@@ -9,7 +9,8 @@ import {
   UserPlus,
   Users,
   Wallet,
-  Star, // Imported Star icon
+  Star,
+  BadgeIndianRupee, // Imported Star icon
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -169,20 +170,27 @@ export default function UserHome() {
           </div>
         </div>
         {/* Updated Profile Score Section */}
-        <div className="flex items-center space-x-2 p-2 bg-purple-50 rounded-lg shadow-sm">
-          <Star className="h-5 w-5 text-purple-600" />{" "}
-          {/* Icon for Profile Score */}
-          <div>
-            <p className="text-sm font-medium text-gray-700">Profile Score</p>
-            <span className="text-xl font-bold text-purple-800">
+        <div className="relative flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg bg-gradient-to-r from-yellow-100 via-white to-yellow-50 border border-yellow-200 backdrop-blur-md transition-transform duration-300 hover:scale-105 group">
+          <BadgeIndianRupee className="h-6 w-6 text-yellow-600 animate-bounce group-hover:animate-none" />
+
+          <div className="flex flex-col">
+            <p className="text-sm font-semibold text-gray-800 tracking-wide">
+              Salary Score
+            </p>
+            <span className="text-2xl font-extrabold text-yellow-700">
               {user.profileScore}
             </span>
+          </div>
+
+          {/* Optional Tooltip for clarity */}
+          <div className="absolute top-0 right-0 -mt-2 -mr-2 bg-yellow-500 text-white text-xs px-2 py-0.5 rounded-full shadow-md">
+            New!
           </div>
         </div>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 md:grid-cols-2 lg:grid-cols-4">
         {defaultStats.map(
           (
             stat // Use defaultStats which now contains dynamic data
@@ -254,7 +262,7 @@ export default function UserHome() {
           </CardHeader>
           <CardContent>
             {analyticsData?.recentReffrals &&
-            analyticsData.recentReffrals.length > 0 ? (
+              analyticsData.recentReffrals.length > 0 ? (
               <div className="space-y-3">
                 {analyticsData.recentReffrals.map((referral) => (
                   <div
@@ -294,7 +302,7 @@ export default function UserHome() {
           </CardHeader>
           <CardContent>
             {analyticsData?.recentTransaction &&
-            analyticsData.recentTransaction.length > 0 ? (
+              analyticsData.recentTransaction.length > 0 ? (
               <div className="space-y-3">
                 {analyticsData.recentTransaction.map((transaction, index) => (
                   <div
@@ -308,11 +316,10 @@ export default function UserHome() {
                       <p className="text-sm ">{transaction.date}</p>
                     </div>
                     <span
-                      className={`font-medium ${
-                        transaction.amount < 0 // Check if amount is negative
+                      className={`font-medium ${transaction.amount < 0 // Check if amount is negative
                           ? "text-red-600"
                           : "text-green-600"
-                      }`}
+                        }`}
                     >
                       {transaction.amount < 0
                         ? `-₹${Math.abs(transaction.amount).toLocaleString()}`

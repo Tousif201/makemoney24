@@ -1,6 +1,6 @@
 import React from "react";
 import { Card } from "@/components/ui/card";
-import backImg from "../assets/cashback/card12.png";
+import backImg from "../assets/cashback/cardback.png";
 import logo from "../assets/makemoney.png";
 
 const CashbackCardBack = ({
@@ -37,14 +37,14 @@ const CashbackCardBack = ({
             <span className="text-sm xs:text-base">📞</span> 
             <span className="break-all">{phone}</span>
           </p>
-          <p className="flex items-center gap-2">
-            <span className="text-sm xs:text-base">📧</span> 
-            <span className="break-all">{email}</span>
+          <p className="flex items-center ">
+            <span className="text-[10px] md:text-sm xs:text-base">📧</span> 
+            <span className="break-all text-[10px] md:text-sm">{email}</span>
           </p>
         </div>
 
         {/* Notes Section */}
-        <div className="text-xs xs:text-xs sm:text-sm md:text-sm  xs:mt-3 sm:mt-4 space-y-1 xs:space-y-2 text-gray-100 ">
+        <div className="text-[8px] mt-2 xs:text-xs sm:text-[5px] md:text-sm  xs:mt-3 sm:mt-4 space-y-1 xs:space-y-2 text-gray-100 ">
           {notes.map((note, index) => (
             <p key={index} className="leading-tight ">
               <span className="font-semibold">{index + 1}.</span> {note}

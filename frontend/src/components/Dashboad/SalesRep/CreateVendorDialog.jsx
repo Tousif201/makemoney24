@@ -28,7 +28,7 @@ export function CreateVendorDialog({ children }) {
   });
 
   const { session } = useSession(); // Assuming you have access to session
-  const salesRepId = session?.id; // This should be the _id of logged-in user
+  const salesRepId = session?._id; // This should be the _id of logged-in user
 
   const handleSubmit = async (e) => {
     e.preventDefault();

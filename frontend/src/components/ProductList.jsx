@@ -49,7 +49,7 @@ const ProductList = () => {
 
   if (loading) {
     return (
-      <section className="bg-white sm:py-16 md:py-20">
+      <section className="bg-white py-0 sm:py-16 md:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-4xl sm:text-5xl font-extrabold text-gray-900 text-center mb-12">
             Featured Products
@@ -96,7 +96,7 @@ const ProductList = () => {
   }
 
   return (
-    <section className="bg-white py-12 sm:py-16 md:py-20">
+    <section className="bg-white  sm:py-16 md:py-20">
       <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
         <h2 className="text-4xl sm:text-5xl font-extrabold text-gray-900 text-center mb-12">
           Featured Products
@@ -123,7 +123,7 @@ const ProductList = () => {
         <div className="mt-12 text-center">
           <Link
             to="/browse"
-            className="inline-flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-full text-white bg-indigo-600 hover:bg-indigo-700 md:py-4 md:px-10 text-lg shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105"
+            className="inline-flex items-center justify-center px-8 py-3 border border-transparent  font-medium rounded-full text-white bg-indigo-600 hover:bg-indigo-700 md:py-4 md:px-10 text-lg shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105"
           >
             See All Products
             <svg
