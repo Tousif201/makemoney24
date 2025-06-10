@@ -8,7 +8,8 @@ const membershipPackagesSchema = new Schema({
   
   validityInDays:{type: Number,required:false},
   description: { type: String }, 
-  amount: { type: Number, required: true }, },{
+  packageAmount: { type: Number, required: true },
+  miscellaneousAmount: { type: Number, required: true }, },{
   timestamps: true // <--- ADD THIS LINE
 });
 

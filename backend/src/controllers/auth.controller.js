@@ -351,6 +351,7 @@ export const getUserProfile = async (req, res) => {
         withdrawableWallet: user.withdrawableWallet,
         referralCode: user.referralCode,
         referredByCode: user.referredByCode,
+        profileImage: user.profileImage.url,
         roles: user.roles,
         accountStatus: user.accountStatus,
       });

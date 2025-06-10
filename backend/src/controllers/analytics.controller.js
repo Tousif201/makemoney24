@@ -729,114 +729,190 @@ export const getAdminHomeAnalytics = async (req, res) => {
  * @param {Object} req - Express request object (expects userId in params)
  * @param {Object} res - Express response object
  */
+// const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
+
 export const getUserHomeAnalytics = async (req, res) => {
-  const { userId } = req.params; // Get userId from URL parameters
+  const { userId } = req.params;
 
-  // Input Validation
-  if (!userId) {
+  if (!userId || !isValidObjectId(userId)) {
     return res.status(400).json({
       success: false,
-      message: "User ID is required as a URL parameter.",
-    });
-  }
-
-  if (!isValidObjectId(userId)) {
-    return res.status(400).json({
-      success: false,
-      message: "Invalid User ID format.",
+      message: "A valid User ID is required.",
     });
   }
 
   try {
     const objectUserId = new mongoose.Types.ObjectId(userId);
 
-    // 1. Fetch User Data (for walletBalance and referralCode if needed)
-    const user = await User.findById(objectUserId)
-      .select("withdrawableWallet purchaseWallet referralCode name")
-      .lean();
+    // Define date ranges for the queries
+    const now = new Date();
+    const todayStart = new Date(new Date(now).setHours(0, 0, 0, 0));
+    const weekStart = new Date(new Date().setDate(now.getDate() - 7));
+    const monthStart = new Date(new Date().setDate(now.getDate() - 30));
+
+    // Run all database queries in parallel for best performance
+    const [
+      user,
+      referralStats,
+      levelIncomeStats,
+      totalWithdrawalResult,
+      totalOrdersCount,
+      recentReferrals,
+      recentTransactions,
+    ] = await Promise.all([
+      // Get basic user info (wallets)
+      User.findById(objectUserId)
+        .select("withdrawableWallet purchaseWallet")
+        .lean(),
+
+      // 1. Aggregate new referral members by time periods
+      User.aggregate([
+        {
+          $match: {
+            parent: objectUserId,
+            isMember: true,
+          },
+        },
+        {
+          $facet: {
+            today: [
+              { $match: { joinedAt: { $gte: todayStart } } },
+              { $count: "count" },
+            ],
+            thisWeek: [
+              { $match: { joinedAt: { $gte: weekStart } } },
+              { $count: "count" },
+            ],
+            thisMonth: [
+              { $match: { joinedAt: { $gte: monthStart } } },
+              { $count: "count" },
+            ],
+            total: [{ $count: "count" }],
+          },
+        },
+      ]),
+
+      // 2. Aggregate level income by time periods
+      RewardLog.aggregate([
+        {
+          $match: {
+            userId: objectUserId,
+            type: "ReferralLevelReward",
+          },
+        },
+        {
+          $facet: {
+            today: [
+              { $match: { createdAt: { $gte: todayStart } } },
+              { $group: { _id: null, total: { $sum: "$amount" } } },
+            ],
+            thisWeek: [
+              { $match: { createdAt: { $gte: weekStart } } },
+              { $group: { _id: null, total: { $sum: "$amount" } } },
+            ],
+            thisMonth: [
+              { $match: { createdAt: { $gte: monthStart } } },
+              { $group: { _id: null, total: { $sum: "$amount" } } },
+            ],
+            total: [
+              { $group: { _id: null, total: { $sum: "$amount" } } },
+            ],
+          },
+        },
+      ]),
+
+      // 3. Calculate total withdrawal
+      Transaction.aggregate([
+        {
+          $match: {
+            userId: objectUserId,
+            transactionType: "withdrawal",
+            status: "success",
+          },
+        },
+        { $group: { _id: null, total: { $sum: "$amount" } } },
+      ]),
+
+      // Other general stats
+      Order.countDocuments({ userId: objectUserId }),
+      User.find({ parent: objectUserId, isMember: true })
+        .sort({ joinedAt: -1 })
+        .limit(3)
+        .select("name joinedAt")
+        .lean(),
+      Transaction.find({ userId: objectUserId })
+        .sort({ createdAt: -1 })
+        .limit(3)
+        .select("transactionType amount status createdAt txnId")
+        .lean(),
+    ]);
 
     if (!user) {
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found." });
+      return res.status(404).json({ success: false, message: "User not found." });
     }
 
-    // 2. Calculate Total Level Earning (from RewardLog)
-    const [levelEarnings] = await RewardLog.aggregate([
-      {
-        $match: {
-          userId: objectUserId,
-          type: "ReferralLevelReward",
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          total: { $sum: "$amount" },
-        },
-      },
-    ]);
-    const totalLevelEarning = levelEarnings ? levelEarnings.total : 0;
+    // --- Safely extract the new aggregated data ---
+    const referralData = referralStats[0];
+    const incomeData = levelIncomeStats[0];
+    
+    const referralCounts = {
+      today: referralData.today[0]?.count || 0,
+      thisWeek: referralData.thisWeek[0]?.count || 0,
+      thisMonth: referralData.thisMonth[0]?.count || 0,
+      total: referralData.total[0]?.count || 0,
+    };
 
-    // 3. Count Active Referrals (direct referrals who are members)
-    const activeReferralsCount = await User.countDocuments({
-      parent: objectUserId,
-      isMember: true,
-    });
+    // This object holds the calculated level income.
+    const levelIncome = {
+      today: incomeData.today[0]?.total || 0,
+      thisWeek: incomeData.thisWeek[0]?.total || 0,
+      thisMonth: incomeData.thisMonth[0]?.total || 0,
+      total: incomeData.total[0]?.total || 0,
+    };
 
-    // 4. Count Total Orders
-    const totalOrdersCount = await Order.countDocuments({
-      userId: objectUserId,
-    });
+    const totalWithdrawal = totalWithdrawalResult[0]?.total || 0;
 
-    // 5. Fetch Recent Referrals (top 3 direct referrals who are members)
-    const recentReferrals = await User.find({
-      parent: objectUserId,
-      isMember: true,
-    })
-      .sort({ joinedAt: -1 }) // Sort by most recent join date
-      .limit(3)
-      .select("name joinedAt") // Select only necessary fields
-      .lean(); // Get plain JavaScript objects
-
-    // 6. Fetch Recent Transactions (top 3 user transactions)
-    const recentTransactions = await Transaction.find({
-      userId: objectUserId,
-    })
-      .sort({ createdAt: -1 }) // Sort by most recent transaction
-      .limit(3)
-      .select("transactionType amount status createdAt txnId") // Select relevant fields
-      .lean(); // Get plain JavaScript objects
-
+    // --- Final JSON Response (with updated field names) ---
     res.status(200).json({
       success: true,
-      totalLevelEarning: totalLevelEarning,
-      activeReffrals: activeReferralsCount,
-      walletBalance: user.withdrawableWallet, // Using withdrawableWallet as "walletBalance"
-      purchaseWalletBalance: user.purchaseWallet, // Including purchaseWallet as well for clarity
+      
+      // Current wallet balances
+      withdrawableWallet: user.withdrawableWallet,
+      purchaseWallet: user.purchaseWallet,
+
+      // Renamed earnings fields as requested
+      todayEarning: levelIncome.today,
+      weeklyEarning: levelIncome.thisWeek,
+      monthlyEarning: levelIncome.thisMonth,
+      totalEarning: levelIncome.total,
+
+      // New referral join counts
+      referralJoins: referralCounts,
+      
+      // Existing withdrawal and order stats
+      totalWithdrawal: totalWithdrawal,
       totalOrders: totalOrdersCount,
-      recentReffrals: recentReferrals.map((ref) => ({
+      
+      // Recent activity
+      recentReferrals: recentReferrals.map((ref) => ({
         name: ref.name,
-        joinDate: ref.joinedAt
-          ? ref.joinedAt.toISOString().split("T")[0]
-          : "N/A", // Format date
+        joinDate: ref.joinedAt?.toISOString().split("T")[0] || "N/A",
       })),
-      recentTransaction: recentTransactions.map((txn) => ({
+      recentTransactions: recentTransactions.map((txn) => ({
         type: txn.transactionType,
         amount: txn.amount,
         status: txn.status,
-        date: txn.createdAt ? txn.createdAt.toISOString().split("T")[0] : "N/A", // Format date
+        date: txn.createdAt?.toISOString().split("T")[0] || "N/A",
         txnId: txn.txnId,
       })),
     });
+
   } catch (error) {
     console.error("Error fetching user home analytics:", error);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Internal server error.",
-        error: error.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Internal server error.",
+      error: error.message,
+    });
   }
 };

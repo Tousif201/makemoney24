@@ -25,6 +25,15 @@ const userSchema = new Schema(
     },
 
     profileScore: { type: Number, default: 0 },
+    profileImage :{
+      url:{type: String,} ,// URL of the profile image
+      key:{type: String,} ,// URL of the profile image
+    },
+    kycDocumentImage:[{
+      url:{type:String},
+      key:{type:String},
+      // documentType :{type :String}
+    }],
 
     // Wallets for purchases and withdrawals
     purchaseWallet: { type: Number, default: 0 },

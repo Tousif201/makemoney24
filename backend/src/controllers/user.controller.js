@@ -212,30 +212,38 @@ export const upgradeUser = async (req, res) => {
       .session(session);
     if (!membershipPackage) throw new Error("Membership package not found.");
 
+    // --- 2.a Validate total amount matches package + misc ---
+    const expectedTotal = membershipPackage.packageAmount + membershipPackage.miscellaneousAmount;
+    if (membershipAmount !== expectedTotal) {
+      return res
+        .status(400)
+        .json({ success: false, message: "membershipAmount must equal packageAmount + miscellaneousAmount." });
+    }
+
     // --- 3. Upgrade user flag ---
     user.isMember = true;
     await user.save({ session });
 
     // --- 4. Record transaction ---
     const newTransaction = new Transaction({
-      userId:      user._id,
-      transactionType: "purchase",
-      amount:      membershipAmount,
-      description: `Membership purchase for ${user.email}`,
-      status:      "success",
-      cashFreeOrderId: cashFreeOrderId || "Manual_Enrollment",
+      userId:            user._id,
+      transactionType:   "purchase",
+      amount:            membershipAmount,
+      description:       `Membership purchase for ${user.email}`,
+      status:            "success",
+      cashFreeOrderId:   cashFreeOrderId || "Manual_Enrollment",
     });
     await newTransaction.save({ session });
 
     // --- 5. Create membership with expiry ---
     const purchasedAt = new Date();
     const expiredAt = membershipPackage.validityInDays
-      ? new Date(purchasedAt.getTime() + membershipPackage.validityInDays * 24*60*60*1000)
+      ? new Date(purchasedAt.getTime() + membershipPackage.validityInDays * 24 * 60 * 60 * 1000)
       : null;
 
     const newMembership = new Membership({
       userId:              user._id,
-      amountPaid:          membershipAmount,
+      amountPaid:          membershipPackage.packageAmount,  // only packageAmount
       transactionId:       newTransaction._id,
       membershipPackageId: membershipPackage._id,
       purchasedAt,
@@ -243,12 +251,12 @@ export const upgradeUser = async (req, res) => {
     });
     await newMembership.save({ session });
 
-    // --- 6. Distribute referral commissions ---
+    // --- 6. Distribute referral commissions on packageAmount ---
     const levels = [
       { pct: 0.30 }, // Level 1: 30%
       { pct: 0.10 }, // Level 2: 10%
-      { pct: 0.025}, // Level 3: 2.5%
-      { pct: 0.025}  // Level 4: 2.5%
+      { pct: 0.025 },// Level 3: 2.5%
+      { pct: 0.025 } // Level 4: 2.5%
     ];
     let currentParentId = user.parent;
 
@@ -256,8 +264,9 @@ export const upgradeUser = async (req, res) => {
       const parentUser = await User.findById(currentParentId).session(session);
       if (!parentUser) break;
 
-      const commission = membershipAmount * levels[i].pct;
+      const commission = membershipPackage.packageAmount * levels[i].pct;
       parentUser.withdrawableWallet = (parentUser.withdrawableWallet || 0) + commission;
+      parentUser.profileScore  += 20
       await parentUser.save({ session });
 
       currentParentId = parentUser.parent;
@@ -271,9 +280,9 @@ export const upgradeUser = async (req, res) => {
       success: true,
       message: "User upgraded and commissions distributed.",
       user: {
-        id:     user._id,
-        name:   user.name,
-        email:  user.email,
+        id:       user._id,
+        name:     user.name,
+        email:    user.email,
         isMember: user.isMember,
       },
       transactionId: newTransaction._id,
@@ -289,6 +298,7 @@ export const upgradeUser = async (req, res) => {
     });
   }
 };
+
 
 /**
  * @desc Updates a user's account status to a specified value ("active" or "suspended").
@@ -347,3 +357,30 @@ export const updateAccountStatus = async (req, res) => {
     });
   }
 };
+
+
+export const uploadProfileImage = async (req,res)=>{
+  try {
+    
+const {userId, profileImage} = req.body;
+const user = await User.findById(userId);
+if(!user){
+  return res.status(404).json({message:"User not fount",success :false})
+}
+user.profileImage.key = profileImage.key;
+user.profileImage.url = profileImage.url;
+await user.save();
+
+res.status(200).json({
+  success: true,
+  message: "Profile image uploaded successfully.",
+  profileImage: user.profileImage
+})
+  } catch (error) {
+    console.error("Error uploading profile imaage :",error);
+    res.status(500).json({
+      success:false,
+      message :`An error occured while uploading profile image :${error.message}`
+    })
+  }
+}

@@ -1,4 +1,5 @@
 import { MembershipPackages } from "../models/MembershipPackages.model.js";
+import { Membership} from "../models/Membership.model.js";
 
 /**
  * @desc    Create a new membership package
@@ -7,7 +8,7 @@ import { MembershipPackages } from "../models/MembershipPackages.model.js";
  */
 export const createMembershipPackage = async (req, res) => {
   try {
-    const { name, validityInDays, description, amount } = req.body;
+    const { name, validityInDays, description, packageAmount,miscellaneousAmount } = req.body;
 
     const existing = await MembershipPackages.findOne({ name });
     if (existing) {
@@ -18,7 +19,8 @@ export const createMembershipPackage = async (req, res) => {
       name,
       validityInDays,
       description,
-      amount,
+      packageAmount,
+      miscellaneousAmount
     });
 
     await newPackage.save();
@@ -35,39 +37,48 @@ export const createMembershipPackage = async (req, res) => {
  * @desc    Get all membership packages with total users enrolled & total amount collected
  * @route   GET /api/membership-packages/stats
  * @access  Public / Admin
- */
-export const getMembershipPackagesWithStats = async (req, res) => {
+ */export const getMembershipPackagesWithStats = async (req, res) => {
   try {
     const packages = await MembershipPackages.find();
 
+    // Get stats only for valid package references (non-null)
     const stats = await Membership.aggregate([
+      {
+        $match: {
+          membershipPackageId: { $exists: true, $ne: null },
+        },
+      },
       {
         $group: {
           _id: "$membershipPackageId",
           totalUsers: { $sum: 1 },
-          totalAmount: { $sum: "$amountPaid" }
-        }
-      }
+          totalAmount: { $sum: "$amountPaid" },
+        },
+      },
     ]);
 
-    // Convert stats array to a map for fast lookup
     const statsMap = {};
     stats.forEach(stat => {
       statsMap[stat._id.toString()] = stat;
     });
 
-    // Merge stats with package data
+    // Merge stats into the package data
     const result = packages.map(pkg => {
-      const stat = statsMap[pkg._id.toString()] || { totalUsers: 0, totalAmount: 0 };
+      const stat = statsMap[pkg._id.toString()] || {
+        totalUsers: 0,
+        totalAmount: 0,
+      };
 
       return {
         _id: pkg._id,
         name: pkg.name,
-        amount: pkg.amount,
+        packageAmount: pkg.packageAmount,
         validityInDays: pkg.validityInDays,
         createdAt: pkg.createdAt,
+        description:pkg.description,
+        miscellaneousAmount: pkg.miscellaneousAmount,
         totalUsersEnrolled: stat.totalUsers,
-        totalAmountCollected: stat.totalAmount
+        totalAmountCollected: stat.totalAmount,
       };
     });
 
@@ -86,7 +97,7 @@ export const getMembershipPackagesWithStats = async (req, res) => {
  */
 export const updateMembershipPackage = async (req, res) => {
   try {
-    const packageId = req.params.id;
+    const packageId = req.params.packageId;
 
     const updated = await MembershipPackages.findByIdAndUpdate(packageId, req.body, {
       new: true,
@@ -98,6 +109,7 @@ export const updateMembershipPackage = async (req, res) => {
 
     res.json({ message: "Package updated successfully", data: updated });
   } catch (error) {
+    console.error("Error updating membership package:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };

@@ -18,7 +18,7 @@ router.post("/create", createMembershipPackage);
  * @route PUT /api/membership-packages/update/:id
  * @desc  Update an existing membership package
  */
-router.put("/update/:id", updateMembershipPackage);
+router.put("/update/:packageId", updateMembershipPackage);
 
 /**
  * @route DELETE /api/membership-packages/delete/:id
