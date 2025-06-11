@@ -27,6 +27,8 @@ export function CreateFranchiseDialog({ children }) {
     ownerPhone: "",
     ownerPassword: "",
     ownerPincode: "",
+    // --- NEW: Add address field to formData ---
+    ownerAddress: "",
     referredByCode: "",
   });
 
@@ -58,6 +60,10 @@ export function CreateFranchiseDialog({ children }) {
       if (!aadhaarFile || !panFile) {
         throw new Error("Aadhaar and PAN documents are mandatory.");
       }
+      // --- NEW: Add validation for ownerAddress ---
+      if (!formData.ownerAddress.trim()) {
+        throw new Error("Owner Address is mandatory.");
+      }
 
       // --- 2. Collect all files for upload ---
       const filesToUpload = [];
@@ -76,10 +82,7 @@ export function CreateFranchiseDialog({ children }) {
       if (filesToUpload.length > 0) {
         const uploadResult = await uploadFiles(filesToUpload);
         // Assuming uploadFiles returns an array of { key, url, type }
-        if (
-          uploadResult &&
-          uploadResult.length > 0
-        ) {
+        if (uploadResult && uploadResult.length > 0) {
           uploadedDocuments = uploadResult.map((uploadedFile) => ({
             key: uploadedFile.key,
             url: uploadedFile.url,
@@ -107,7 +110,9 @@ export function CreateFranchiseDialog({ children }) {
       const payload = {
         ...formData,
         salesRepId,
-        kycDocuments: uploadedDocuments, // Attach the uploaded documents
+        kycDocuments: uploadedDocuments,
+        address: formData.ownerAddress,
+        franchisePincode:formData.ownerPincode // Attach the uploaded documents
       };
 
       // --- 4. Create the franchise ---
@@ -125,6 +130,8 @@ export function CreateFranchiseDialog({ children }) {
         ownerPhone: "",
         ownerPassword: "",
         ownerPincode: "",
+        // --- NEW: Reset ownerAddress ---
+        ownerAddress: "",
         referredByCode: "",
       });
       setAadhaarFile(null);
@@ -258,6 +265,25 @@ export function CreateFranchiseDialog({ children }) {
                 />
               </div>
             </div>
+
+            {/* --- NEW: Owner Address Field --- */}
+            <div className="grid gap-2">
+              <Label htmlFor="ownerAddress">
+                Owner Address <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="ownerAddress"
+                value={formData.ownerAddress}
+                onChange={(e) =>
+                  setFormData({ ...formData, ownerAddress: e.target.value })
+                }
+                placeholder="Enter full address"
+                required // Make mandatory
+                disabled={isSubmitting}
+              />
+            </div>
+            {/* --- END NEW: Owner Address Field --- */}
+
             <div className="grid gap-2">
               <Label htmlFor="franchise-location">
                 Location <span className="text-red-500">*</span>
