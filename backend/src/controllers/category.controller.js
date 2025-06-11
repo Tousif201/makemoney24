@@ -17,7 +17,8 @@ const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
  */
 export const createCategory = async (req, res) => {
   try {
-    const { name, description, type, parentId } = req.body; // Added parentId
+    // Destructure image field from req.body
+    const { name, description, type, parentId, image } = req.body;
 
     // Basic validation
     if (!name || !type) {
@@ -42,7 +43,7 @@ export const createCategory = async (req, res) => {
       }
       // Optional: Ensure child category type matches parent category type or is consistent
       if (parentCategory.type !== type) {
-          return res.status(400).json({ message: "Subcategory type must match parent category type." });
+        return res.status(400).json({ message: "Subcategory type must match parent category type." });
       }
     }
 
@@ -64,6 +65,7 @@ export const createCategory = async (req, res) => {
       description,
       type,
       parentId: parentId || null, // Save parentId as null if not provided
+      image: image || {}, // Assign the image object, default to empty if not provided
     });
 
     const savedCategory = await newCategory.save();
@@ -144,7 +146,8 @@ export const getCategoryById = async (req, res) => {
 export const updateCategory = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, description, type, parentId } = req.body; // Added parentId
+    // Destructure image field from req.body
+    const { name, description, type, parentId, image } = req.body;
 
     if (!isValidObjectId(id)) {
       return res.status(400).json({ message: "Invalid Category ID format." });
@@ -182,12 +185,20 @@ export const updateCategory = async (req, res) => {
         }
         // Optional: Ensure child category type matches new parent category type or is consistent
         if (newParentCategory.type !== (type || categoryToUpdate.type)) {
-            return res.status(400).json({ message: "Subcategory type must match parent category type." });
+          return res.status(400).json({ message: "Subcategory type must match parent category type." });
         }
         updateFields.parentId = parentId;
       } else {
         return res.status(400).json({ message: "Invalid parentId format." });
       }
+    }
+    // Add image field to updateFields if present in req.body
+    if (image !== undefined) {
+      // Ensure image is an object with url and key, even if one is missing
+      updateFields.image = {
+        url: image.url || "",
+        key: image.key || ""
+      };
     }
 
 
@@ -213,15 +224,15 @@ export const updateCategory = async (req, res) => {
 
     // Prevent moving a parent category under one of its own subcategories
     if (parentId && parentId.toString() !== categoryToUpdate.parentId?.toString()) {
-        let currentParent = parentId;
-        // Recursively check if the new parentId is a descendant of the category being updated
-        while (currentParent) {
-            if (currentParent.toString() === id.toString()) {
-                return res.status(400).json({ message: "Cannot move a category under its own descendant." });
-            }
-            const parent = await Category.findById(currentParent).select('parentId');
-            currentParent = parent ? parent.parentId : null;
+      let currentParent = parentId;
+      // Recursively check if the new parentId is a descendant of the category being updated
+      while (currentParent) {
+        if (currentParent.toString() === id.toString()) {
+          return res.status(400).json({ message: "Cannot move a category under its own descendant." });
         }
+        const parent = await Category.findById(currentParent).select('parentId');
+        currentParent = parent ? parent.parentId : null;
+      }
     }
 
 
@@ -295,14 +306,23 @@ export const getAllCategoriesWithImages = async (req, res) => {
     const categoriesWithImages = await Promise.all(
       categories.map(async (category) => {
         let imageUrl = null;
+        let imageKey = null;
 
-        const productService = await ProductService.findOne({
-          categoryId: category._id,
-          "portfolio.0": { $exists: true },
-        }).select("portfolio.url");
+        // Prioritize the category's own image field if it exists and has a URL
+        if (category.image && category.image.url) {
+          imageUrl = category.image.url;
+          imageKey = category.image.key;
+        } else {
+          // Fallback to a product/service image if category doesn't have one
+          const productService = await ProductService.findOne({
+            categoryId: category._id,
+            "portfolio.0": { $exists: true },
+          }).select("portfolio.url portfolio.key"); // Also select key if available
 
-        if (productService && productService.portfolio.length > 0) {
-          imageUrl = productService.portfolio[0].url;
+          if (productService && productService.portfolio.length > 0) {
+            imageUrl = productService.portfolio[0].url;
+            imageKey = productService.portfolio[0].key; // Get key from product/service
+          }
         }
 
         return {
@@ -311,7 +331,7 @@ export const getAllCategoriesWithImages = async (req, res) => {
           description: category.description,
           type: category.type,
           parentId: category.parentId,
-          imageUrl: imageUrl,
+          image: { url: imageUrl || "", key: imageKey || "" }, // Return as image object
         };
       })
     );
@@ -422,6 +442,31 @@ export const getCategoriesByParentId = async (req, res) => {
     res.status(200).json(categories);
   } catch (error) {
     console.error("Error fetching categories by parent ID:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+/**
+ * @desc Get all categories (flat list, no hierarchy implied in return)
+ * @route GET /api/categories/all-flat
+ * @access Public
+ * @param {Object} req - Express request object (query parameters: type)
+ * @param {Object} res - Express response object
+ */
+export const getAllCategoriesFlat = async (req, res) => { // ADD THIS NEW FUNCTION
+  try {
+    const { type } = req.query;
+    const filter = {};
+    if (type) {
+      if (!["product", "service"].includes(type)) {
+        return res.status(400).json({ message: 'Category type must be "product" or "service".' });
+      }
+      filter.type = type;
+    }
+    const categories = await Category.find(filter).sort({ name: 1 });
+    res.status(200).json(categories);
+  } catch (error) {
+    console.error("Error fetching all flat categories:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };

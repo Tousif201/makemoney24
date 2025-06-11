@@ -28,22 +28,18 @@ import {
   IndianRupee, // Ensure XCircle is imported for variant removal
 } from "lucide-react";
 
-// Shadcn Dialog Imports (for new category creation)
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 // Import your API functions
-import { getProductServiceById, updateProductService } from "../../../../api/vendor";
+import {
+  getProductServiceById,
+  updateProductService,
+} from "../../../../api/vendor";
 import { deleteFiles, uploadFiles } from "../../../../api/upload";
-import { createCategory, getCategories } from "../../../../api/categories";
+import {
+  getCategories,
+  getAllCategoriesFlat,
+} from "../../../../api/categories";
 
 export default function EditProduct() {
   const { id } = useParams();
@@ -75,22 +71,13 @@ export default function EditProduct() {
   const [fetchingCategories, setFetchingCategories] = useState(false);
   const [categoryError, setCategoryError] = useState(null);
 
-  const [isNewCategoryDialogOpen, setIsNewCategoryDialogOpen] = useState(false);
-  const [newCategoryName, setNewCategoryName] = useState("");
-  const [newCategoryDescription, setNewCategoryDescription] = useState("");
-  const [newCategoryType, setNewCategoryType] = useState("");
-  const [creatingCategory, setCreatingCategory] = useState(false);
-  const [newCategoryError, setNewCategoryError] = useState(null);
-  const [newCategorySuccess, setNewCategorySuccess] = useState(null);
-  // --- End Category Management States ---
-
   // Fetch product details on component mount
   useEffect(() => {
     const fetchProduct = async () => {
       setLoading(true);
       setFormError(null);
       try {
-        const product = await getProductServiceById(id);
+        const { data: product } = await getProductServiceById(id);
         if (product) {
           setFormData({
             title: product.title || "",
@@ -104,15 +91,19 @@ export default function EditProduct() {
             variants: product.variants || [], // Retain the original variants array
             pincode: product.pincode || "",
             isBookable: product.isBookable || false,
-            isInStock: product.isInStock !== undefined ? product.isInStock : true,
+            isInStock:
+              product.isInStock !== undefined ? product.isInStock : true,
           });
-          setNewCategoryType(product.type || "");
         } else {
           setFormError("Product or service not found.");
         }
       } catch (err) {
         console.error("Error fetching product:", err);
-        setFormError(`Failed to load product details: ${err.response?.data?.message || err.message}`);
+        setFormError(
+          `Failed to load product details: ${
+            err.response?.data?.message || err.message
+          }`
+        );
       } finally {
         setLoading(false);
       }
@@ -163,9 +154,6 @@ export default function EditProduct() {
       [name]: value,
       ...(name === "type" && { categoryId: "" }),
     }));
-    if (name === "type") {
-      setNewCategoryType(value);
-    }
   };
 
   const handleSwitch = (name, checked) => {
@@ -229,52 +217,6 @@ export default function EditProduct() {
     }
   };
 
-  const handleCreateCategory = async () => {
-    setNewCategoryError(null);
-    setNewCategorySuccess(null);
-    setCreatingCategory(true);
-
-    if (!newCategoryName || !newCategoryType) {
-      setNewCategoryError("Category name and type are required.");
-      setCreatingCategory(false);
-      return;
-    }
-    if (!["product", "service"].includes(newCategoryType)) {
-      setNewCategoryError('Category type must be "product" or "service".');
-      setCreatingCategory(false);
-      return;
-    }
-
-    try {
-      const categoryData = {
-        name: newCategoryName,
-        description: newCategoryDescription,
-        type: newCategoryType,
-      };
-      const created = await createCategory(categoryData);
-      setNewCategorySuccess(`Category "${created.name}" created successfully!`);
-      setCategories((prev) => [...prev, created]);
-      setFormData((prev) => ({
-        ...prev,
-        categoryId: created._id,
-        type: created.type,
-      }));
-
-      setNewCategoryName("");
-      setNewCategoryDescription("");
-      setIsNewCategoryDialogOpen(false);
-    } catch (error) {
-      console.error("Error creating new category:", error);
-      setNewCategoryError(
-        `Failed to create category: ${
-          error.response?.data?.message || error.message
-        }`
-      );
-    } finally {
-      setCreatingCategory(false);
-    }
-  };
-
   // --- Variant Handlers (Restored to original structure) ---
   const handleAddVariant = () => {
     setFormData((prev) => ({
@@ -314,7 +256,9 @@ export default function EditProduct() {
       if (formData.localMediaFiles.length > 0) {
         setIsUploading(true);
         try {
-          const uploadedMediaArray = await uploadFiles(formData.localMediaFiles);
+          const uploadedMediaArray = await uploadFiles(
+            formData.localMediaFiles
+          );
           finalPortfolio = [...finalPortfolio, ...uploadedMediaArray];
 
           setFormData((prev) => ({
@@ -352,10 +296,13 @@ export default function EditProduct() {
         isBookable: formData.type === "service" ? formData.isBookable : false,
         isInStock: formData.isInStock,
         // Ensure variants are correctly formatted for payload
-        variants: formData.type === "product" ? formData.variants.map(variant => ({
-          ...variant,
-          quantity: parseInt(variant.quantity) || 0 // Ensure quantity is number
-        })) : [],
+        variants:
+          formData.type === "product"
+            ? formData.variants.map((variant) => ({
+                ...variant,
+                quantity: parseInt(variant.quantity) || 0, // Ensure quantity is number
+              }))
+            : [],
       };
 
       // --- Validation Checks ---
@@ -422,7 +369,13 @@ export default function EditProduct() {
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-2">
-            Edit {formData.type === 'product' ? 'Product' : formData.type === 'service' ? 'Service' : 'Item'} ( {formData.title})
+            Edit{" "}
+            {formData.type === "product"
+              ? "Product"
+              : formData.type === "service"
+              ? "Service"
+              : "Item"}{" "}
+            ( {formData.title})
           </h1>
           <p className="text-slate-600 text-lg">
             Modify details of your existing listing
@@ -439,12 +392,6 @@ export default function EditProduct() {
           <Alert variant="destructive" className="mb-4">
             <AlertTitle>Error!</AlertTitle>
             <AlertDescription>{formError}</AlertDescription>
-          </Alert>
-        )}
-        {newCategorySuccess && (
-          <Alert className="mb-4 bg-green-50 text-green-700 border-green-200">
-            <AlertTitle>Category Created!</AlertTitle>
-            <AlertDescription>{newCategorySuccess}</AlertDescription>
           </Alert>
         )}
 
@@ -545,106 +492,6 @@ export default function EditProduct() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <Dialog
-                    open={isNewCategoryDialogOpen}
-                    onOpenChange={setIsNewCategoryDialogOpen}
-                  >
-                    <DialogTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-11 w-11 flex-shrink-0"
-                        disabled={!formData.type}
-                      >
-                        <PlusCircle className="h-5 w-5" />
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-[425px]">
-                      <DialogHeader>
-                        <DialogTitle>Create New Category</DialogTitle>
-                        <DialogDescription>
-                          Add a new category. This will be available for "
-                          {formData.type}" products.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="grid gap-4 py-4">
-                        {newCategoryError && (
-                          <Alert variant="destructive">
-                            <AlertTitle>Error!</AlertTitle>
-                            <AlertDescription>
-                              {newCategoryError}
-                            </AlertDescription>
-                          </Alert>
-                        )}
-                        <div className="space-y-2">
-                          <Label htmlFor="newCategoryName">
-                            Category Name
-                          </Label>
-                          <Input
-                            id="newCategoryName"
-                            value={newCategoryName}
-                            onChange={(e) =>
-                              setNewCategoryName(e.target.value)
-                            }
-                            placeholder="e.g., Electronics, Plumbing Service"
-                            disabled={creatingCategory}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="newCategoryType">
-                            Category Type
-                          </Label>
-                          <Input
-                            id="newCategoryType"
-                            value={newCategoryType}
-                            disabled
-                            className="bg-slate-100 text-slate-500"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="newCategoryDescription">
-                            Description (Optional)
-                          </Label>
-                          <Textarea
-                            id="newCategoryDescription"
-                            value={newCategoryDescription}
-                            onChange={(e) =>
-                              setNewCategoryDescription(e.target.value)
-                            }
-                            placeholder="Brief description of the category"
-                            disabled={creatingCategory}
-                          />
-                        </div>
-                      </div>
-                      <DialogFooter>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => {
-                            setIsNewCategoryDialogOpen(false);
-                            setNewCategoryError(null);
-                            setNewCategorySuccess(null);
-                          }}
-                          disabled={creatingCategory}
-                        >
-                          Cancel
-                        </Button>
-                        <Button
-                          onClick={handleCreateCategory}
-                          disabled={creatingCategory}
-                        >
-                          {creatingCategory ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Creating...
-                            </>
-                          ) : (
-                            "Create Category"
-                          )}
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
                 </div>
               </div>
               <div className="space-y-2">
@@ -711,12 +558,19 @@ export default function EditProduct() {
               {/* Variant Section (Restored to original individual inputs) */}
               {formData.type === "product" && (
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-slate-800">Product Variants</h3>
+                  <h3 className="text-lg font-semibold text-slate-800">
+                    Product Variants
+                  </h3>
                   {formData.variants.length === 0 && (
-                    <p className="text-slate-500 text-sm">No variants added yet.</p>
+                    <p className="text-slate-500 text-sm">
+                      No variants added yet.
+                    </p>
                   )}
                   {formData.variants.map((variant, index) => (
-                    <div key={index} className="border p-3 rounded-md bg-slate-50 relative">
+                    <div
+                      key={index}
+                      className="border p-3 rounded-md bg-slate-50 relative"
+                    >
                       <Button
                         type="button"
                         onClick={() => handleRemoveVariant(index)}
@@ -732,7 +586,11 @@ export default function EditProduct() {
                             id={`color-${index}`}
                             value={variant.color}
                             onChange={(e) =>
-                              handleVariantChange(index, "color", e.target.value)
+                              handleVariantChange(
+                                index,
+                                "color",
+                                e.target.value
+                              )
                             }
                             placeholder="e.g. Red"
                           />
@@ -766,7 +624,11 @@ export default function EditProduct() {
                             type="number"
                             value={variant.quantity}
                             onChange={(e) =>
-                              handleVariantChange(index, "quantity", e.target.value)
+                              handleVariantChange(
+                                index,
+                                "quantity",
+                                e.target.value
+                              )
                             }
                             min="0"
                           />
@@ -776,7 +638,12 @@ export default function EditProduct() {
                       </div>
                     </div>
                   ))}
-                  <Button type="button" onClick={handleAddVariant} variant="outline" className="w-full">
+                  <Button
+                    type="button"
+                    onClick={handleAddVariant}
+                    variant="outline"
+                    className="w-full"
+                  >
                     Add New Variant
                   </Button>
                 </div>

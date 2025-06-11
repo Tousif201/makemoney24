@@ -26,6 +26,7 @@ import {
   TicketPercent,
   IndianRupee,
   Ticket,
+  Proportions,
 } from "lucide-react";
 
 export const sidebarConfig = {
@@ -273,5 +274,10 @@ export const sidebarConfig = {
       icon: Ticket,
       href: "/dashboard/tickets",
     },
+    {
+      label: "Categories",
+      icon: Proportions,
+      href: "/dashboard/category"
+    }
   ],
 };

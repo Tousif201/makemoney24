@@ -11,11 +11,18 @@ const apiClient = axios.create({
 });
 
 /**
+ * @typedef {Object} ImageObject
+ * @property {string} [url] - Public URL of the image.
+ * @property {string} [key] - Storage key (e.g. S3 key or Cloudinary public_id).
+ */
+
+/**
  * @typedef {Object} CategoryPayload
  * @property {string} name - The name of the category.
  * @property {string} [description] - A description of the category.
  * @property {'product' | 'service'} type - The type of category ('product' or 'service').
  * @property {string} [parentId] - The ID of the parent category if it's a subcategory.
+ * @property {ImageObject} [image] - The image object for the category.
  */
 
 /**
@@ -25,10 +32,22 @@ const apiClient = axios.create({
  * @property {string} [description] - A description of the category.
  * @property {'product' | 'service'} type - The type of category.
  * @property {string} [parentId] - The ID of the parent category if it's a subcategory.
+ * @property {ImageObject} [image] - The image object for the category.
  * @property {string} createdAt - The creation timestamp.
  * @property {string} updatedAt - The last update timestamp.
  * @property {number} __v - Version key.
  */
+
+/**
+ * @typedef {Object} CategoryWithImageResponse
+ * @property {string} _id - The ID of the category.
+ * @property {string} categoryName - The name of the category (alias for name in some views).
+ * @property {string} [description] - A description of the category.
+ * @property {'product' | 'service'} type - The type of category.
+ * @property {string} [parentId] - The ID of the parent category if it's a subcategory.
+ * @property {ImageObject} image - The image object for the category, including url and key.
+ */
+
 
 /**
  * @desc Creates a new category.
@@ -99,7 +118,7 @@ export const getCategoryById = async (id) => {
 /**
  * @desc Updates an existing category by its ID.
  * @param {string} id - The ID of the category to update.
- * @param {Partial<CategoryPayload>} updateData - The data to update (e.g., { name: 'New Name', parentId: 'someId' }).
+ * @param {Partial<CategoryPayload>} updateData - The data to update (e.g., { name: 'New Name', parentId: 'someId', image: { url: '...', key: '...' } }).
  * @returns {Promise<CategoryResponse>} A promise that resolves to the updated category object.
  * @throws {Error} Throws an error if the API call fails or validation errors occur.
  */
@@ -212,6 +231,31 @@ export const getCategoriesByParentId = async (parentId, type = null) => {
   } catch (error) {
     console.error(
       `Error fetching categories by parent ID ${parentId}:`,
+      error.response?.data || error.message
+    );
+    throw error;
+  }
+};
+
+
+/**
+ * @desc Fetches all categories as a flat list, optionally filtered by type.
+ * @route GET /api/categories/all-flat
+ * @param {'product' | 'service'} [type] - Optional type to filter categories.
+ * @returns {Promise<CategoryResponse[]>} A promise that resolves to an array of category objects.
+ * @throws {Error} Throws an error if the API call fails.
+ */
+export const getAllCategoriesFlat = async (type = null) => { // ADD THIS NEW FUNCTION
+  try {
+    const params = {};
+    if (type) {
+      params.type = type;
+    }
+    const response = await apiClient.get("/all-flat", { params });
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Error fetching all flat categories:",
       error.response?.data || error.message
     );
     throw error;
