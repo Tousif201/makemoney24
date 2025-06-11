@@ -10,12 +10,12 @@ export const backendConfig = {
   // // origin: "https://api.makemoney24hrs.com/
 
 
-  base: " http://localhost:3000/api",
-  origin: "http://localhost:3000/",
-
-
-  // base: "https://4sr8mplp-3000.inc1.devtunnels.ms/api",
+  // base: " http://localhost:3000/api",
   // origin: "http://localhost:3000/",
+
+
+  base: "https://4sr8mplp-3000.inc1.devtunnels.ms/api",
+  origin: "https://4sr8mplp-3000.inc1.devtunnels.ms/",
 };
 
 export const sessionKey = "test";

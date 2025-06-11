@@ -76,6 +76,7 @@ export default function VendorDetailsPage({  }) { // Accept vendorId as a prop
       setIsLoading(true);
       try {
         const data = await getVendorAnalytics(vendorId, orderFilter, productFilter);
+        console.log("response vendor detail",data)
         setVendorData(data);
         setError(null);
       } catch (err) {

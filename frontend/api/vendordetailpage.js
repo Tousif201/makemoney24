@@ -39,6 +39,7 @@ export const getVendorAnalytics = async (vendorId, filter, productStatusFilter) 
     }
 
     const response = await apiClient.get(`/vendor-analytics/${vendorId}`, { params });
+    console.log("api frontend response vendor analytics",response);
     return response.data.data;
   } catch (error) {
     console.error("Error fetching vendor analytics:", error.response?.data || error.message);
@@ -56,7 +57,7 @@ export const getVendorAnalytics = async (vendorId, filter, productStatusFilter) 
 export const processSettlement = async (vendorId, amount) => {
   try {
     // This is a hypothetical endpoint. You must create it in your backend.
-    const response = await API.post(`/settlements/vendor/${vendorId}`, {
+    const response = await apiClient.post(`/settlements/vendor/${vendorId}`, {
       amountSettle: amount,
     });
     return response.data;
@@ -77,7 +78,7 @@ export const processSettlement = async (vendorId, amount) => {
 export const updateProductStatus = async (productId, status) => {
     try {
         // This is a hypothetical endpoint. You must create it in your backend.
-        const response = await API.patch(`/products/${productId}/status`, {
+        const response = await apiClient.patch(`/products/${productId}/status`, {
             isAdminApproved: status
         });
         return response.data;

@@ -134,6 +134,7 @@ export function CreateVendorDialog({ children }) {
 
       // --- 4. Create the vendor ---
       const result = await createVendor(payload);
+      window.location.reload()
       toast.success("Vendor created successfully!", {
         id: "createVendorToast",
       });
@@ -153,6 +154,7 @@ export function CreateVendorDialog({ children }) {
       setAadhaarFile(null);
       setShopImages([]);
       setGstCertificateFile(null);
+
       setOpen(false);
     } catch (err) {
       console.error("Vendor creation error:", err);
