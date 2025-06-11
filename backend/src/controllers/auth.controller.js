@@ -8,7 +8,7 @@ import { generateUniqueReferralCode } from "../utils/referralGenerator.js";
 import { getComparePassword, getHashPassword } from "../utils/getPassword.js";
 import { generateAuthToken } from "../utils/generateAuthToken.js";
 import { sendEmail } from "../utils/nodeMailerOtp.js";
-
+import { Membership } from "../models/Membership.model.js"
 /**
  * @desc Register a new user
  * @route POST /api/auth/register
@@ -129,9 +129,9 @@ export const loginUser = async (req, res) => {
           message: "Your account has been suspended. Please contact support.",
         });
     }
-  if(user.otp && user.otp.verified === false) {
-    return res.status(401).json({ message: "Please verify your OTP first." });
-  }
+    if (user.otp && user.otp.verified === false) {
+      return res.status(401).json({ message: "Please verify your OTP first." });
+    }
     // 3. Compare passwords
     const isMatch = await getComparePassword(password, user.password);
     if (!isMatch) {
@@ -411,10 +411,10 @@ export const getUserTodayReferralPerformance = async (req, res) => {
           },
           membership: membershipToday
             ? {
-                amountPaid: membershipToday.amountPaid,
-                purchasedAt: membershipToday.purchasedAt,
-                transactionId: membershipToday.transactionId?._id || null,
-              }
+              amountPaid: membershipToday.amountPaid,
+              purchasedAt: membershipToday.purchasedAt,
+              transactionId: membershipToday.transactionId?._id || null,
+            }
             : null,
         });
       }
@@ -460,10 +460,10 @@ export const getUserDetails = async (req, res) => {
     });
 
     const userDetails = {
-      name : user.name,
+      name: user.name,
       email: user.email,
       phone: user.phone,
-      referralCode:user.referralCode,
+      referralCode: user.referralCode,
       joiningDate: user.createdAt,
       profileScore: user.profileScore,
       totalReferrals: totalReferralsCount,

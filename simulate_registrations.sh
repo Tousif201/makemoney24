@@ -2,8 +2,13 @@
 
 # --- Configuration ---
 REGISTER_ENDPOINT="http://localhost:3000/api/auth/register"
+UPGRADE_BASE_ENDPOINT="http://localhost:3000/api/users/upgrade" # Will append userId
 NUM_USERS_TO_REGISTER=30
 DELAY_SECONDS=2 # Delay between registrations in seconds (e.g., 0.5 for 500ms)
+
+# Membership details for upgrade
+MEMBERSHIP_AMOUNT=5500
+MEMBERSHIP_PACKAGE_ID="68431fa5aa515ab91c29f9b7"
 
 # --- Prerequisites Check ---
 # Ensure curl is installed for making HTTP requests
@@ -35,10 +40,10 @@ INDIAN_LAST_NAMES=(
     "Pillai" "Choudhary" "Thakur" "Saini" "Goyal" "Mishra" "Das" "Roy"
 )
 
-# --- Global arrays to store generated referral codes and emails ---
-# These are used to select parent referral codes and ensure unique emails during the simulation.
-declare -a REGISTERED_REFERRAL_CODES=()
-declare -a REGISTERED_USER_EMAILS=()
+# --- Global arrays and associative array for referral logic and tracking ---
+declare -a REGISTERED_USER_EMAILS=() # For ensuring unique emails
+declare -a AVAILABLE_REFERRERS_QUEUE=() # Queue of referral codes that can still refer users (FIFO)
+declare -A REFERRER_CHILD_COUNT=() # Associative array to track children referred by each code
 
 # --- Helper Functions ---
 
@@ -63,25 +68,22 @@ generate_pincode() {
     echo "${first_digit}${suffix}"
 }
 
-# Generates a unique email address for the current simulation run
+# Generates a unique email address for the current simulation run ending with @gmail.com
 generate_unique_email() {
-    # Create a base for the email using parts of the name
     local base_name_email_part=$(echo "$1" | tr -d ' ' | tr '[:upper:]' '[:lower:]' | head -c 10)
     local counter=0
     local new_email=""
     while true; do
-        new_email="${base_name_email_part}${counter}@example.com"
+        new_email="${base_name_email_part}${counter}@gmail.com" # Changed to @gmail.com
         local exists=false
-        # Check if this email already exists in our list of registered emails
         for existing_email in "${REGISTERED_USER_EMAILS[@]}"; do
             if [[ "$existing_email" == "$new_email" ]]; then
                 exists=true
                 break
-            # Add a safety break for very long loops in case name-based emails collide a lot
             elif (( counter > 1000 )); then
                 echo "Warning: Too many email generation attempts for $1, generating a random one." >&2
-                new_email=$(head /dev/urandom | tr -dc a-z0-9 | head -c 15)@example.com
-                exists=false # Assume random is unique enough
+                new_email=$(head /dev/urandom | tr -dc a-z0-9 | head -c 15)@gmail.com
+                exists=false
                 break
             fi
         done
@@ -89,137 +91,211 @@ generate_unique_email() {
             echo "$new_email"
             break
         fi
-        counter=$((counter + 1)) # Increment counter if email is not unique
+        counter=$((counter + 1))
     done
 }
 
 # --- Main Simulation Logic ---
-echo "--- Starting Registration Simulation ---"
-echo "Targeting endpoint: ${REGISTER_ENDPOINT}"
+echo "--- Starting Registration & Upgrade Simulation ---"
+echo "Registration Endpoint: ${REGISTER_ENDPOINT}"
+echo "Upgrade Base Endpoint: ${UPGRADE_BASE_ENDPOINT}"
 echo "Number of users to register: ${NUM_USERS_TO_REGISTER}"
-echo "Delay between registrations: ${DELAY_SECONDS} seconds"
-echo "----------------------------------------"
+echo "Delay between operations: ${DELAY_SECONDS} seconds"
+echo "Membership Amount: ${MEMBERSHIP_AMOUNT}"
+echo "Membership Package ID: ${MEMBERSHIP_PACKAGE_ID}"
+echo "--------------------------------------------------"
 
 for (( i=1; i<=NUM_USERS_TO_REGISTER; i++ )); do
     NAME=$(generate_indian_name)
-    EMAIL=$(generate_unique_email "$NAME") # Generate a unique email
+    EMAIL=$(generate_unique_email "$NAME")
     PHONE=$(generate_indian_phone_number)
-    PASSWORD="Password123!" # Using a fixed password for simulation purposes
+    PASSWORD="Password123!"
     PINCODE=$(generate_pincode)
 
-    REFERRED_BY_CODE_TO_SEND="null" # Default value for the 'referredByCode' field in JSON
-    # If there are existing referral codes, randomly pick one for this user
-    if (( ${#REGISTERED_REFERRAL_CODES[@]} > 0 )); then
-        # 70% chance to be referred by an existing user
-        if (( RANDOM % 10 < 7 )); then
-            REFERRED_BY_CODE_TO_SEND="${REGISTERED_REFERRAL_CODES[$(( RANDOM % ${#REGISTERED_REFERRAL_CODES[@]} ))]}"
+    REFERRED_BY_CODE_TO_SEND="null" # Default for first user or if no referrers available
+
+    # Binary Tree Referral Logic:
+    # If there are available referrers, use the first one in the queue
+    if (( ${#AVAILABLE_REFERRERS_QUEUE[@]} > 0 )); then
+        REFERRED_BY_CODE_TO_SEND="${AVAILABLE_REFERRERS_QUEUE[0]}"
+        # Increment child count for this referrer
+        REFERRER_CHILD_COUNT["$REFERRED_BY_CODE_TO_SEND"]=$(( REFERRER_CHILD_COUNT["$REFERRED_BY_CODE_TO_SEND"] + 1 ))
+
+        # If this referrer has now referred 2 children, remove them from the queue
+        if (( REFERRER_CHILD_COUNT["$REFERRED_BY_CODE_TO_SEND"] >= 2 )); then
+            # Remove the first element from the queue (pop)
+            AVAILABLE_REFERRERS_QUEUE=("${AVAILABLE_REFERRERS_QUEUE[@]:1}")
+            echo "  DEBUG: Referrer ${REFERRED_BY_CODE_TO_SEND} reached 2 children, removed from queue."
         fi
+        echo "  DEBUG: Referring by: ${REFERRED_BY_CODE_TO_SEND} (Children: ${REFERRER_CHILD_COUNT["$REFERRED_BY_CODE_TO_SEND"]})"
+    else
+        echo "  DEBUG: No available referrers. Registering as top-level user."
     fi
 
-    # Construct the JSON payload using jq
-    # IMPORTANT: Ensure NO hidden characters (like non-breaking spaces) exist in this block.
-    # Manually re-type the indentation if you keep getting errors.
-    JSON_PAYLOAD=$(jq -n \
-                    --arg name "$NAME" \
-                    --arg email "$EMAIL" \
-                    --arg phone "$PHONE" \
-                    --arg password "$PASSWORD" \
-                    --arg pincode "$PINCODE" \
-                    --arg refCodeStr "$REFERRED_BY_CODE_TO_SEND" \
-                    '{
-                      name: $name,
-                      email: $email,
-                      phone: $phone,
-                      password: $password,
-                      pincode: $pincode,
-                      isMember: false,
-                      roles: ["user"],
-                      referredByCode: ($refCodeStr | if . == "null" then null else . end)
-                    }' 2>&1) # Redirect jq's stderr to stdout for debugging
+    # Construct the JSON payload for Registration
+    JSON_PAYLOAD_REGISTER=$(jq -n \
+                            --arg name "$NAME" \
+                            --arg email "$EMAIL" \
+                            --arg phone "$PHONE" \
+                            --arg password "$PASSWORD" \
+                            --arg pincode "$PINCODE" \
+                            --arg refCodeStr "$REFERRED_BY_CODE_TO_SEND" \
+                            '{
+                              name: $name,
+                              email: $email,
+                              phone: $phone,
+                              password: $password,
+                              pincode: $pincode,
+                              isMember: false,
+                              roles: ["user"],
+                              referredByCode: ($refCodeStr | if . == "null" then null else . end)
+                            }' 2>&1)
 
-    JQ_EXIT_CODE=$? # Capture jq's exit code immediately
+    JQ_REGISTER_EXIT_CODE=$?
 
-    echo -e "\n--- User ${i}/${NUM_USERS_TO_REGISTER} ---"
+    echo -e "\n--- User ${i}/${NUM_USERS_TO_REGISTER} (Registration) ---"
     echo -e "Attempting to register: ${NAME} (${EMAIL})"
     echo -e "Referral attempt: ${REFERRED_BY_CODE_TO_SEND:-'N/A (top-level)'}"
 
-    if [ "$JQ_EXIT_CODE" -ne 0 ]; then
-        echo -e "  ❌ Error: jq command failed to generate JSON payload."
-        echo -e "     jq Exit Code: ${JQ_EXIT_CODE}"
-        echo -e "     jq Error Output/Payload Content: ${JSON_PAYLOAD}" # This will contain jq's error message
-        echo -e "     Skipping registration for this user."
-        sleep "$DELAY_SECONDS" # Still pause to prevent tight loops on errors
-        continue # Skip to the next user
-    fi
-
-    if [ -z "$JSON_PAYLOAD" ]; then
-        echo -e "  ❌ Error: JSON_PAYLOAD is empty after jq command."
-        echo -e "     This usually means jq produced no output despite exiting successfully (possible issue with input vars)."
-        echo -e "     Skipping registration for this user."
+    if [ "$JQ_REGISTER_EXIT_CODE" -ne 0 ]; then
+        echo -e "  ❌ Error: jq command failed to generate registration JSON payload."
+        echo -e "     jq Exit Code: ${JQ_REGISTER_EXIT_CODE}"
+        echo -e "     jq Error Output/Payload Content: ${JSON_PAYLOAD_REGISTER}"
+        echo -e "     Skipping registration and upgrade for this user."
         sleep "$DELAY_SECONDS"
         continue
     fi
 
-    echo -e "Request Body:\n${JSON_PAYLOAD}" # Log the full request body now that we've verified it
+    if [ -z "$JSON_PAYLOAD_REGISTER" ]; then
+        echo -e "  ❌ Error: Registration JSON_PAYLOAD is empty after jq command."
+        echo -e "     Skipping registration and upgrade for this user."
+        sleep "$DELAY_SECONDS"
+        continue
+    fi
 
-    # Make the HTTP POST request using curl, storing response and status code
-    HTTP_STATUS=$(curl -s -o /tmp/curl_response.txt -w "%{http_code}" -X POST \
+    echo -e "Request Body (Registration):\n${JSON_PAYLOAD_REGISTER}"
+
+    # Make the HTTP POST request for Registration
+    HTTP_STATUS_REGISTER=$(curl -s -o /tmp/curl_response_register.txt -w "%{http_code}" -X POST \
         -H "Content-Type: application/json" \
-        -d "$JSON_PAYLOAD" \
+        -d "$JSON_PAYLOAD_REGISTER" \
         "$REGISTER_ENDPOINT")
-    CURL_EXIT_CODE=$? # Capture curl's exit code
+    CURL_REGISTER_EXIT_CODE=$?
+    RESPONSE_REGISTER=$(cat /tmp/curl_response_register.txt)
 
-    RESPONSE=$(cat /tmp/curl_response.txt)
+    USER_ID=""
+    NEW_REFERRAL_CODE=""
 
-    if [ "$CURL_EXIT_CODE" -ne 0 ]; then
-        echo -e "  ❌ Critical Error: Curl command failed to execute."
-        echo -e "     Curl Exit Code: ${CURL_EXIT_CODE}"
-        echo -e "     This might indicate a network issue, DNS problem, or server not reachable."
-        echo -e "     Raw response (if any): ${RESPONSE}"
-    elif [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 300 ]; then
-        # Successful response (2xx status code)
-        # MOVED 2>/dev/null OUTSIDE THE QUOTES for shell redirection
-        MESSAGE=$(echo "$RESPONSE" | jq -r '.message // "No message received"' 2>/dev/null)
-        USER_ID=$(echo "$RESPONSE" | jq -r '.user._id // "N/A"' 2>/dev/null)
-        NEW_REFERRAL_CODE=$(echo "$RESPONSE" | jq -r '.user.referralCode // "N/A"' 2>/dev/null)
+    if [ "$CURL_REGISTER_EXIT_CODE" -ne 0 ]; then
+        echo -e "  ❌ Critical Error: Curl command failed for registration."
+        echo -e "     Curl Exit Code: ${CURL_REGISTER_EXIT_CODE}"
+        echo -e "     Raw response (if any): ${RESPONSE_REGISTER}"
+    elif [ "$HTTP_STATUS_REGISTER" -ge 200 ] && [ "$HTTP_STATUS_REGISTER" -lt 300 ]; then
+        MESSAGE=$(echo "$RESPONSE_REGISTER" | jq -r '.message // "No message received"' 2>/dev/null)
+        USER_ID=$(echo "$RESPONSE_REGISTER" | jq -r '.user._id // "N/A"' 2>/dev/null)
+        NEW_REFERRAL_CODE=$(echo "$RESPONSE_REGISTER" | jq -r '.user.referralCode // "N/A"' 2>/dev/null)
 
-        if [ "$NEW_REFERRAL_CODE" != "N/A" ]; then
-            REGISTERED_REFERRAL_CODES+=("$NEW_REFERRAL_CODE")
-            REGISTERED_USER_EMAILS+=("$EMAIL")
-            echo -e "  ✅ Success (HTTP ${HTTP_STATUS})!"
+        if [ "$USER_ID" != "N/A" ] && [ "$NEW_REFERRAL_CODE" != "N/A" ]; then
+            REGISTERED_USER_EMAILS+=("$EMAIL") # Add email to tracking for uniqueness
+            # Add new referral code to the queue of available referrers
+            AVAILABLE_REFERRERS_QUEUE+=("$NEW_REFERRAL_CODE")
+            REFERRER_CHILD_COUNT["$NEW_REFERRAL_CODE"]=0 # Initialize child count for new referrer
+            echo -e "  ✅ Registration Success (HTTP ${HTTP_STATUS_REGISTER})!"
             echo -e "     User ID: ${USER_ID}, Referral Code: ${NEW_REFERRAL_CODE}"
             echo -e "     Message: ${MESSAGE}"
         else
-            echo -e "  ⚠️ Partial Success (HTTP ${HTTP_STATUS}) / Missing Data:"
+            echo -e "  ⚠️ Registration Partial Success (HTTP ${HTTP_STATUS_REGISTER}) / Missing Data:"
             echo -e "     Message: ${MESSAGE}"
-            echo -e "     Response: ${RESPONSE}"
+            echo -e "     Response: ${RESPONSE_REGISTER}"
         fi
     else
-        # Error response (non-2xx status code)
-        # Attempt to parse specific message or show full response
-        # MOVED 2>/dev/null OUTSIDE THE QUOTES for shell redirection
-        ERROR_MESSAGE=$(echo "$RESPONSE" | jq -r '.message // "No specific message from API."' 2>/dev/null)
-        if [ "$ERROR_MESSAGE" == "No specific message from API." ] && [ -n "$RESPONSE" ]; then
-             # If jq couldn't find a 'message' field but response is not empty, show raw response
-            ERROR_MESSAGE="Raw API response (possible invalid JSON or unexpected format): ${RESPONSE}"
+        ERROR_MESSAGE=$(echo "$RESPONSE_REGISTER" | jq -r '.message // "No specific message from API." 2>/dev/null')
+        if [ "$ERROR_MESSAGE" == "No specific message from API." ] && [ -n "$RESPONSE_REGISTER" ]; then
+            ERROR_MESSAGE="Raw API response (possible invalid JSON or unexpected format): ${RESPONSE_REGISTER}"
         fi
-
-        echo -e "  ❌ Failed (HTTP ${HTTP_STATUS})!"
+        echo -e "  ❌ Registration Failed (HTTP ${HTTP_STATUS_REGISTER})!"
         echo -e "     Error: ${ERROR_MESSAGE}"
-        echo -e "     Request failed for: ${NAME} (${EMAIL})"
-        echo -e "     Full response: ${RESPONSE}"
+        echo -e "     Full response: ${RESPONSE_REGISTER}"
     fi
 
-    # Clean up the temporary response file
-    rm -f /tmp/curl_response.txt
+    rm -f /tmp/curl_response_register.txt # Clean up temp file
 
-    # Pause for the specified delay before the next registration
+    # --- Upgrade User ---
+    if [ -n "$USER_ID" ] && [ "$USER_ID" != "N/A" ]; then
+        echo -e "\n--- User ${i}/${NUM_USERS_TO_REGISTER} (Upgrade) ---"
+        echo -e "Attempting to upgrade user ID: ${USER_ID}"
+
+        UPGRADE_ENDPOINT="${UPGRADE_BASE_ENDPOINT}/${USER_ID}"
+
+        # Construct JSON payload for upgrade
+        JSON_PAYLOAD_UPGRADE=$(jq -n \
+                                --arg amount "$MEMBERSHIP_AMOUNT" \
+                                --arg packageId "$MEMBERSHIP_PACKAGE_ID" \
+                                '{
+                                  membershipAmount: ($amount | tonumber),
+                                  membershipPackageId: $packageId
+                                }' 2>&1)
+
+        JQ_UPGRADE_EXIT_CODE=$?
+
+        if [ "$JQ_UPGRADE_EXIT_CODE" -ne 0 ]; then
+            echo -e "  ❌ Error: jq command failed to generate upgrade JSON payload."
+            echo -e "     jq Exit Code: ${JQ_UPGRADE_EXIT_CODE}"
+            echo -e "     jq Error Output/Payload Content: ${JSON_PAYLOAD_UPGRADE}"
+            echo -e "     Skipping upgrade for this user."
+            sleep "$DELAY_SECONDS"
+            continue
+        fi
+
+        if [ -z "$JSON_PAYLOAD_UPGRADE" ]; then
+            echo -e "  ❌ Error: Upgrade JSON_PAYLOAD is empty after jq command."
+            echo -e "     Skipping upgrade for this user."
+            sleep "$DELAY_SECONDS"
+            continue
+        fi
+
+        echo -e "Request Body (Upgrade):\n${JSON_PAYLOAD_UPGRADE}"
+
+        # Make the HTTP POST request for Upgrade
+        HTTP_STATUS_UPGRADE=$(curl -s -o /tmp/curl_response_upgrade.txt -w "%{http_code}" -X POST \
+            -H "Content-Type: application/json" \
+            -d "$JSON_PAYLOAD_UPGRADE" \
+            "$UPGRADE_ENDPOINT")
+        CURL_UPGRADE_EXIT_CODE=$?
+        RESPONSE_UPGRADE=$(cat /tmp/curl_response_upgrade.txt)
+
+        if [ "$CURL_UPGRADE_EXIT_CODE" -ne 0 ]; then
+            echo -e "  ❌ Critical Error: Curl command failed for upgrade."
+            echo -e "     Curl Exit Code: ${CURL_UPGRADE_EXIT_CODE}"
+            echo -e "     Raw response (if any): ${RESPONSE_UPGRADE}"
+        elif [ "$HTTP_STATUS_UPGRADE" -ge 200 ] && [ "$HTTP_STATUS_UPGRADE" -lt 300 ]; then
+            UPGRADE_MESSAGE=$(echo "$RESPONSE_UPGRADE" | jq -r '.message // "No message received" 2>/dev/null')
+            echo -e "  ✅ Upgrade Success (HTTP ${HTTP_STATUS_UPGRADE})!"
+            echo -e "     Message: ${UPGRADE_MESSAGE}"
+        else
+            UPGRADE_ERROR_MESSAGE=$(echo "$RESPONSE_UPGRADE" | jq -r '.message // "No specific message from API." 2>/dev/null')
+            if [ "$UPGRADE_ERROR_MESSAGE" == "No specific message from API." ] && [ -n "$RESPONSE_UPGRADE" ]; then
+                UPGRADE_ERROR_MESSAGE="Raw API response (possible invalid JSON or unexpected format): ${RESPONSE_UPGRADE}"
+            fi
+            echo -e "  ❌ Upgrade Failed (HTTP ${HTTP_STATUS_UPGRADE})!"
+            echo -e "     Error: ${UPGRADE_ERROR_MESSAGE}"
+            echo -e "     Full response: ${RESPONSE_UPGRADE}"
+        fi
+        rm -f /tmp/curl_response_upgrade.txt # Clean up temp file
+    else
+        echo -e "  ⚠️ Skipping upgrade for user ${i} as User ID was not obtained from registration."
+    fi
+
+    # Pause for the specified delay before the next operation
     sleep "$DELAY_SECONDS"
 done
 
 echo -e "\n----------------------------"
 echo "--- Simulation Complete ---"
-echo "Attempted to register ${NUM_USERS_TO_REGISTER} users."
-echo "Total unique referral codes collected: ${#REGISTERED_REFERRAL_CODES[@]}"
-echo "Collected referral codes: ${REGISTERED_REFERRAL_CODES[@]}"
+echo "Attempted to register and upgrade ${NUM_USERS_TO_REGISTER} users."
+echo "Total unique referral codes collected and used for tree structure: ${#AVAILABLE_REFERRERS_QUEUE[@]}"
+echo "Referrer Child Counts (code: count):"
+for code in "${!REFERRER_CHILD_COUNT[@]}"; do
+    echo "  $code: ${REFERRER_CHILD_COUNT[$code]}"
+done
 echo "----------------------------"
