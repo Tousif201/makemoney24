@@ -16,8 +16,8 @@ const MobileBottomNav = () => {
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 md:hidden z-50">
       <div className="flex justify-around items-center py-2">
-        <Link to="/" className="p-2 text-purple-600">
-          <div className="bg-purple-100 p-2 rounded-lg">
+        <Link to="/" className="p-2 text-gray-600">
+          <div className=" p-2 rounded-lg">
             <Home size={22} />
           </div>
           Home
