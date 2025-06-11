@@ -4,7 +4,7 @@
 import { ProductService } from "../models/ProductService.model.js";
 import mongoose from "mongoose";
 import { Review } from "../models/Review.model.js";
-
+import { Vendor } from "../models/Vendor.model.js"
 // Helper function to validate ObjectId
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
@@ -18,7 +18,7 @@ const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 export const createProductService = async (req, res) => {
   try {
     const {
-      vendorId,
+      vendorId, // This is now assumed to be the userId of the vendor
       categoryId,
       type,
       title,
@@ -34,12 +34,28 @@ export const createProductService = async (req, res) => {
     // Basic validation for required fields
     if (!vendorId || !categoryId || !type || !title || price === undefined) {
       return res.status(400).json({
-        message: "Vendor ID, Category ID, type, title, and price are required.",
+        message: "Vendor User ID, Category ID, type, title, and price are required.",
       });
     }
-    if (!isValidObjectId(vendorId)) {
-      return res.status(400).json({ message: "Invalid Vendor ID format." });
+
+    // *** MODIFICATION START ***
+
+    // 1. Find the Vendor document using the provided vendorId (which is the userId)
+    const vendor = await Vendor.findOne({ userId: vendorId });
+
+    if (!vendor) {
+      return res.status(404).json({ message: "Vendor not found with the provided user ID." });
     }
+
+    // Now, use the actual _id of the found vendor document
+    const actualVendorId = vendor._id;
+console.log(vendor,"Vendor")
+    // Validate the actual vendorId from the found document
+    if (!isValidObjectId(actualVendorId)) {
+        return res.status(400).json({ message: "Invalid Vendor ID format obtained from the user ID." });
+    }
+    // *** MODIFICATION END ***
+
     if (!isValidObjectId(categoryId)) {
       return res.status(400).json({ message: "Invalid Category ID format." });
     }
@@ -55,9 +71,9 @@ export const createProductService = async (req, res) => {
     // Prepare portfolio array
     const productPortfolio = Array.isArray(portfolio)
       ? portfolio.map((item) => ({
-          type: item.type,
-          url: item.url,
-        }))
+        type: item.type,
+        url: item.url,
+      }))
       : [];
 
     // Prepare variants array (only for products)
@@ -81,7 +97,7 @@ export const createProductService = async (req, res) => {
     const finalIsBookable = type === "service" ? isBookable || false : false;
 
     const newProductService = new ProductService({
-      vendorId,
+      vendorId: actualVendorId, // Use the actual _id from the found vendor document
       categoryId,
       type,
       title,
@@ -101,7 +117,6 @@ export const createProductService = async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
-
 /**
  * @desc Get all products/services with advanced filtering, sorting, pagination, and population
  * @route GET /api/product-services
@@ -120,7 +135,8 @@ export const createProductService = async (req, res) => {
  * @query {number} [limit] - Number of items per page (default 10).
  * @param {Object} res - Express response object
  * @returns {Object} { data: ProductServiceData[], totalCount: number, page: number, totalPages: number }
- */export const getProductServices = async (req, res) => {
+ */
+export const getProductServices = async (req, res) => {
   try {
     const {
       vendorId,
@@ -137,7 +153,7 @@ export const createProductService = async (req, res) => {
     } = req.query;
 
     const filter = {
-      isAdminApproved:"approved", // ✅ Only fetch approved products/services
+      isAdminApproved: "approved", // ✅ Only fetch approved products/services
     };
 
     let sort = { createdAt: -1 }; // Default sort

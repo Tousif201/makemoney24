@@ -3,6 +3,7 @@ import { Franchise } from "../models/Franchise.model.js";
 import { User } from "../models/User.model.js";
 import { getHashPassword } from "../utils/getPassword.js";
 import { generateUniqueReferralCode } from "../utils/referralGenerator.js";
+import mongoose from "mongoose";
 
 /**
  * @desc Create a new user (with 'franchise-admin' role) and a corresponding franchise profile
@@ -100,11 +101,11 @@ export const createFranchise = async (req, res) => {
         return res.status(400).json({ message: "Invalid sales representative ID format." });
       }
       salesRepUser = await User.findById(salesRepId);
-      if (!salesRepUser || !salesRepUser.roles.includes("sales-rep")) {
+      if (!salesRepUser || (!salesRepUser.roles.includes("sales-rep") && !salesRepUser.roles.includes("admin"))) {
         await User.findByIdAndDelete(ownerUser._id); // Rollback user creation
         return res.status(400).json({
           message:
-            "Invalid sales representative ID or user is not a sales rep. User creation rolled back.",
+            "Invalid sales representative ID or user is not authorized (not a sales rep or admin). User creation rolled back.",
         });
       }
     }
