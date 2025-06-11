@@ -205,7 +205,7 @@ export const getFranchisesBySalesRep = async (req, res) => {
       });
 
     if (!franchises || franchises.length === 0) {
-      return res.status(404).json({
+      return res.status(200).json({
         message: "No franchises found for the given sales representative.",
       });
     }
@@ -238,7 +238,7 @@ export const getAllFranchises = async (req, res) => {
       .select("-vendors -users"); // Exclude large arrays like vendors and users unless explicitly needed
 
     if (!franchises || franchises.length === 0) {
-      return res.status(404).json({ message: "No franchises found." });
+      return res.status(200).json({ message: "No franchises found." });
     }
 
     res.status(200).json(franchises);

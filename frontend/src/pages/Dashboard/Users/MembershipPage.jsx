@@ -43,6 +43,7 @@ export default function MembershipPage() {
   }
 
   const isMember = user.isMember;
+  // const isMember = false;
 
   const benefits = [
     "PayLater options on orders above ₹500",
@@ -120,7 +121,6 @@ export default function MembershipPage() {
   const qrCodeImageUrl = "/scanner.jpeg";
   const whatsappNumber = "+919545827264"; // Replace with your actual WhatsApp number
 
-  
   if (!isMember) {
     return (
       <div className="flex-1 space-y-8 p-8">
@@ -158,6 +158,9 @@ export default function MembershipPage() {
                 <div className="text-5xl font-extrabold text-purple-900 mb-2">
                   ₹1,298
                 </div>
+                <p className="text-purple-600 text-sm">
+                  ₹1,100 + 18% GST (198)
+                </p>
                 <p className="text-purple-600 text-base">One-time payment</p>
               </div>
 
@@ -277,7 +280,7 @@ export default function MembershipPage() {
         //     Your Virtual Membership Cards
         //   </h2>
         //   <div className="flex md:flex-row flex-col gap-10">
-           
+
         //     <Card className="relative max-w-[500px] w-full aspect-[10/7] sm:aspect-[10/7] rounded-2xl overflow-hidden shadow-xl bg-amber-600 text-white font-semibold">
         //       <img
         //         src={frontImg}
@@ -316,7 +319,6 @@ export default function MembershipPage() {
         //       </div>
         //     </Card>
 
-          
         //     <Card className="relative max-w-[500px] w-full aspect-[10/7] sm:aspect-[10/7] rounded-2xl overflow-hidden shadow-xl bg-amber-600 text-white font-semibold">
         //       <img
         //         src={backImg}
@@ -354,30 +356,29 @@ export default function MembershipPage() {
         //       </div>
         //     </Card>
         //   </div>
-          
+
         // </div>
         <div className="flex flex-col items-center justify-center gap-10 p-4 sm:p-6">
-           <h2 className="text-3xl font-bold text-purple-900 mt-8">
-             Your Virtual Membership Cards
-           </h2>
-        
-        <div  className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-          <Card className="border-2 border-dashed border-blue-200 hover:border-blue-400 transition-colors">
-          <CardContent style={{ textAlign: 'left',marginTop: '-10px' }}>
-               <CashbackCardFront  
-                 userName={user?.name || "Default User"}      
-                 date ={user?.createdAt || "2023-08-01"}
-                 
-                 />  
-            </CardContent>
-          </Card>
+          <h2 className="text-3xl font-bold text-purple-900 mt-8">
+            Your Virtual Membership Cards
+          </h2>
 
-          <Card className="border-2 border-dashed border-green-200 hover:border-green-400 transition-colors">
-            <CardContent style={{ textAlign: 'left', marginTop: '-10px' }}>
-              <CashbackCardBack />         
-            </CardContent>
-          </Card>
-        </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+            <Card className="border-2 border-dashed border-blue-200 hover:border-blue-400 transition-colors">
+              <CardContent style={{ textAlign: "left", marginTop: "-10px" }}>
+                <CashbackCardFront
+                  userName={user?.name || "Default User"}
+                  date={user?.createdAt || "2023-08-01"}
+                />
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 border-dashed border-green-200 hover:border-green-400 transition-colors">
+              <CardContent style={{ textAlign: "left", marginTop: "-10px" }}>
+                <CashbackCardBack />
+              </CardContent>
+            </Card>
+          </div>
         </div>
       )}
       <Link to="/dashboard/referrals">

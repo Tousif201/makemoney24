@@ -5,6 +5,9 @@ export const backendConfig = {
 
   // base: " https://api.makemoney24hrs.com/api",
   // origin: "https://api.makemoney24hrs.com",
+  
+  // // base: " https://api.makemoney24hrs.com/api",
+  // // origin: "https://api.makemoney24hrs.com/
 
 
   base: " http://localhost:3000/api",

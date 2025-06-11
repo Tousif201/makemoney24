@@ -150,12 +150,14 @@
 /* Container to allow horizontal scrolling */
 .scroll-container {
   display: flex;
-  overflow-x: auto; /* Horizontal scroll */
-  padding: 1rem 0; /* Add padding around the scroll */
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 1rem 0;
 }
 
 .scroll-container::-webkit-scrollbar {
-  display: none; /* Hide scrollbar */
+  display: none;
 }
 
 .scroll-content {
@@ -165,17 +167,23 @@
 
 .scroll-item {
   flex-shrink: 0;
-  width: 8rem;  /* Set width for each category card */
-  height: 10rem; /* Set height for each category card */
+  width: 8rem;
+  height: auto;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: start;
 }
-/* Add this CSS to your global stylesheet or inline styles */
-.table-cell-truncate {
-  max-width: 200px; /* Adjust as needed */
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+
+/* Hide scrollbars on all browsers */
+/* Hide scrollbar for Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;     /* Firefox */
+}
+

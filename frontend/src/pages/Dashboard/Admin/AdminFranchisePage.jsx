@@ -62,7 +62,11 @@ export default function AdminFranchisePage() {
       setError(null); // Clear previous errors
       try {
         const data = await getAllFranchise();
-        setFranchises(data);
+        if (data.length > 0) {
+          setFranchises(data);
+        } else {
+          setFranchises([]);
+        }
       } catch (err) {
         console.error("Error fetching franchises:", err);
         setError("Failed to load franchises. Please try again.");
@@ -73,7 +77,7 @@ export default function AdminFranchisePage() {
 
     fetchFranchises();
   }, []); // Empty dependency array means this runs once on mount
-
+console.log(franchises)
   // Filter franchises based on search term
   const filteredFranchises = franchises.filter((franchise) => {
     const matchesSearch =

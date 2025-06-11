@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
-import { getAllCategoriesWithImages } from "../../api/categories"; // Ensure this API function fetches the 'image' object
+import { getAllCategoriesWithImages } from "../../api/categories";
 import { Link } from "react-router-dom";
-import { Skeleton } from "@/components/ui/skeleton"; // Import Shadcn Skeleton
+import { Skeleton } from "@/components/ui/skeleton";
 
 const UserScrollSlider = () => {
   const [categories, setCategories] = useState([]);
@@ -13,15 +13,13 @@ const UserScrollSlider = () => {
     const fetchCategories = async () => {
       try {
         setLoading(true);
-        // Assuming getAllCategoriesWithImages now returns categories with an 'image' object {url, key}
         const fetchedCategories = await getAllCategoriesWithImages();
         const formattedCategories = fetchedCategories.map((cat) => ({
           _id: cat._id,
-          // Access the image URL safely using optional chaining
           img:
             cat.image?.url ||
             "https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png",
-          name: cat.categoryName, // Assuming the category name is now 'name' instead of 'categoryName' based on your previous controller
+          name: cat.categoryName,
         }));
         setCategories(formattedCategories);
       } catch (err) {
@@ -38,7 +36,6 @@ const UserScrollSlider = () => {
   const handleScroll = () => {
     const scrollContainer = scrollContainerRef.current;
     if (scrollContainer) {
-      // Check if the user has reached the end
       if (
         scrollContainer.scrollLeft + scrollContainer.clientWidth >=
         scrollContainer.scrollWidth - 5
@@ -50,27 +47,25 @@ const UserScrollSlider = () => {
 
   const loadMoreCategories = () => {
     if (categories.length > 0) {
-      // Append the same categories again for infinite scrolling
-      // Make sure to create truly unique _id for React's key prop
       const newCategories = categories.map((cat, index) => ({
         ...cat,
-        _id: `${cat._id}-copy-${Date.now()}-${index}`, // Ensure unique _id for React rendering
+        _id: `${cat._id}-copy-${Date.now()}-${index}`,
       }));
-      setCategories((prevCategories) => [...prevCategories, ...newCategories]);
+      setCategories((prev) => [...prev, ...newCategories]);
     }
   };
 
   if (loading) {
     return (
-      <div className="scroll-container">
-        <div className="flex w-max px-2">
+      <div className="overflow-x-auto py-4 px-2 no-scrollbar">
+        <div className="flex w-max gap-2 sm:gap-4">
           {Array.from({ length: 6 }).map((_, index) => (
             <div
               key={index}
-              className=" w-32 h-40 flex flex-col items-center justify-start mx-2 shrink-0"
+              className="w-20 h-28 sm:w-32 sm:h-40 flex flex-col items-center justify-start shrink-0"
             >
-              <Skeleton className="w-28 h-28 rounded-full" />
-              <Skeleton className="w-20 h-4 mt-2 rounded-md" />
+              <Skeleton className="w-16 h-16 sm:w-28 sm:h-28 rounded-full" />
+              <Skeleton className="w-14 h-3 sm:w-20 sm:h-4 mt-1 sm:mt-2 rounded-md" />
             </div>
           ))}
         </div>
@@ -96,28 +91,30 @@ const UserScrollSlider = () => {
 
   return (
     <div
-      className="scroll-container"
+      className="overflow-x-auto px-2 py-4 no-scrollbar"
       ref={scrollContainerRef}
       onScroll={handleScroll}
     >
-      <div className="scroll-content">
+      <div className="flex gap-2 sm:gap-4 w-max">
         {categories.map((item) => (
           <Link
             to={`/browse?categories=${item._id}`}
             key={item._id}
-            className="scroll-item"
+            className="flex flex-col items-center justify-start shrink-0 w-20 sm:w-32"
           >
             <img
               src={item.img}
               alt={item.name}
-              className="w-28 h-28 object-cover rounded-full"
+              className="w-16 h-16 sm:w-28 sm:h-28 object-cover rounded-full"
               onError={(e) => {
                 e.target.onerror = null;
                 e.target.src =
                   "https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png";
               }}
             />
-            <p className="text-center text-sm mt-2">{item.name}</p>
+            <p className="text-center text-xs sm:text-sm mt-1 sm:mt-2 px-1 leading-tight">
+              {item.name}
+            </p>
           </Link>
         ))}
       </div>
