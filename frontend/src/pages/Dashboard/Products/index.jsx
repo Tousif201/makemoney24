@@ -91,7 +91,7 @@ export default function ProductsPage() {
     setProductToDeleteId(productId);
     setShowDeleteDialog(true);
   };
-
+console.log(products)
   // Handler for confirming the delete action
   const confirmDelete = async () => {
     if (!productToDeleteId) return;

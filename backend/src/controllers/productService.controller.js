@@ -49,10 +49,10 @@ export const createProductService = async (req, res) => {
 
     // Now, use the actual _id of the found vendor document
     const actualVendorId = vendor._id;
-console.log(vendor,"Vendor")
+    console.log(vendor, "Vendor")
     // Validate the actual vendorId from the found document
     if (!isValidObjectId(actualVendorId)) {
-        return res.status(400).json({ message: "Invalid Vendor ID format obtained from the user ID." });
+      return res.status(400).json({ message: "Invalid Vendor ID format obtained from the user ID." });
     }
     // *** MODIFICATION END ***
 
@@ -139,7 +139,7 @@ console.log(vendor,"Vendor")
 export const getProductServices = async (req, res) => {
   try {
     const {
-      vendorId,
+      vendorId, // This is now the _id of the Vendor document
       categoryId,
       type,
       pincode,
@@ -160,11 +160,24 @@ export const getProductServices = async (req, res) => {
 
     // 1. Filtering Logic
     if (vendorId) {
+      // Validate that the provided vendorId (which is a userId) is a valid ObjectId
       if (!isValidObjectId(vendorId)) {
-        return res.status(400).json({ message: "Invalid Vendor ID format." });
+        return res.status(400).json({ message: "Invalid User ID format for vendorId." });
       }
-      filter.vendorId = vendorId;
+
+      // Find the Vendor document where its 'userId' field matches the incoming 'vendorId' (which is actually a userId)
+      const vendor = await Vendor.findOne({ userId: vendorId });
+      // If no vendor document is found with that userId, return an error
+      if (!vendor) {
+        return res.status(404).json({ message: "Vendor not found for the provided user ID." });
+      }
+
+      // Use the _id of the found Vendor document to filter ProductService
+      // This assumes your ProductService schema has a field named 'vendorId'
+      // that links to the Vendor model's _id
+      filter.vendorId = vendor._id;
     }
+
 
     if (categoryId) {
       const categoryIdsArray = categoryId.split(",").map((id) => id.trim());
@@ -213,7 +226,7 @@ export const getProductServices = async (req, res) => {
       if (allowedSortFields.includes(sortBy)) {
         sort = { [sortBy]: sortOrder };
         if (sortBy === "rating") {
-          sort.createdAt = -1;
+          sort.createdAt = -1; // Fallback for identical ratings
         }
       } else {
         console.warn(
@@ -226,14 +239,15 @@ export const getProductServices = async (req, res) => {
     const pageNum = parseInt(page, 10) || 1;
     const limitNum = parseInt(limit, 10) || 10;
     const skip = (pageNum - 1) * limitNum;
-
     // Count total documents
     const totalCount = await ProductService.countDocuments(filter);
     const totalPages = Math.ceil(totalCount / limitNum);
 
     // 4. Query Execution
+    // Assuming ProductService populates `userId` if it refers to `User`
+    // And `categoryId` if it refers to `Category`
     const productServices = await ProductService.find(filter)
-      .populate({ path: "vendorId", select: "name" })
+      .populate({ path: "vendorId", select: "name" }) // Populate user details (or just name/email from User model)
       .populate({ path: "categoryId", select: "name" })
       .sort(sort)
       .skip(skip)
@@ -255,6 +269,7 @@ export const getProductServices = async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
 
 
 /**
