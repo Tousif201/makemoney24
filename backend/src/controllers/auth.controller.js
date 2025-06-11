@@ -6,9 +6,9 @@ import { User } from "../models/User.model.js";
 import bcrypt from "bcryptjs"; // Import bcrypt directly if needed for hashing outside of getHashPassword
 import { generateUniqueReferralCode } from "../utils/referralGenerator.js";
 import { getComparePassword, getHashPassword } from "../utils/getPassword.js";
+import { Membership } from "../models/Membership.model.js";
 import { generateAuthToken } from "../utils/generateAuthToken.js";
 import { sendEmail } from "../utils/nodeMailerOtp.js";
-import { Membership } from "../models/Membership.model.js"
 /**
  * @desc Register a new user
  * @route POST /api/auth/register
@@ -129,16 +129,40 @@ export const loginUser = async (req, res) => {
           message: "Your account has been suspended. Please contact support.",
         });
     }
-    if (user.otp && user.otp.verified === false) {
-      return res.status(401).json({ message: "Please verify your OTP first." });
-    }
+
     // 3. Compare passwords
     const isMatch = await getComparePassword(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    // 4. Generate JWT token and set as cookie
+    // 4. Check if OTP is verified. If not, resend OTP and send a message.
+    if (user.otp && user.otp.verified === false) {
+      // Generate a new OTP
+      const newOtpCode = Math.floor(100000 + Math.random() * 900000).toString();
+      const hashedNewOtpCode = await bcrypt.hash(newOtpCode, 10);
+      const newOtpExpiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes expiry
+
+      // Update user's OTP fields
+      user.otp = {
+        code: hashedNewOtpCode,
+        expiresAt: newOtpExpiresAt,
+        verified: false,
+        lastSentAt: new Date(),
+      };
+      await user.save();
+
+      // Send the new OTP via email
+      await sendEmail(email, newOtpCode);
+
+      return res.status(201).json({
+        message:
+          `Your email is not verified. A new OTP has been sent to ${email}. Please verify your email.`,
+        email: user.email, // Optionally send back the email for client-side convenience
+      });
+    }
+
+    // 5. Generate JWT token and set as cookie
     const authToken = await generateAuthToken(
       res,
       user._id,
@@ -162,6 +186,7 @@ export const loginUser = async (req, res) => {
     res.status(500).json({ message: "Server error during login" });
   }
 };
+
 
 /**
  * @desc Log out user / clear cookie
@@ -367,39 +392,59 @@ export const getUserProfile = async (req, res) => {
 export const getUserTodayReferralPerformance = async (req, res) => {
   try {
     const { userId } = req.params;
+    
+    // DEBUG: Log what we're receiving
+    console.log("=== DEBUG INFO ===");
+    console.log("req.body:", req.body);
+    console.log("req.body.date:", req.body.date);
+    console.log("typeof req.body.date:", typeof req.body.date);
+    
     const searchDate = req.body.date ? new Date(req.body.date) : new Date();
+    
+    console.log("searchDate after parsing:", searchDate);
+    console.log("searchDate ISO:", searchDate.toISOString());
+    console.log("==================");
+    
     const startOfDay = new Date(searchDate);
     startOfDay.setHours(0, 0, 0, 0);
     const endOfDay = new Date(searchDate);
     endOfDay.setHours(23, 59, 59, 999);
 
+    console.log("startOfDay:", startOfDay.toISOString());
+    console.log("endOfDay:", endOfDay.toISOString());
+
     // Find the main user
     const user = await User.findById(userId);
     if (!user || !user.referralCode) {
-      return res
-        .status(404)
-        .json({ message: "User not found or does not have a referral code." });
+      return res.status(404).json({ 
+        message: "User not found or does not have a referral code." 
+      });
     }
 
     const referralCode = user.referralCode;
-
-    // Find all users referred by this user
     const referredUsers = await User.find({ referredByCode: referralCode });
+    
+    console.log("Total referred users found:", referredUsers.length);
 
     const todayReferrals = [];
 
     for (const referredUser of referredUsers) {
-      // Check if the referred user joined today
-      const joinedToday =
-        referredUser.joinedAt >= startOfDay &&
-        referredUser.joinedAt <= endOfDay;
+      console.log(`Checking user: ${referredUser.name}`);
+      console.log(`User joinedAt: ${referredUser.joinedAt}`);
+      
+      // Check if the referred user joined on the selected date
+      const joinedOnDate = referredUser.joinedAt >= startOfDay && referredUser.joinedAt <= endOfDay;
+      
+      console.log(`Joined on selected date: ${joinedOnDate}`);
 
-      if (joinedToday) {
-        // Find if the referred user purchased a membership today
-        const membershipToday = await Membership.findOne({
+      if (joinedOnDate) {
+        // Find if the referred user purchased a membership on selected date
+        const membershipOnDate = await Membership.findOne({
           userId: referredUser._id,
           purchasedAt: { $gte: startOfDay, $lte: endOfDay },
         }).populate("transactionId");
+
+        console.log(`Membership found for ${referredUser.name}:`, !!membershipOnDate);
 
         todayReferrals.push({
           referredUser: {
@@ -409,16 +454,16 @@ export const getUserTodayReferralPerformance = async (req, res) => {
             phone: referredUser.phone,
             joinedAt: referredUser.joinedAt,
           },
-          membership: membershipToday
-            ? {
-              amountPaid: membershipToday.amountPaid,
-              purchasedAt: membershipToday.purchasedAt,
-              transactionId: membershipToday.transactionId?._id || null,
-            }
-            : null,
+          membership: membershipOnDate ? {
+            amountPaid: membershipOnDate.amountPaid,
+            purchasedAt: membershipOnDate.purchasedAt,
+            transactionId: membershipOnDate.transactionId?._id || null,
+          } : null,
         });
       }
     }
+
+    console.log("Final referrals count:", todayReferrals.length);
 
     res.status(200).json({
       success: true,
@@ -427,9 +472,9 @@ export const getUserTodayReferralPerformance = async (req, res) => {
       referrals: todayReferrals,
     });
   } catch (error) {
-    console.error("Error fetching user's today referral performance:", error);
+    console.error("Error fetching user's referral performance:", error);
     res.status(500).json({
-      message: "Failed to fetch user's today referral performance",
+      message: "Failed to fetch user's referral performance",
       error: error.message,
     });
   }

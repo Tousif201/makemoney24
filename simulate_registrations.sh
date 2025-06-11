@@ -4,7 +4,7 @@
 REGISTER_ENDPOINT="http://localhost:3000/api/auth/register"
 UPGRADE_BASE_ENDPOINT="http://localhost:3000/api/users/upgrade" # Will append userId
 NUM_USERS_TO_REGISTER=30
-DELAY_SECONDS=2 # Delay between registrations in seconds (e.g., 0.5 for 500ms)
+DELAY_SECONDS=1 # Delay between registrations in seconds (e.g., 0.5 for 500ms)
 
 # Membership details for upgrade
 MEMBERSHIP_AMOUNT=5500

@@ -60,6 +60,7 @@ const userSchema = new Schema(
     accountStatus: {
       type: String,
       enum: ["active", "suspended"],
+      default:"active",
     },
     emiHistory: [
       {
