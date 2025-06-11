@@ -106,22 +106,33 @@ export const fetchUserDetails = async (userId) => {
 };
 
 // Function to fetch user's referral performance (requires admin role)
-export const fetchUserReferralPerformance = async (userId, date) => {
+export const fetchUserReferralPerformance = async (userId, date,authToken) => {
   try {
-
     const token = localStorage.getItem("authToken");
     if (!token) throw new Error("Token not found");
-    const response = await apiClient.post(`/admin-dashboard/user/referral-performance/${userId}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
+    
+    // DEBUG: Log what we're sending
+    console.log("=== FRONTEND DEBUG ===");
+    console.log("userId:", userId);
+    console.log("date being sent:", date);
+    console.log("typeof date:", typeof date);
+    console.log("=====================");
+    
+    const response = await apiClient.post(
+      `/admin-dashboard/user/referral-performance/${userId}`,
+      {
+        date: date,
       },
-      data: {
-        date: date, // Send date as a query parameter if provided
-      },
-    });
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    
+    console.log("Referral performance response:", response.data);
     return response.data;
   } catch (error) {
-
     console.error('Error fetching user referral performance:', error);
     throw error;
   }

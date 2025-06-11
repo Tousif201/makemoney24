@@ -67,14 +67,28 @@ function UsersDetailsPageAdmin() {
   const [userData, setUserData] = useState(null);
   const [referralData, setReferralData] = useState(null);
   const [emiHistory, setEmiHistory] = useState(null);
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(null);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const params = useParams();
   const { id } = params;
   const authToken = localStorage.getItem("token");
+
+  // Fixed formatDate function
   const formatDate = (date) => {
-    return date.toLocaleDateString("en-US", {
+    // Add null/undefined check
+    if (!date) {
+      return "Select Date";
+    }
+    const validDate = date instanceof Date ? date : new Date(date);
+    
+    // Check if the date is valid
+    if (isNaN(validDate.getTime())) {
+      return "Invalid Date";
+    }
+    
+    return validDate.toLocaleDateString("en-US", {
       year: "numeric",
       month: "long",
       day: "numeric",
@@ -101,7 +115,10 @@ function UsersDetailsPageAdmin() {
       if (id) {
         try {
           const formattedDate = selectedDate ? selectedDate.toISOString().split('T')[0] : null;
-          const data = await fetchUserReferralPerformance(id, authToken, formattedDate);
+          console.log("Selected date:", selectedDate);
+          console.log("Formatted date being sent to API:", formattedDate);
+          const data = await fetchUserReferralPerformance(id,formattedDate,authToken);
+          console.log("Referral frontend data:", data);
           setReferralData(data.referrals);
         } catch (error) {
           console.error("Error fetching referral data:", error);
@@ -199,8 +216,6 @@ function UsersDetailsPageAdmin() {
 
   const [isExporting, setIsExporting] = useState(false);
 
-
-
   const handleExportPDF = async () => {
     if (!pdfRef.current) return;
     setIsExporting(true);
@@ -287,7 +302,7 @@ function UsersDetailsPageAdmin() {
       
       // 🚨 Mobile के लिए user-friendly error message
       if (window.innerWidth <= 768) {
-        alert("PDF export problem ! Please tyr again।");
+        alert("PDF export problem ! Please try again।");
       }
     } finally {
       setIsExporting(false);
@@ -310,6 +325,7 @@ function UsersDetailsPageAdmin() {
       URL.revokeObjectURL(url);
     }, 100);
   };
+
   if (!userData) {
     return <div>Loading user data...</div>;
   }
@@ -329,7 +345,7 @@ function UsersDetailsPageAdmin() {
                 User Details
               </h1>
               <p className="text-gray-600">
-                Manage user performance and EMI details -{userData.name}
+                Manage user performance and EMI details - {userData.name}
               </p>
             </div>
           </div>
@@ -458,23 +474,26 @@ function UsersDetailsPageAdmin() {
                       Daily Performance
                     </CardTitle>
                     <CardDescription>
-                      Referral performance for {formatDate(selectedDate)}
+                      Referral performance for {selectedDate ? formatDate(selectedDate) : "Select a date to view performance"}
                     </CardDescription>
                   </div>
 
-                  <div className="flex flex-col  items-stretch sm:items-center gap-2 w-full sm:w-auto">
+                  <div className="flex flex-col items-stretch sm:items-center gap-2 w-full sm:w-auto">
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button variant="outline" className="justify-start">
                           <Calendar className="w-4 h-4 mr-2" />
-                          {formatDate(selectedDate)}
+                          {selectedDate ? formatDate(selectedDate) : "Select Date"}
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="end">
                         <CalendarComponent
                           mode="single"
                           selected={selectedDate}
-                          onSelect={setSelectedDate}
+                          onSelect={(date) => {
+                            console.log("Date selected from calendar:", date);
+                            setSelectedDate(date);
+                          }}
                           initialFocus
                         />
                       </PopoverContent>
@@ -595,7 +614,7 @@ function UsersDetailsPageAdmin() {
                             ₹{emi.totalAmount?.toLocaleString()}
                           </TableCell>
                           <TableCell className="text-green-600">
-                            ₹{emi.paidInstallments * emi.installmentAmount?.toLocaleString()}
+                            ₹{(emi.paidInstallments * emi.installmentAmount)?.toLocaleString()}
                           </TableCell>
                           <TableCell className="text-red-600">
                             ₹{emi.remainingAmount?.toLocaleString()}
