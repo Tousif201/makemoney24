@@ -4,8 +4,8 @@ import backImg from "../assets/cashback/cardback.png";
 import logo from "../assets/makemoney.png";
 
 const CashbackCardBack = ({
-  phone = "+123-456-7890",
-  email = "hello@reallygreatsite.com",
+  phone = "+919545827264",
+  email = "info@makemoney24hrs.com",
   notes = [
     "This card is only valid for people who are registered as members",
     "This membership card can be used in all regions",

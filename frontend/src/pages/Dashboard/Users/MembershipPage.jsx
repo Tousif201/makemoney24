@@ -369,6 +369,7 @@ export default function MembershipPage() {
                 <CashbackCardFront
                   userName={user?.name || "Default User"}
                   date={user?.createdAt || "2023-08-01"}
+                  cardNumber={user?.referralCode || "MM24 1234 5678"}
                 />
               </CardContent>
             </Card>
