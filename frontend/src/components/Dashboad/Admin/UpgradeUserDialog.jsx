@@ -72,7 +72,6 @@ export default function UpgradeUserDialog({ userId, name, onUpgradeSuccess }) {
       setSelectedPackageId(""); // Clear selected package when dialog closes
     }
   }, [isDialogOpen]);
-
   const handleSubmit = async (e) => {
     e.preventDefault(); // Prevent default form submission behavior
 
@@ -97,10 +96,19 @@ export default function UpgradeUserDialog({ userId, name, onUpgradeSuccess }) {
         return;
       }
 
+      // Generate a unique random CashFree Order ID for manual enrollment
+      // A simple timestamp-based approach combined with a random string can be used for uniqueness.
+      const generateUniqueCashFreeOrderId = () => {
+        return `CF_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+      };
+
+      const uniqueCashFreeOrderId = generateUniqueCashFreeOrderId();
+
       // Call the upgradeUser API function
       const response = await upgradeUser(userId, {
         membershipPackageId: selectedPackageId,
         membershipAmount: selectedPackage.packageAmount + selectedPackage.miscellaneousAmount, // Pass the amount from the selected package
+        cashFreeOrderId: uniqueCashFreeOrderId // Send the generated unique random key
       });
 
       if (response.success) {
@@ -129,6 +137,7 @@ export default function UpgradeUserDialog({ userId, name, onUpgradeSuccess }) {
       setIsSubmitting(false);
     }
   };
+
 
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
