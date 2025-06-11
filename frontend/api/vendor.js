@@ -105,6 +105,7 @@ export const getProductServices = async (payload = {}) => {
     const response = await apiClient.get("/product-services", {
       params: payload, // Axios automatically serializes this object into query parameters
     });
+    console.log("response api",response)
     return response.data; // The actual product/service data is in response.data
   } catch (error) {
     console.error("Error fetching product/services:", error);

@@ -171,7 +171,7 @@ export default function VendorDetailsPage({ }) { // Accept vendorId as a prop
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-col md:flex-row md:items-center md:justify-between gap-4 sm:gap-2 mb-4">
           <h1 className="text-3xl font-bold text-gray-900">{vendorData?.vendorDetails?.name || 'Vendor Details'}</h1>
           <div className="flex items-center gap-4">
             <Select value={orderFilter} onValueChange={setOrderFilter}>
