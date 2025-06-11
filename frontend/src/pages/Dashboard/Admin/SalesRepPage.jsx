@@ -65,6 +65,7 @@ export default function SalesRepsPage() {
       const response = await CreateSalesRep(newSalesRepData);
       if (response.success) {
         setSuccessMessage("Sales representative created successfully!"); // This will be handled by toast
+        window.location.reload()
         toast({
           title: "Success",
           description: "Sales representative created successfully!",
@@ -103,6 +104,7 @@ export default function SalesRepsPage() {
       const response = await deleteSalesRep(id);
       if (response.success) {
         setSuccessMessage("Sales representative deleted successfully."); // This will be handled by toast
+        window.location.reload()
         toast({
           title: "Success",
           description: "Sales representative deleted successfully.",

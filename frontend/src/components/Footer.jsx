@@ -34,7 +34,7 @@ const MobileBottomNav = () => {
         <div className=" p-2 rounded-lg">
         <HandCoins size={24} />
           </div>
-          Emi
+          EMI
         </Link>
 
         <Link to="/dashboard/tickets" className="p-2 text-gray-600">
@@ -48,7 +48,7 @@ const MobileBottomNav = () => {
         <div className=" p-2 rounded-lg ">
         <User size={22} />
           </div>
-          Profile
+          Account
         </Link>
       </div>
     </div>

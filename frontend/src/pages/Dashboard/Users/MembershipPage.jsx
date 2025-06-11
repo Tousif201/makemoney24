@@ -363,17 +363,17 @@ export default function MembershipPage() {
         
         <div  className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
           <Card className="border-2 border-dashed border-blue-200 hover:border-blue-400 transition-colors">
-            <CardContent  className="p-6 ">
+          <CardContent style={{ textAlign: 'left',marginTop: '-10px' }}>
                <CashbackCardFront  
                  userName={user?.name || "Default User"}      
                  date ={user?.createdAt || "2023-08-01"}
-                
+                 
                  />  
             </CardContent>
           </Card>
 
           <Card className="border-2 border-dashed border-green-200 hover:border-green-400 transition-colors">
-            <CardContent className="p-6">
+            <CardContent style={{ textAlign: 'left', marginTop: '-10px' }}>
               <CashbackCardBack />         
             </CardContent>
           </Card>

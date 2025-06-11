@@ -68,7 +68,7 @@ const UserScrollSlider = () => {
           {Array.from({ length: 6 }).map((_, index) => (
             <div
               key={index}
-              className="w-32 h-40 flex flex-col items-center justify-start mx-2 shrink-0"
+              className=" w-32 h-40 flex flex-col items-center justify-start mx-2 shrink-0"
             >
               <Skeleton className="w-28 h-28 rounded-full" />
               <Skeleton className="w-20 h-4 mt-2 rounded-md" />
