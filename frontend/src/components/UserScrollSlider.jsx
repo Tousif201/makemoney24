@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { getAllCategoriesWithImages } from "../../api/categories";
+import { getAllCategoriesWithImages } from "../../api/categories"; // Ensure this API function fetches the 'image' object
 import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton"; // Import Shadcn Skeleton
 
@@ -13,13 +13,16 @@ const UserScrollSlider = () => {
     const fetchCategories = async () => {
       try {
         setLoading(true);
+        // Assuming getAllCategoriesWithImages now returns categories with an 'image' object {url, key}
         const fetchedCategories = await getAllCategoriesWithImages();
+
         const formattedCategories = fetchedCategories.map((cat) => ({
           _id: cat._id,
+          // Access the image URL safely using optional chaining
           img:
-            cat.imageUrl ||
+            cat.image?.url ||
             "https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png",
-          name: cat.categoryName,
+          name: cat.name, // Assuming the category name is now 'name' instead of 'categoryName' based on your previous controller
         }));
         setCategories(formattedCategories);
       } catch (err) {
@@ -37,7 +40,10 @@ const UserScrollSlider = () => {
     const scrollContainer = scrollContainerRef.current;
     if (scrollContainer) {
       // Check if the user has reached the end
-      if (scrollContainer.scrollLeft + scrollContainer.clientWidth >= scrollContainer.scrollWidth - 5) {
+      if (
+        scrollContainer.scrollLeft + scrollContainer.clientWidth >=
+        scrollContainer.scrollWidth - 5
+      ) {
         loadMoreCategories();
       }
     }
@@ -46,9 +52,10 @@ const UserScrollSlider = () => {
   const loadMoreCategories = () => {
     if (categories.length > 0) {
       // Append the same categories again for infinite scrolling
-      const newCategories = categories.map((cat) => ({
+      // Make sure to create truly unique _id for React's key prop
+      const newCategories = categories.map((cat, index) => ({
         ...cat,
-        _id: `${cat._id}-copy`, // Ensure unique _id for React rendering
+        _id: `${cat._id}-copy-${Date.now()}-${index}`, // Ensure unique _id for React rendering
       }));
       setCategories((prevCategories) => [...prevCategories, ...newCategories]);
     }
@@ -89,7 +96,11 @@ const UserScrollSlider = () => {
   }
 
   return (
-    <div className="scroll-container" ref={scrollContainerRef} onScroll={handleScroll}>
+    <div
+      className="scroll-container"
+      ref={scrollContainerRef}
+      onScroll={handleScroll}
+    >
       <div className="scroll-content">
         {categories.map((item) => (
           <Link

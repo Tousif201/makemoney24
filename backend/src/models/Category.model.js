@@ -14,6 +14,11 @@ const categorySchema = new Schema(
       ref: "Category",
       default: null, // null for top-level categories
     },
+    // Image field with url and key
+    image: {
+      url: { type: String, default: "" }, // Public URL of the image
+      key: { type: String, default: "" }, // Storage key (e.g. S3 key or Cloudinary public_id)
+    },
     createdAt: { type: Date, default: Date.now },
   },
   {
