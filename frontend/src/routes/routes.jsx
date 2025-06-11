@@ -51,13 +51,14 @@ import TermsAndConditions from "../pages/TermsAndConditions";
 import PrivacyPolicy from "../pages/PrivacyPolicy";
 import CompanyPolicy from "../pages/CompanyPolicy";
 import BusinessPlan from "../pages/BusinessPlan";
-import EmiPlan from "../pages/EmiPlan"
+import EmiPlan from "../pages/EmiPlan";
 import PackagesPage from "../pages/Dashboard/Admin/PackagesPage";
 import SalesRepsPage from "../pages/Dashboard/Admin/SalesRepPage";
 import CouponManager from "../pages/Dashboard/Admin/Coupon";
 import VendorDetailsPage from "../components/Dashboad/Admin/vendorDetailsPage";
 import TicketListPage from "../pages/Dashboard/Ticket/TicketListPage";
 import MessagingPage from "../pages/Dashboard/Ticket/MessagingPage";
+import CategoryManagementPage from "../pages/Dashboard/Admin/CategoryManagementPage";
 
 const routes = [
   {
@@ -490,6 +491,14 @@ const routes = [
     ),
   },
   {
+    path: "/dashboard/category",
+    element: (
+      <DashboardLayout>
+        <CategoryManagementPage />
+      </DashboardLayout>
+    ),
+  },
+  {
     path: "/dashboard/emi-schedule",
     element: (
       <DashboardLayout>
@@ -506,9 +515,7 @@ const routes = [
     ),
   },
 
-
-
-    {
+  {
     path: "/dashboard/tickets",
     element: (
       <DashboardLayout>
@@ -516,7 +523,7 @@ const routes = [
       </DashboardLayout>
     ),
   },
-   {
+  {
     path: "/dashboard/tickets/:ticketId",
     element: (
       <DashboardLayout>

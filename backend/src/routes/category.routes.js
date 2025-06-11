@@ -11,6 +11,7 @@ import {
   getAllCategoriesWithImages,
   getCategoriesWithSubcategories,
   getCategoriesByParentId,
+  getAllCategoriesFlat,
 } from "../controllers/category.controller.js";
 
 const router = express.Router();
@@ -18,6 +19,7 @@ const router = express.Router();
 // Category CRUD routes
 // Note: Order matters. More specific routes should come before less specific ones.
 
+router.get("/all-flat", getAllCategoriesFlat)
 router.get("/categories-with-images", getAllCategoriesWithImages);
 
 // New route for fetching all categories with nested subcategories
@@ -36,5 +38,4 @@ router.get("/", getCategories); // Get all TOP-LEVEL categories (with optional t
 router.get("/:id", getCategoryById); // Get a single category by ID (now populates parentId)
 router.put("/:id", updateCategory); // Update an existing category (now supports parentId)
 router.delete("/:id", deleteCategory); // Delete a category (with new integrity checks)
-
 export default router;

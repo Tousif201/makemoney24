@@ -38,12 +38,28 @@ export default function Login() {
       const payload = { email, password };
       const res = await loginUser(payload);
 
+      // Check if the response indicates OTP verification is needed
+      if (
+        res.message &&
+        res.message.includes("Your email is not verified") &&
+        res.email
+      ) {
+          console.log("OTP verification message received, redirecting...");
+
+        toast.info(res.message); // Show informative toast
+        navigate(`/otp/${res.email}`); // Redirect to OTP verification page with email
+          console.log("Navigation call made.");
+
+        return; // Stop further execution
+      }
+
       localStorage.setItem("authToken", res.authToken);
 
       toast.success("Login successful!"); // Sonner toast for success
       navigate("/"); // Redirect to home or dashboard
     } catch (err) {
-      const errorMessage = err.message || "Login failed. Please try again.";
+      const errorMessage =
+        err.response?.data?.message || err.message || "Login failed. Please try again.";
       toast.error(errorMessage); // Sonner toast for API errors
     } finally {
       setLoading(false); // Set loading to false after API call (success or failure)

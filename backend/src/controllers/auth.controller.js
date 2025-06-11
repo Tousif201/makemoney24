@@ -9,7 +9,7 @@ import { getComparePassword, getHashPassword } from "../utils/getPassword.js";
 import { Membership } from "../models/Membership.model.js";
 import { generateAuthToken } from "../utils/generateAuthToken.js";
 import { sendEmail } from "../utils/nodeMailerOtp.js";
-
+import { Membership } from "../models/Membership.model.js"
 /**
  * @desc Register a new user
  * @route POST /api/auth/register
@@ -130,16 +130,40 @@ export const loginUser = async (req, res) => {
           message: "Your account has been suspended. Please contact support.",
         });
     }
-  if(user.otp && user.otp.verified === false) {
-    return res.status(401).json({ message: "Please verify your OTP first." });
-  }
+
     // 3. Compare passwords
     const isMatch = await getComparePassword(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    // 4. Generate JWT token and set as cookie
+    // 4. Check if OTP is verified. If not, resend OTP and send a message.
+    if (user.otp && user.otp.verified === false) {
+      // Generate a new OTP
+      const newOtpCode = Math.floor(100000 + Math.random() * 900000).toString();
+      const hashedNewOtpCode = await bcrypt.hash(newOtpCode, 10);
+      const newOtpExpiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes expiry
+
+      // Update user's OTP fields
+      user.otp = {
+        code: hashedNewOtpCode,
+        expiresAt: newOtpExpiresAt,
+        verified: false,
+        lastSentAt: new Date(),
+      };
+      await user.save();
+
+      // Send the new OTP via email
+      await sendEmail(email, newOtpCode);
+
+      return res.status(201).json({
+        message:
+          `Your email is not verified. A new OTP has been sent to ${email}. Please verify your email.`,
+        email: user.email, // Optionally send back the email for client-side convenience
+      });
+    }
+
+    // 5. Generate JWT token and set as cookie
     const authToken = await generateAuthToken(
       res,
       user._id,
@@ -163,6 +187,7 @@ export const loginUser = async (req, res) => {
     res.status(500).json({ message: "Server error during login" });
   }
 };
+
 
 /**
  * @desc Log out user / clear cookie
@@ -481,10 +506,10 @@ export const getUserDetails = async (req, res) => {
     });
 
     const userDetails = {
-      name : user.name,
+      name: user.name,
       email: user.email,
       phone: user.phone,
-      referralCode:user.referralCode,
+      referralCode: user.referralCode,
       joiningDate: user.createdAt,
       profileScore: user.profileScore,
       totalReferrals: totalReferralsCount,
