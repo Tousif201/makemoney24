@@ -68,6 +68,7 @@ const EditPackageDialog = ({ isOpen, setIsOpen, selectedPackage, packages, setPa
         pkg._id === selectedPackage._id ? response.data : pkg // Use response.data which is the updated package from backend
       );
       setPackages(updatedPackages);
+    
       setIsOpen(false); // Close the dialog on success
     } catch (err) {
       setError("Failed to update package. Please try again.");

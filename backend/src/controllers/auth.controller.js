@@ -9,7 +9,10 @@ import { getComparePassword, getHashPassword } from "../utils/getPassword.js";
 import { Membership } from "../models/Membership.model.js";
 import { generateAuthToken } from "../utils/generateAuthToken.js";
 import { sendEmail } from "../utils/nodeMailerOtp.js";
+
 // import { Membership } from "../models/Membership.model.js"
+
+
 /**
  * @desc Register a new user
  * @route POST /api/auth/register

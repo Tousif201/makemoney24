@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Edit, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { format } from "date-fns";
 
 import CreatePackageDialog from "../../../../src/components/Dialogs/CreatePackageDialog";
 import EditPackageDialog from "../../../../src/components/Dialogs/EditPackageDialog";
@@ -18,7 +19,7 @@ const PackagesPage = () => {
     const fetchPackages = async () => {
       try {
         const response = await getMembershipPackage();
-        console.log("frontend package console",response)
+        console.log("frontend package console", response)
         if (response.success) {
           setPackages(response.data);
         } else {
@@ -80,7 +81,8 @@ const PackagesPage = () => {
                   <TableCell className="font-medium">{pkg.name}</TableCell>
                   <TableCell>₹{pkg.packageAmount}</TableCell>
                   <TableCell>{pkg.miscellaneousAmount} </TableCell>
-                  <TableCell>₹{pkg.createdAt}</TableCell>
+                  <TableCell>{format(new Date(pkg.createdAt), "dd-MM-yyyy")
+                  }</TableCell>
                   <TableCell>{pkg.validityInDays} days</TableCell>
                   <TableCell className="max-w-xs overflow-hidden text-ellipsis whitespace-nowrap">{pkg.description}</TableCell>
                   <TableCell>{pkg.totalUsersEnrolled}</TableCell>

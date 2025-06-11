@@ -46,6 +46,7 @@ const CreatePackageDialog = ({ packages, setPackages }) => {
             description: "",
             validityInDays: "",
           })
+          window.location.reload(e)
         toast.success("membership package created successfully");
         setIsOpen(false)
     } catch (error) {
@@ -128,7 +129,7 @@ const CreatePackageDialog = ({ packages, setPackages }) => {
               <Input
                 value={formData.validityInDays}
                 onChange={(e) => setFormData({ ...formData, validityInDays: e.target.value })}
-                required
+            
                 type = "number"
                 placeholder = "e.g., 1 for 1 day,  30 for 1 month,  365 for 1 year"
               />

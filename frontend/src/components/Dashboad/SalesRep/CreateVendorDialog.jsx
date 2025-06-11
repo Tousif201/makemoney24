@@ -131,7 +131,7 @@ export function CreateVendorDialog({ children }) {
         salesRepId,
         kycDocumentImage: uploadedDocuments, // Attach the uploaded documents
       };
-console.log(payloada);
+
       // --- 4. Create the vendor ---
       const result = await createVendor(payload);
       toast.success("Vendor created successfully!", {

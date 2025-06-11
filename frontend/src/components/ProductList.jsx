@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import ProductCard from "./ProductCard";
 import { getProductServices } from "../../api/productService"; // Ensure this path is correct
+import { getCategoriesByParentId } from "../../api/categories"; // Import for category fetching
 import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton"; // Import Shadcn Skeleton
 import { Input } from "@/components/ui/input"; // Assuming you have a Shadcn Input component
@@ -27,6 +28,12 @@ const ProductList = () => {
   const [sortBy, setSortBy] = useState("createdAt"); // 'createdAt', 'price', 'title'
   const [sortOrder, setSortOrder] = useState("desc"); // 'asc', 'desc'
   const [searchTerm, setSearchTerm] = useState("");
+
+  // New Category and Price Range Filter States
+  const [allCategories, setAllCategories] = useState([]); // Stores all fetched categories for lookup
+  const [level2and3Categories, setLevel2and3Categories] = useState([]); // Categories to display in the dropdown
+  const [selectedCategory, setSelectedCategory] = useState("all"); // ID of the selected category or "all"
+  const [selectedPriceRange, setSelectedPriceRange] = useState("all"); // String like "0-500", "501-1000", "1001-above"
 
   // Infinite Scroll Observer
   const observer = useRef();
@@ -93,6 +100,55 @@ const ProductList = () => {
     fetchProducts();
   }, [currentPage]); // Re-fetch when currentPage changes
 
+  // --- Effect to Fetch All Hierarchical Categories (Level 2 and 3) ---
+  useEffect(() => {
+    const fetchAllHierarchicalCategories = async () => {
+      try {
+        const fetchedL2L3Categories = [];
+        const fetchedAllCategories = []; // To hold all categories for potential future use
+
+        // Fetch top-level categories for 'product' and 'service'
+        const productTopLevel = await getCategoriesByParentId(
+          "null",
+          "product"
+        );
+        const serviceTopLevel = await getCategoriesByParentId(
+          "null",
+          "service"
+        );
+
+        const allTopLevel = [...productTopLevel, ...serviceTopLevel];
+        fetchedAllCategories.push(...allTopLevel);
+
+        for (const topCat of allTopLevel) {
+          // Fetch Level 2 categories
+          const level2Cats = await getCategoriesByParentId(
+            topCat._id,
+            topCat.type
+          );
+          fetchedAllCategories.push(...level2Cats);
+          fetchedL2L3Categories.push(...level2Cats); // Level 2 categories are included
+
+          for (const level2Cat of level2Cats) {
+            // Fetch Level 3 categories
+            const level3Cats = await getCategoriesByParentId(
+              level2Cat._id,
+              level2Cat.type
+            );
+            fetchedAllCategories.push(...level3Cats);
+            fetchedL2L3Categories.push(...level3Cats); // Level 3 categories are included
+          }
+        }
+        setLevel2and3Categories(fetchedL2L3Categories);
+        setAllCategories(fetchedAllCategories);
+      } catch (err) {
+        console.error("Error fetching hierarchical categories:", err);
+        // Optionally set an error state for category loading here
+      }
+    };
+    fetchAllHierarchicalCategories();
+  }, []); // Run once on mount
+
   // --- Client-Side Filtering and Sorting Effect ---
   useEffect(() => {
     let currentProducts = [...products]; // Start with the full list of fetched products
@@ -104,7 +160,25 @@ const ProductList = () => {
       );
     }
 
-    // 2. Apply Search Term Filter
+    // 2. Apply Category Filter (NEW)
+    if (selectedCategory !== "all") {
+      currentProducts = currentProducts.filter(
+        (product) => product.categoryId === selectedCategory
+      );
+    }
+
+    // 3. Apply Price Range Filter (NEW)
+    if (selectedPriceRange !== "all") {
+      const [minStr, maxStr] = selectedPriceRange.split("-");
+      const minPrice = parseFloat(minStr);
+      const maxPrice = maxStr === "above" ? Infinity : parseFloat(maxStr);
+
+      currentProducts = currentProducts.filter(
+        (product) => product.price >= minPrice && product.price <= maxPrice
+      );
+    }
+
+    // 4. Apply Search Term Filter
     if (searchTerm) {
       const lowerCaseSearchTerm = searchTerm.toLowerCase();
       currentProducts = currentProducts.filter(
@@ -114,7 +188,7 @@ const ProductList = () => {
       );
     }
 
-    // 3. Apply Sorting
+    // 5. Apply Sorting
     currentProducts.sort((a, b) => {
       let valA, valB;
 
@@ -140,11 +214,22 @@ const ProductList = () => {
     });
 
     setFilteredAndSortedProducts(currentProducts);
-  }, [products, filterType, sortBy, sortOrder, searchTerm]); // Re-run when any of these dependencies change
+  }, [
+    products,
+    filterType,
+    selectedCategory,
+    selectedPriceRange,
+    sortBy,
+    sortOrder,
+    searchTerm,
+  ]); // Re-run when any of these dependencies change
 
   // --- Handlers for Filter and Sort UI ---
   const handleFilterTypeChange = (type) => {
     setFilterType(type);
+    setCurrentPage(1); // Reset page on filter change to fetch from start
+    setProducts([]); // Clear existing products
+    setHasMore(true); // Assume more data
   };
 
   const handleSortChange = (value) => {
@@ -156,6 +241,15 @@ const ProductList = () => {
 
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
+  };
+
+  // New Handlers for Category and Price Range
+  const handleCategoryChange = (value) => {
+    setSelectedCategory(value);
+  };
+
+  const handlePriceRangeChange = (value) => {
+    setSelectedPriceRange(value);
   };
 
   if (loading && currentPage === 1) {
@@ -213,42 +307,8 @@ const ProductList = () => {
         </h2>
 
         {/* --- Filters and Search Section --- */}
-        <div className="mb-8 flex flex-col sm:flex-row justify-between items-center gap-4">
-          {/* Filter Buttons (Retained from original) */}
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => handleFilterTypeChange("all")}
-              className={`px-5 py-2 rounded-full text-base font-medium transition-colors duration-200 ${
-                filterType === "all"
-                  ? "bg-indigo-600 text-white shadow-md"
-                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-              }`}
-            >
-              All Items
-            </button>
-            <button
-              onClick={() => handleFilterTypeChange("product")}
-              className={`px-5 py-2 rounded-full text-base font-medium transition-colors duration-200 ${
-                filterType === "product"
-                  ? "bg-indigo-600 text-white shadow-md"
-                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-              }`}
-            >
-              Products
-            </button>
-            <button
-              onClick={() => handleFilterTypeChange("service")}
-              className={`px-5 py-2 rounded-full text-base font-medium transition-colors duration-200 ${
-                filterType === "service"
-                  ? "bg-indigo-600 text-white shadow-md"
-                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-              }`}
-            >
-              Services
-            </button>
-          </div>
-
-          {/* Search and Sort */}
+        <div className="mb-8 flex flex-col sm:flex-row justify-center items-center gap-4">
+          {/* Search, Category, Price Range, and Sort */}
           <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
             <Input
               type="text"
@@ -257,21 +317,60 @@ const ProductList = () => {
               onChange={handleSearchChange}
               className="w-full sm:w-64"
             />
-            <Select
-              onValueChange={handleSortChange}
-              defaultValue={`${sortBy}-${sortOrder}`}
-            >
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="createdAt-desc">Newest</SelectItem>
-                <SelectItem value="price-asc">Price: Low to High</SelectItem>
-                <SelectItem value="price-desc">Price: High to Low</SelectItem>
-                <SelectItem value="title-asc">Alphabetical (A-Z)</SelectItem>
-                <SelectItem value="title-desc">Alphabetical (Z-A)</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex space-x-2">
+              {/* Category Dropdown (NEW) */}
+              <Select
+                onValueChange={handleCategoryChange}
+                value={selectedCategory}
+              >
+                <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectValue placeholder="Filter by Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {level2and3Categories.map((cat) => (
+                    <SelectItem key={cat._id} value={cat._id}>
+                      {cat.name} ({cat.type})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Price Range Dropdown (NEW) */}
+              <Select
+                onValueChange={handlePriceRangeChange}
+                value={selectedPriceRange}
+              >
+                <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectValue placeholder="Filter by Price" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Prices</SelectItem>
+                  <SelectItem value="0-500">₹0 - ₹500</SelectItem>
+                  <SelectItem value="501-1000">₹501 - ₹1000</SelectItem>
+                  <SelectItem value="1001-2000">₹1001 - ₹2000</SelectItem>
+                  <SelectItem value="2001-5000">₹2001 - ₹5000</SelectItem>
+                  <SelectItem value="5001-above">₹5001 & Above</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Existing Sort Dropdown */}
+              <Select
+                onValueChange={handleSortChange}
+                defaultValue={`${sortBy}-${sortOrder}`}
+              >
+                <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="createdAt-desc">Newest</SelectItem>
+                  <SelectItem value="price-asc">Price: Low to High</SelectItem>
+                  <SelectItem value="price-desc">Price: High to Low</SelectItem>
+                  <SelectItem value="title-asc">Alphabetical (A-Z)</SelectItem>
+                  <SelectItem value="title-desc">Alphabetical (Z-A)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
 

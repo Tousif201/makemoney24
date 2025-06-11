@@ -15,14 +15,13 @@ const UserScrollSlider = () => {
         setLoading(true);
         // Assuming getAllCategoriesWithImages now returns categories with an 'image' object {url, key}
         const fetchedCategories = await getAllCategoriesWithImages();
-
         const formattedCategories = fetchedCategories.map((cat) => ({
           _id: cat._id,
           // Access the image URL safely using optional chaining
           img:
             cat.image?.url ||
             "https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png",
-          name: cat.name, // Assuming the category name is now 'name' instead of 'categoryName' based on your previous controller
+          name: cat.categoryName, // Assuming the category name is now 'name' instead of 'categoryName' based on your previous controller
         }));
         setCategories(formattedCategories);
       } catch (err) {
@@ -68,7 +67,7 @@ const UserScrollSlider = () => {
           {Array.from({ length: 6 }).map((_, index) => (
             <div
               key={index}
-              className="w-32 h-40 flex flex-col items-center justify-start mx-2 shrink-0"
+              className=" w-32 h-40 flex flex-col items-center justify-start mx-2 shrink-0"
             >
               <Skeleton className="w-28 h-28 rounded-full" />
               <Skeleton className="w-20 h-4 mt-2 rounded-md" />
