@@ -21,7 +21,7 @@ export function SalesRepCards({ salesReps }) {
         </CardContent>
       </Card>
 
-      <Card>
+      {/* <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
           <IndianRupee className="h-4 w-4 text-muted-foreground" />
@@ -30,9 +30,9 @@ export function SalesRepCards({ salesReps }) {
           <div className="text-2xl font-bold">₹{totalSales.toLocaleString()}</div>
           <p className="text-xs text-muted-foreground">Across all representatives</p>
         </CardContent>
-      </Card>
+      </Card> */}
 
-      <Card>
+      {/* <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Active Deals</CardTitle>
           <Target className="h-4 w-4 text-muted-foreground" />
@@ -41,9 +41,9 @@ export function SalesRepCards({ salesReps }) {
           <div className="text-2xl font-bold">{totalActiveDeals}</div>
           <p className="text-xs text-muted-foreground">Currently in pipeline</p>
         </CardContent>
-      </Card>
+      </Card> */}
 
-      <Card>
+      {/* <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Average Sales</CardTitle>
           <TrendingUp className="h-4 w-4 text-muted-foreground" />
@@ -52,7 +52,7 @@ export function SalesRepCards({ salesReps }) {
           <div className="text-2xl font-bold">₹{Math.round(averageSales).toLocaleString()}</div>
           <p className="text-xs text-muted-foreground">Per sales representative</p>
         </CardContent>
-      </Card>
+      </Card> */}
     </div>
   );
 }

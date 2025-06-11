@@ -20,22 +20,35 @@ const MobileBottomNav = () => {
           <div className="bg-purple-100 p-2 rounded-lg">
             <Home size={22} />
           </div>
+          Home
         </Link>
 
-        <Link to="/browse" className="p-2 text-gray-600">
+        <Link to="/browse" className="p-2  text-gray-600">
+        <div className=" p-2 rounded-lg">
           <Grid3X3 size={22} />
+          </div>
+          category
         </Link>
 
         <Link to="/emi-plan" className="p-2 text-gray-600">
-          <HandCoins size={24} />
+        <div className=" p-2 rounded-lg">
+        <HandCoins size={24} />
+          </div>
+          Emi
         </Link>
 
         <Link to="/dashboard/tickets" className="p-2 text-gray-600">
-          <HelpCircle size={22} />
+        <div className=" p-2 rounded-lg">
+        <HelpCircle size={22} />
+          </div>
+         Help
         </Link>
 
         <Link to="/dashboard" className="p-2 text-gray600">
-          <User size={22} />
+        <div className=" p-2 rounded-lg ">
+        <User size={22} />
+          </div>
+          Profile
         </Link>
       </div>
     </div>

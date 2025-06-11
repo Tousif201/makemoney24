@@ -92,10 +92,10 @@ export function SalesRepTable({ salesReps, onDelete }) {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem onClick={() => handleEdit(salesRep)}>
+                          {/* <DropdownMenuItem onClick={() => handleEdit(salesRep)}>
                             <Pencil className="mr-2 h-4 w-4" />
                             Edit
-                          </DropdownMenuItem>
+                          </DropdownMenuItem> */}
                           <DropdownMenuItem onClick={() => onDelete(salesRep._id)} className="text-red-600">
                             <Trash2 className="mr-2 h-4 w-4" />
                             Delete
