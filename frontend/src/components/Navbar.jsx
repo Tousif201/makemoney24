@@ -28,16 +28,16 @@ import {
 // Shadcn ScrollArea Import
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-// Shadcn Tooltip Imports (NEW)
+// Shadcn Tooltip Imports
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip"; // Ensure this path is correct
+} from "@/components/ui/tooltip";
 
 // Import API for categories
-import { getCategoriesWithSubcategories } from "../../api/categories"; // Assuming this API exists and returns nested categories
+import { getCategoriesWithSubcategories } from "../../api/categories";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false); // Mobile menu open/close
@@ -92,16 +92,15 @@ export default function Navbar() {
 
   const handleLogout = () => {
     localStorage.removeItem("authToken");
-    // Optionally clear user data from a session context if you have one
-    // session.clearSession();
     setIsLoggedIn(false);
     navigate("/login"); // Redirect to login page after logout
   };
 
-  const NavLinkItem = ({ to, children, className = "" }) => (
+  const NavLinkItem = ({ to, children, className = "", onClick }) => (
     <Link
       to={to}
       className={`relative font-medium text-gray-700 hover:text-purple-600 transition-colors duration-200 group ${className}`}
+      onClick={onClick} // Pass onClick directly
     >
       {children}
       {/* Underline effect */}
@@ -126,9 +125,7 @@ export default function Navbar() {
 
         {/* Desktop Nav Links */}
         <nav className="hidden sm:flex items-center space-x-8">
-
           <NavLinkItem to="/">Products</NavLinkItem>
-
           <NavLinkItem to="/services">Services</NavLinkItem>
           {/* Browse Dropdown Menu */}
           <DropdownMenu>
@@ -158,10 +155,8 @@ export default function Navbar() {
                   No categories found.
                 </DropdownMenuItem>
               ) : (
-                // ScrollArea for the main category list in desktop
                 <ScrollArea className="h-auto max-h-80 pr-2">
                   {" "}
-                  {/* Added max-h-80 and pr-2 for scrollbar space */}
                   {categories.map((category) =>
                     category.children && category.children.length > 0 ? (
                       <DropdownMenuSub key={category._id}>
@@ -170,10 +165,8 @@ export default function Navbar() {
                           <ChevronRight className="ml-auto h-4 w-4 text-gray-500 group-hover:text-purple-600 transition-transform duration-150" />
                         </DropdownMenuSubTrigger>
                         <DropdownMenuSubContent className="w-64 p-2 shadow-lg rounded-md border border-gray-100 bg-white z-[65]">
-                          {/* ScrollArea for subcategory lists in desktop */}
                           <ScrollArea className="h-auto max-h-80 pr-2">
                             {" "}
-                            {/* Added max-h-80 and pr-2 */}
                             {category.children.map((subCategory) => (
                               <DropdownMenuItem key={subCategory._id} asChild>
                                 <Link
@@ -200,29 +193,13 @@ export default function Navbar() {
                   )}
                 </ScrollArea>
               )}
-              {/* {categories.length > 0 && (
-                <>
-                  <DropdownMenuSeparator className="my-2 bg-gray-100" />
-                  <DropdownMenuItem asChild>
-                    <Link
-                      to="/browse"
-                      className="block font-semibold text-blue-600 hover:bg-blue-50 hover:text-blue-700 transition-colors duration-150 rounded px-2 py-1.5"
-                    >
-                      View All
-                    </Link>
-                  </DropdownMenuItem>
-                </>
-              )} */}
             </DropdownMenuContent>
           </DropdownMenu>
           <NavLinkItem to="/about">About</NavLinkItem>
-
-          {/* Add more desktop links here if needed */}
         </nav>
 
         {/* Auth Buttons / User */}
         <div className="hidden sm:flex items-center space-x-3">
-          {/* TooltipProvider wraps the entire section where tooltips are needed */}
           <TooltipProvider>
             {isLoggedIn ? (
               <>
@@ -293,7 +270,7 @@ export default function Navbar() {
               <Button
                 variant="ghost"
                 className="p-2 rounded-full text-gray-700"
-                title="Dashboard" // Native title for mobile, since tooltips aren't ideal on touch
+                title="Dashboard"
               >
                 <User size={20} />
               </Button>
@@ -312,6 +289,22 @@ export default function Navbar() {
       {/* Mobile Nav */}
       {isOpen && (
         <div className="sm:hidden bg-white border-t border-gray-100 px-4 py-4 space-y-4 shadow-lg animate-slideIn">
+          {/* Explicit Mobile Nav Links for consistency */}
+          <NavLinkItem
+            to="/"
+            className="block text-gray-700 hover:text-purple-600 text-lg py-2"
+            onClick={() => setIsOpen(false)} // Close menu on click
+          >
+            Products
+          </NavLinkItem>
+          <NavLinkItem
+            to="/services"
+            className="block text-gray-700 hover:text-purple-600 text-lg py-2"
+            onClick={() => setIsOpen(false)} // Close menu on click
+          >
+            Services
+          </NavLinkItem>
+
           {/* Browse Section for Mobile */}
           <div className="border-b pb-3 mb-3 border-gray-100">
             <Button
@@ -366,19 +359,20 @@ export default function Navbar() {
                                   key={subCategory._id}
                                   to={`/browse?categories=${subCategory._id}`}
                                   className="block text-gray-600 hover:text-purple-600 transition-colors duration-200 text-sm py-1.5"
-                                  onClick={() => setIsOpen(false)} // Close menu on click
+                                  onClick={() => setIsOpen(false)}
                                 >
                                   {subCategory.name}
                                 </Link>
                               ))}
                             </div>
                           )}
+                        {/* If a category has no children, render it as a direct link */}
                         {(!category.children ||
                           category.children.length === 0) && (
                           <Link
                             to={`/browse?categories=${category._id}`}
                             className="block text-gray-700 hover:text-purple-600 transition-colors duration-200 text-base py-1.5"
-                            onClick={() => setIsOpen(false)} // Close menu on click
+                            onClick={() => setIsOpen(false)}
                           >
                             {category.name}
                           </Link>
@@ -403,10 +397,10 @@ export default function Navbar() {
           <NavLinkItem
             to="/about"
             className="block text-gray-700 hover:text-purple-600 text-lg py-2"
+            onClick={() => setIsOpen(false)} // Close menu on click
           >
             About
           </NavLinkItem>
-          {/* Add more mobile links here if needed */}
 
           {isLoggedIn ? (
             <Button
