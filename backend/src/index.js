@@ -1,7 +1,7 @@
 // index.js
 import express from "express";
-import { createServer } from 'http'; // Import createServer
-import { Server } from 'socket.io'; // Import Server from socket.io
+import { createServer } from 'http';
+import { Server } from 'socket.io';
 import dotenv from "dotenv";
 import cors from "cors";
 import cron from "node-cron";
@@ -11,8 +11,6 @@ import { connectDB } from "./config/database.js";
 import startScoreUpdaterCron from "./cron-jobs/profileScoreUpdater.cron.js";
 import startMilestoneRewarderCron from "./cron-jobs/milestoneRewarder.cron.js";
 import startProfileScoreRewarderCron from "./cron-jobs/profileScoreRewarder.cron.js";
-
-// Import your new socket handler
 import setupTicketSocketEvents from './sockets/tickets.js';
 
 dotenv.config();
@@ -20,35 +18,37 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Create an HTTP server from your Express app
+// --- Create HTTP server ---
 const httpServer = createServer(app);
 
-// Configure Socket.IO
+// --- Configure Socket.IO ---
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.CORS_ORIGIN || "*", // Adjust this to your frontend URL in production
+    origin: "*", // Allows all origins (Note: If using credentials, configure properly below)
     methods: ["GET", "POST"],
-    credentials: true // Allow sending cookies/auth headers if needed
+    credentials: true
   }
 });
 
-// Setup Socket.IO event handlers for tickets
+// --- Setup Socket Events ---
 setupTicketSocketEvents(io);
 
-// --- Essential Middlewares ---
+// --- Middleware: CORS ---
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || "*", // Ensure this matches your frontend URL for REST API
+  origin: (origin, callback) => callback(null, true), // Allow all origins dynamically
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true
 }));
+
+// --- Middleware: JSON Parser ---
 app.use(express.json());
 // app.use(express.urlencoded({ extended: true }));
 
 // --- API Routes ---
 app.use("/api", apiRoutes);
 
-// --- Root Endpoint ---
+// --- Root Route ---
 app.get("/", (req, res) => {
   res.json({ message: "Welcome to the makeMoney24 API! ✨" });
 });
@@ -64,21 +64,21 @@ app.use((err, req, res, next) => {
   });
 });
 
-// --- Connect DB and Start Server ---
+// --- Connect to DB and Start Server ---
 connectDB()
   .then(() => {
-    // Listen with httpServer, not app, so Socket.IO can use the same server
     httpServer.listen(PORT, () => {
       beyonderLogger();
       console.log(`✅ Server listening on http://localhost:${PORT}`);
       console.log(`✅ Socket.IO server running on ws://localhost:${PORT}`);
     });
-  }).then(() => {
+  })
+  .then(() => {
     // --- Start Cron Jobs ---
     startScoreUpdaterCron();
     startProfileScoreRewarderCron();
     startMilestoneRewarderCron();
-    console.log('All cron jobs initialized.')
+    console.log('All cron jobs initialized.');
   })
   .catch((err) => {
     console.error("❌ Failed to start server:", err);
