@@ -4,7 +4,8 @@
 import { ProductService } from "../models/ProductService.model.js";
 import mongoose from "mongoose";
 import { Review } from "../models/Review.model.js";
-import { Vendor } from "../models/Vendor.model.js"
+import { Vendor } from "../models/Vendor.model.js";
+import {Category} from "../models/Category.model.js"
 // Helper function to validate ObjectId
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
@@ -136,10 +137,48 @@ export const createProductService = async (req, res) => {
  * @param {Object} res - Express response object
  * @returns {Object} { data: ProductServiceData[], totalCount: number, page: number, totalPages: number }
  */
+// --- NEW HELPER FUNCTION ---
+// This function finds all descendant category IDs for a given set of initial IDs.
+const getAllDescendantCategoryIds = async (initialCategoryIds) => {
+  if (!initialCategoryIds || initialCategoryIds.length === 0) {
+    return [];
+  }
+
+  // Use a Set to store final IDs to prevent duplicates
+  const finalIds = new Set(initialCategoryIds);
+  
+  // A queue to hold the IDs whose children we need to find
+  let queue = [...initialCategoryIds];
+
+  while (queue.length > 0) {
+    // Find all categories whose parent is in the current queue
+    const children = await Category.find({ parentId: { $in: queue } }).select("_id");
+    
+    // Get just the IDs of the children
+    const childrenIds = children.map(c => c._id.toString());
+    
+    // Clear the queue for the next iteration
+    queue = [];
+
+    for (const childId of childrenIds) {
+      // If we haven't already processed this ID, add it to the final set and the queue for the next level of search
+      if (!finalIds.has(childId)) {
+        finalIds.add(childId);
+        queue.push(childId);
+      }
+    }
+  }
+
+  // Convert the Set back to an array
+  return Array.from(finalIds);
+};
+
+
+// --- Main Controller Function ---
 export const getProductServices = async (req, res) => {
   try {
     const {
-      vendorId, // This is now the _id of the Vendor document
+      vendorId,
       categoryId,
       type,
       pincode,
@@ -153,54 +192,48 @@ export const getProductServices = async (req, res) => {
     } = req.query;
 
     const filter = {
-      isAdminApproved: "approved", // ✅ Only fetch approved products/services
+      isAdminApproved: "approved",
     };
 
-    let sort = { createdAt: -1 }; // Default sort
+    let sort = { createdAt: -1 };
 
-    // 1. Filtering Logic
-    if (vendorId) {
-      // Validate that the provided vendorId (which is a userId) is a valid ObjectId
-      if (!isValidObjectId(vendorId)) {
-        return res.status(400).json({ message: "Invalid User ID format for vendorId." });
-      }
-
-      // Find the Vendor document where its 'userId' field matches the incoming 'vendorId' (which is actually a userId)
-      const vendor = await Vendor.findOne({ userId: vendorId });
-      // If no vendor document is found with that userId, return an error
-      if (!vendor) {
-        return res.status(404).json({ message: "Vendor not found for the provided user ID." });
-      }
-
-      // Use the _id of the found Vendor document to filter ProductService
-      // This assumes your ProductService schema has a field named 'vendorId'
-      // that links to the Vendor model's _id
-      filter.vendorId = vendor._id;
-    }
-
-
+    // --- MODIFIED: Category Filtering Logic ---
     if (categoryId) {
-      const categoryIdsArray = categoryId.split(",").map((id) => id.trim());
-      const validCategoryIds = categoryIdsArray.filter((id) =>
-        isValidObjectId(id)
-      );
+      // 1. Get the initial list of IDs from the query string
+      const initialCategoryIds = categoryId
+        .split(",")
+        .map((id) => id.trim())
+        .filter((id) => isValidObjectId(id));
 
-      if (validCategoryIds.length === 0 && categoryIdsArray.length > 0) {
+      if (initialCategoryIds.length === 0) {
         return res
           .status(400)
           .json({ message: "Invalid Category ID format(s)." });
       }
 
+      // 2. Use the helper function to get the initial IDs PLUS all their descendants
+      const allApplicableCategoryIds = await getAllDescendantCategoryIds(initialCategoryIds);
+
+      // 3. Use this complete list in the filter
       filter.categoryId = {
-        $in: validCategoryIds.map((id) => new mongoose.Types.ObjectId(id)),
+        $in: allApplicableCategoryIds.map((id) => new mongoose.Types.ObjectId(id)),
       };
+    }
+
+    if (vendorId) {
+      if (!isValidObjectId(vendorId)) {
+        return res.status(400).json({ message: "Invalid User ID format for vendorId." });
+      }
+      const vendor = await Vendor.findOne({ userId: vendorId });
+      if (!vendor) {
+        return res.status(404).json({ message: "Vendor not found for the provided user ID." });
+      }
+      filter.vendorId = vendor._id;
     }
 
     if (type) {
       if (!["product", "service"].includes(type)) {
-        return res
-          .status(400)
-          .json({ message: 'Type must be "product" or "service".' });
+        return res.status(400).json({ message: 'Type must be "product" or "service".' });
       }
       filter.type = type;
     }
@@ -219,35 +252,27 @@ export const getProductServices = async (req, res) => {
       if (maxPrice) filter.price.$lte = parseFloat(maxPrice);
     }
 
-    // 2. Sorting Logic
     if (sortBy) {
       const sortOrder = order === "asc" ? 1 : -1;
       const allowedSortFields = ["price", "createdAt", "title", "rating"];
       if (allowedSortFields.includes(sortBy)) {
         sort = { [sortBy]: sortOrder };
         if (sortBy === "rating") {
-          sort.createdAt = -1; // Fallback for identical ratings
+          sort.createdAt = -1;
         }
       } else {
-        console.warn(
-          `Invalid sortBy field received: ${sortBy}. Defaulting to createdAt.`
-        );
+        console.warn(`Invalid sortBy field received: ${sortBy}. Defaulting to createdAt.`);
       }
     }
 
-    // 3. Pagination Logic
     const pageNum = parseInt(page, 10) || 1;
     const limitNum = parseInt(limit, 10) || 10;
     const skip = (pageNum - 1) * limitNum;
-    // Count total documents
     const totalCount = await ProductService.countDocuments(filter);
     const totalPages = Math.ceil(totalCount / limitNum);
 
-    // 4. Query Execution
-    // Assuming ProductService populates `userId` if it refers to `User`
-    // And `categoryId` if it refers to `Category`
     const productServices = await ProductService.find(filter)
-      .populate({ path: "vendorId", select: "name" }) // Populate user details (or just name/email from User model)
+      .populate({ path: "vendorId", select: "name" })
       .populate({ path: "categoryId", select: "name" })
       .sort(sort)
       .skip(skip)
@@ -262,9 +287,7 @@ export const getProductServices = async (req, res) => {
   } catch (error) {
     console.error("Error fetching products/services:", error);
     if (error.name === "CastError" && error.kind === "ObjectId") {
-      return res
-        .status(400)
-        .json({ message: `Invalid ID format for ${error.path}.` });
+      return res.status(400).json({ message: `Invalid ID format for ${error.path}.` });
     }
     res.status(500).json({ message: "Server error", error: error.message });
   }

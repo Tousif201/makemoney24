@@ -91,8 +91,9 @@ const ProductCard = ({ product }) => {
         <h3 className="text-xl font-semibold text-gray-800">{product.title}</h3>
         <p className="text-sm text-gray-500 mt-1">{product.description}</p>
         <div className="mt-3 text-lg text-blue-600 font-bold">
-          ₹{product.price}
+          ₹{product.price.toLocaleString("en-IN")}
         </div>
+
       </div>
     </motion.div>
   );

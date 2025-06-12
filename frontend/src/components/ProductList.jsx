@@ -1,41 +1,52 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import ProductCard from "./ProductCard";
-import { getProductServices } from "../../api/productService"; // Ensure this path is correct
-import { getCategoriesByParentId } from "../../api/categories"; // Import for category fetching
+import { getProductServices } from "../../api/productService";
+import { getCategoriesByParentId } from "../../api/categories";
 import { Link } from "react-router-dom";
-import { Skeleton } from "@/components/ui/skeleton"; // Import Shadcn Skeleton
-import { Input } from "@/components/ui/input"; // Assuming you have a Shadcn Input component
+import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"; // Assuming you have Shadcn Select components
+} from "@/components/ui/select";
+
+// Helper function for debouncing
+const debounce = (func, delay) => {
+  let timeoutId;
+  return (...args) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => {
+      func(...args);
+    }, delay);
+  };
+};
 
 const ProductList = () => {
-  const [products, setProducts] = useState([]); // Raw products from API
-  const [filteredAndSortedProducts, setFilteredAndSortedProducts] = useState(
-    []
-  ); // Products after client-side filtering/sorting
+  // --- REFACTORED: Simplified State ---
+  // 'products' now holds the final, filtered, and sorted data from the API.
+  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true); // To check if there are more products to load
+  const [hasMore, setHasMore] = useState(true);
 
-  // Filter and Sort States
-  const [filterType, setFilterType] = useState("all"); // 'all', 'product', 'service'
-  const [sortBy, setSortBy] = useState("createdAt"); // 'createdAt', 'price', 'title'
-  const [sortOrder, setSortOrder] = useState("desc"); // 'asc', 'desc'
+  // --- Filter and Sort States (These will be sent to the API) ---
+  const [sortBy, setSortBy] = useState("createdAt");
+  const [sortOrder, setSortOrder] = useState("desc");
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedPriceRange, setSelectedPriceRange] = useState("all");
 
-  // New Category and Price Range Filter States
-  const [allCategories, setAllCategories] = useState([]); // Stores all fetched categories for lookup
-  const [level2and3Categories, setLevel2and3Categories] = useState([]); // Categories to display in the dropdown
-  const [selectedCategory, setSelectedCategory] = useState("all"); // ID of the selected category or "all"
-  const [selectedPriceRange, setSelectedPriceRange] = useState("all"); // String like "0-500", "501-1000", "1001-above"
+  // State for category dropdown
+  const [level2and3Categories, setLevel2and3Categories] = useState([]);
 
-  // Infinite Scroll Observer
+  // Ref to detect if a filter/sort has changed, which requires resetting products
+  const isNewSearch = useRef(false);
+
+  // --- Infinite Scroll Observer (No changes needed here) ---
   const observer = useRef();
   const lastProductElementRef = useCallback(
     (node) => {
@@ -51,208 +62,148 @@ const ProductList = () => {
     [loading, hasMore]
   );
 
-  // --- API Data Fetching Effect (Infinite Scroll) ---
+  // --- REFACTORED: Unified Data Fetching Effect ---
+  // This single effect now handles initial load, infinite scroll, and re-fetching when filters change.
   useEffect(() => {
     const fetchProducts = async () => {
+      setLoading(true);
+      setError(null);
+
+      // --- NEW: Build params object for the API from current state ---
+      const params = {
+        limit: 800, // Fetch smaller, manageable pages
+        page: currentPage,
+        sortBy: sortBy,
+        order: sortOrder,
+      };
+
+      if (searchTerm) {
+        params.title = searchTerm; // Backend uses $regex for searching
+      }
+      if (selectedCategory !== "all") {
+        params.categoryId = selectedCategory;
+      }
+      if (selectedPriceRange !== "all") {
+        const [minPrice, maxPrice] = selectedPriceRange.split("-");
+        if (minPrice) params.minPrice = minPrice;
+        if (maxPrice !== "above") params.maxPrice = maxPrice;
+      }
+
       try {
-        setLoading(true);
-        setError(null);
-
-        const params = {
-          limit: 8, // Fetch 8 items per page
-          sortBy: "createdAt", // We'll always fetch by createdAt for consistent pagination
-          order: "desc",
-          page: currentPage,
-        };
-
+        // The API call now includes all our filter/sort parameters
         const response = await getProductServices(params);
 
         if (response && response.data && Array.isArray(response.data)) {
+          // If it's a new search (filter changed), replace products. Otherwise, append for infinite scroll.
           setProducts((prevProducts) => {
-            // Filter out duplicates in case of fast scrolling or API quirks
+            if (isNewSearch.current || currentPage === 1) {
+              return response.data;
+            }
+            // Filter out duplicates before appending
             const newProducts = response.data.filter(
-              (newProd) =>
-                !prevProducts.some((prevProd) => prevProd._id === newProd._id)
+              (newProd) => !prevProducts.some((prevProd) => prevProd._id === newProd._id)
             );
             return [...prevProducts, ...newProducts];
           });
-          setHasMore(response.data.length > 0); // If less than limit, no more pages
+
+          // Use totalPages from the API to know if there's more data
+          setHasMore(response.page < response.totalPages);
+          isNewSearch.current = false; // Reset the flag after fetch
         } else {
-          console.warn(
-            "API response data is not an array or is missing 'data' property:",
-            response
-          );
           setProducts([]);
-          setHasMore(false); // No more data if response is invalid
+          setHasMore(false);
         }
       } catch (err) {
         console.error("Error fetching products:", err);
-        setError(
-          err.response?.data?.message ||
-            "Failed to load products. Please try again later."
-        );
-        setHasMore(false); // Stop trying to load more on error
+        setError("Failed to load products. Please try again.");
+        setHasMore(false);
       } finally {
         setLoading(false);
       }
     };
 
     fetchProducts();
-  }, [currentPage]); // Re-fetch when currentPage changes
+    // This effect runs whenever the page or any filter/sort option changes.
+  }, [currentPage, sortBy, sortOrder, searchTerm, selectedCategory, selectedPriceRange]);
 
-  // --- Effect to Fetch All Hierarchical Categories (Level 2 and 3) ---
+  // --- Effect to Fetch Categories (No changes needed) ---
   useEffect(() => {
     const fetchAllHierarchicalCategories = async () => {
       try {
         const fetchedL2L3Categories = [];
-        const fetchedAllCategories = []; // To hold all categories for potential future use
-
-        // Fetch top-level categories for 'product' and 'service'
-        const productTopLevel = await getCategoriesByParentId(
-          "null",
-          "product"
-        );
-        const serviceTopLevel = await getCategoriesByParentId(
-          "null",
-          "service"
-        );
-
+        const productTopLevel = await getCategoriesByParentId("null", "product");
+        const serviceTopLevel = await getCategoriesByParentId("null", "service");
         const allTopLevel = [...productTopLevel, ...serviceTopLevel];
-        fetchedAllCategories.push(...allTopLevel);
-
         for (const topCat of allTopLevel) {
-          // Fetch Level 2 categories
-          const level2Cats = await getCategoriesByParentId(
-            topCat._id,
-            topCat.type
-          );
-          fetchedAllCategories.push(...level2Cats);
-          fetchedL2L3Categories.push(...level2Cats); // Level 2 categories are included
-
+          const level2Cats = await getCategoriesByParentId(topCat._id, topCat.type);
+          fetchedL2L3Categories.push(...level2Cats);
           for (const level2Cat of level2Cats) {
-            // Fetch Level 3 categories
-            const level3Cats = await getCategoriesByParentId(
-              level2Cat._id,
-              level2Cat.type
-            );
-            fetchedAllCategories.push(...level3Cats);
-            fetchedL2L3Categories.push(...level3Cats); // Level 3 categories are included
+            const level3Cats = await getCategoriesByParentId(level2Cat._id, level2Cat.type);
+            fetchedL2L3Categories.push(...level3Cats);
           }
         }
         setLevel2and3Categories(fetchedL2L3Categories);
-        setAllCategories(fetchedAllCategories);
       } catch (err) {
         console.error("Error fetching hierarchical categories:", err);
-        // Optionally set an error state for category loading here
       }
     };
     fetchAllHierarchicalCategories();
-  }, []); // Run once on mount
+  }, []);
 
-  // --- Client-Side Filtering and Sorting Effect ---
-  useEffect(() => {
-    let currentProducts = [...products]; // Start with the full list of fetched products
-
-    // 1. Apply Type Filter
-    if (filterType !== "all") {
-      currentProducts = currentProducts.filter(
-        (product) => product.type === filterType
-      );
+  // --- REFACTORED: Handlers now reset the page to 1 on any change ---
+  const resetSearch = () => {
+    isNewSearch.current = true; // Mark that a filter has changed
+    if (currentPage === 1) {
+      // If already on page 1, the effect won't re-run on its own, so we need to manually handle it
+      // This is a bit of a trick to force the effect to re-evaluate with the new params
+      setProducts([]); // Clear current products immediately for better UX
+      // The main useEffect will handle the rest
+    } else {
+      setCurrentPage(1); // Triggers the main useEffect, which will then use the new filter values
     }
-
-    // 2. Apply Category Filter (NEW)
-    if (selectedCategory !== "all") {
-      currentProducts = currentProducts.filter(
-        (product) => product.categoryId === selectedCategory
-      );
-    }
-
-    // 3. Apply Price Range Filter (NEW)
-    if (selectedPriceRange !== "all") {
-      const [minStr, maxStr] = selectedPriceRange.split("-");
-      const minPrice = parseFloat(minStr);
-      const maxPrice = maxStr === "above" ? Infinity : parseFloat(maxStr);
-
-      currentProducts = currentProducts.filter(
-        (product) => product.price >= minPrice && product.price <= maxPrice
-      );
-    }
-
-    // 4. Apply Search Term Filter
-    if (searchTerm) {
-      const lowerCaseSearchTerm = searchTerm.toLowerCase();
-      currentProducts = currentProducts.filter(
-        (product) =>
-          product.title.toLowerCase().includes(lowerCaseSearchTerm) ||
-          product.description.toLowerCase().includes(lowerCaseSearchTerm)
-      );
-    }
-
-    // 5. Apply Sorting
-    currentProducts.sort((a, b) => {
-      let valA, valB;
-
-      if (sortBy === "price") {
-        valA = a.price;
-        valB = b.price;
-      } else if (sortBy === "title") {
-        valA = a.title.toLowerCase();
-        valB = b.title.toLowerCase();
-      } else if (sortBy === "createdAt") {
-        // Convert to Date objects for proper comparison
-        valA = new Date(a.createdAt);
-        valB = new Date(b.createdAt);
-      }
-
-      if (valA < valB) {
-        return sortOrder === "asc" ? -1 : 1;
-      }
-      if (valA > valB) {
-        return sortOrder === "asc" ? 1 : -1;
-      }
-      return 0;
-    });
-
-    setFilteredAndSortedProducts(currentProducts);
-  }, [
-    products,
-    filterType,
-    selectedCategory,
-    selectedPriceRange,
-    sortBy,
-    sortOrder,
-    searchTerm,
-  ]); // Re-run when any of these dependencies change
-
-  // --- Handlers for Filter and Sort UI ---
-  const handleFilterTypeChange = (type) => {
-    setFilterType(type);
-    setCurrentPage(1); // Reset page on filter change to fetch from start
-    setProducts([]); // Clear existing products
-    setHasMore(true); // Assume more data
   };
 
   const handleSortChange = (value) => {
-    // Split the value into sortBy and sortOrder
     const [newSortBy, newSortOrder] = value.split("-");
     setSortBy(newSortBy);
     setSortOrder(newSortOrder);
+    resetSearch();
   };
 
-  const handleSearchChange = (e) => {
-    setSearchTerm(e.target.value);
+  // State to hold the current input value for the search bar (before debouncing)
+  const [searchInput, setSearchInput] = useState("");
+
+  // Debounced version of setSearchTerm
+  const debouncedSetSearchTerm = useCallback(
+    debounce((value) => {
+      setSearchTerm(value);
+      resetSearch();
+    }, 500), // 500ms debounce delay
+    []
+  );
+
+  const handleSearchInputChange = (e) => {
+    const value = e.target.value;
+    setSearchInput(value); // Update the immediate input value
+    debouncedSetSearchTerm(value); // Pass the value to the debounced function
   };
 
-  // New Handlers for Category and Price Range
   const handleCategoryChange = (value) => {
     setSelectedCategory(value);
+    resetSearch();
   };
 
   const handlePriceRangeChange = (value) => {
     setSelectedPriceRange(value);
+    resetSearch();
   };
 
+
+  // --- JSX (Rendering Logic) ---
+  // The structure remains mostly the same, but now it always renders the `products` state.
+
   if (loading && currentPage === 1) {
+    // Initial loading skeleton
     return (
       <section className="bg-white py-0 sm:py-16 md:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -286,19 +237,6 @@ const ProductList = () => {
     );
   }
 
-  if (products.length === 0 && !loading) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 py-12 sm:py-16 text-center bg-gray-50 rounded-lg shadow-lg my-8">
-        <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-4">
-          Latest Products & Services
-        </h2>
-        <p className="text-lg text-gray-600">
-          No items available at the moment. Please check back soon!
-        </p>
-      </div>
-    );
-  }
-
   return (
     <section className="bg-white py-0 sm:py-16 md:py-20">
       <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
@@ -308,24 +246,27 @@ const ProductList = () => {
 
         {/* --- Filters and Search Section --- */}
         <div className="mb-8 flex flex-col sm:flex-row justify-center items-center gap-4">
-          {/* Search, Category, Price Range, and Sort */}
           <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
             <Input
               type="text"
-              placeholder="Search by title or description..."
-              value={searchTerm}
-              onChange={handleSearchChange}
+              placeholder="Search by title..."
+              value={searchInput} // Bind to searchInput
+              onChange={handleSearchInputChange} // Use the new handler
               className="w-full sm:w-64"
             />
             <div className="flex space-x-2">
-              {/* Category Dropdown (NEW) */}
-              <Select
-                onValueChange={handleCategoryChange}
-                value={selectedCategory}
-              >
-                <SelectTrigger className="w-full sm:w-[180px]">
-                  <SelectValue placeholder="Filter by Category" />
-                </SelectTrigger>
+              <Select onValueChange={handleSortChange} defaultValue={`${sortBy}-${sortOrder}`}>
+                <SelectTrigger className="w-full sm:w-[180px]"><SelectValue placeholder="Sort" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="createdAt-desc">Sort</SelectItem>
+                  <SelectItem value="price-asc">Price: Low to High</SelectItem>
+                  <SelectItem value="price-desc">Price: High to Low</SelectItem>
+                  <SelectItem value="title-asc">Alphabetical (A-Z)</SelectItem>
+                  <SelectItem value="title-desc">Alphabetical (Z-A)</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select onValueChange={handleCategoryChange} value={selectedCategory}>
+                <SelectTrigger className="w-full sm:w-[180px]"><SelectValue placeholder="Filter by Category" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Categories</SelectItem>
                   {level2and3Categories.map((cat) => (
@@ -335,17 +276,10 @@ const ProductList = () => {
                   ))}
                 </SelectContent>
               </Select>
-
-              {/* Price Range Dropdown (NEW) */}
-              <Select
-                onValueChange={handlePriceRangeChange}
-                value={selectedPriceRange}
-              >
-                <SelectTrigger className="w-full sm:w-[180px]">
-                  <SelectValue placeholder="Filter by Price" />
-                </SelectTrigger>
+              <Select onValueChange={handlePriceRangeChange} value={selectedPriceRange}>
+                <SelectTrigger className="w-full sm:w-[180px]"><SelectValue placeholder="Filter by Price" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Prices</SelectItem>
+                  <SelectItem value="all">Filter</SelectItem>
                   <SelectItem value="0-500">₹0 - ₹500</SelectItem>
                   <SelectItem value="501-1000">₹501 - ₹1000</SelectItem>
                   <SelectItem value="1001-2000">₹1001 - ₹2000</SelectItem>
@@ -353,76 +287,38 @@ const ProductList = () => {
                   <SelectItem value="5001-above">₹5001 & Above</SelectItem>
                 </SelectContent>
               </Select>
-
-              {/* Existing Sort Dropdown */}
-              <Select
-                onValueChange={handleSortChange}
-                defaultValue={`${sortBy}-${sortOrder}`}
-              >
-                <SelectTrigger className="w-full sm:w-[180px]">
-                  <SelectValue placeholder="Sort by" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="createdAt-desc">Newest</SelectItem>
-                  <SelectItem value="price-asc">Price: Low to High</SelectItem>
-                  <SelectItem value="price-desc">Price: High to Low</SelectItem>
-                  <SelectItem value="title-asc">Alphabetical (A-Z)</SelectItem>
-                  <SelectItem value="title-desc">Alphabetical (Z-A)</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
           </div>
         </div>
 
         {/* --- Product Grid --- */}
-        {filteredAndSortedProducts.length === 0 && !loading && (
+        {products.length === 0 && !loading && (
           <div className="text-center py-10">
             <p className="text-lg text-gray-600">
-              No items match your current filters or search. Try adjusting them!
+              No items match your current filters. Try adjusting them!
             </p>
           </div>
         )}
 
-        <div className="grid gap-6 sm:gap-8 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4">
-          {filteredAndSortedProducts.map((product, index) => {
-            // Attach ref to the last element for infinite scrolling
-            if (filteredAndSortedProducts.length === index + 1) {
-              return (
-                <ProductCard
-                  ref={lastProductElementRef}
-                  key={product._id}
-                  product={{
-                    id: product._id,
-                    title: product.title,
-                    description: product.description,
-                    price: product.price,
-                    type: product.type,
-                    image:
-                      product.portfolio && product.portfolio.length > 0
-                        ? product.portfolio[0].url
-                        : "https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png",
-                  }}
-                />
-              );
-            } else {
-              return (
-                <ProductCard
-                  key={product._id}
-                  product={{
-                    id: product._id,
-                    title: product.title,
-                    description: product.description,
-                    price: product.price,
-                    type: product.type,
-                    image:
-                      product.portfolio && product.portfolio.length > 0
-                        ? product.portfolio[0].url
-                        : "https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png",
-                  }}
-                />
-              );
-            }
-          })}
+        {/* --- REFACTORED: Map over 'products' directly --- */}
+        <div className="grid gap-3 sm:gap-8 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4">
+          {products.map((product, index) => (
+            <ProductCard
+              ref={products.length === index + 1 ? lastProductElementRef : null}
+              key={product._id}
+              product={{
+                id: product._id,
+                title: product.title,
+                description: product.description,
+                price: product.price,
+                type: product.type,
+                image:
+                  product.portfolio?.length > 0
+                    ? product.portfolio[0].url
+                    : "https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png",
+              }}
+            />
+          ))}
         </div>
 
         {/* Loading indicator for infinite scroll */}
@@ -433,31 +329,8 @@ const ProductList = () => {
         )}
 
         {!hasMore && products.length > 0 && (
-          <div className="mt-12 text-center">
-            <Link
-              to="/browse"
-              className="inline-flex items-center justify-center px-8 py-3 border border-transparent font-medium rounded-full text-white bg-indigo-600 hover:bg-indigo-700 md:py-4 md:px-10 text-lg shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105"
-            >
-              Explore All
-              <svg
-                className="ml-3 -mr-1 h-5 w-5"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-                aria-hidden="true"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10.293 15.707a1 1 0 010-1.414L14.586 10l-4.293-4.293a1 1 0 111.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0z"
-                  clipRule="evenodd"
-                />
-                <path
-                  fillRule="evenodd"
-                  d="M4.293 15.707a1 1 0 010-1.414L8.586 10 4.293 5.707a1 1 0 011.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </Link>
+          <div className="mt-12 text-center text-gray-500">
+            You've reached the end!
           </div>
         )}
       </div>

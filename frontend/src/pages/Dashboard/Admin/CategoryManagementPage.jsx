@@ -42,8 +42,7 @@ import {
   Package,
   Wrench,
   Loader2,
-  Image as ImageIcon,
-} from "lucide-react"; // Added ImageIcon
+} from "lucide-react";
 
 // Import the new API functions
 import {
@@ -51,7 +50,7 @@ import {
   updateCategory,
   deleteCategory,
   getAllCategoriesFlat,
-} from "../../../../api/categories"; // Adjust this path to your api.js file
+} from "../../../../api/categories";
 
 // Import AlertDialog components for delete confirmation
 import {
@@ -63,10 +62,11 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+}
+from "@/components/ui/alert-dialog";
 
 // Import file upload/delete functions
-import { deleteFiles, uploadFiles } from "../../../../api/upload"; // Ensure this path is correct
+import { deleteFiles, uploadFiles } from "../../../../api/upload";
 
 export default function CategoryManagementPage() {
   const [categories, setCategories] = useState([]);
@@ -80,7 +80,6 @@ export default function CategoryManagementPage() {
     description: "",
     type: "product",
     parentId: null,
-    // imageUrl: "", // We'll manage this through selectedFile/uploadedImageUrl
   });
 
   // State for image upload
@@ -151,9 +150,9 @@ export default function CategoryManagementPage() {
       type: "product",
       parentId: parentId,
     });
-    setSelectedFile(null); // Clear selected file
-    setUploadedImageUrl(""); // Clear any previously uploaded URL
-    setUploadedImageKey(""); // Clear any previously uploaded key
+    setSelectedFile(null);
+    setUploadedImageUrl("");
+    setUploadedImageKey("");
     setIsDialogOpen(true);
   };
 
@@ -165,9 +164,9 @@ export default function CategoryManagementPage() {
       type: category.type,
       parentId: category.parentId,
     });
-    setSelectedFile(null); // Clear selected file for edit, as existing image is shown
-    setUploadedImageUrl(category.image?.url || ""); // Set existing image URL
-    setUploadedImageKey(category.image?.key || ""); // Set existing image key
+    setSelectedFile(null);
+    setUploadedImageUrl(category.image?.url || "");
+    setUploadedImageKey(category.image?.key || "");
     setIsDialogOpen(true);
   };
 
@@ -218,8 +217,7 @@ export default function CategoryManagementPage() {
         await deleteFiles([uploadedImageKey]);
         setUploadedImageUrl("");
         setUploadedImageKey("");
-        setSelectedFile(null); // Clear selected file if it was replacing an existing one
-        // If editing, also clear image from selectedCategory to reflect removal
+        setSelectedFile(null);
         if (selectedCategory) {
           setSelectedCategory((prev) => ({
             ...prev,
@@ -241,31 +239,33 @@ export default function CategoryManagementPage() {
 
   // Handles both creating and updating categories
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e.preventDefault(); // Prevent default form submission
     setLoading(true);
     setError(null);
-    setUploadingImage(true); // Indicate image upload is part of the process
+    setUploadingImage(true);
 
     let newImageUrl = uploadedImageUrl;
     let newImageKey = uploadedImageKey;
-    let oldImageKeyToDelete = selectedCategory?.image?.key || ""; // Keep track of original key for deletion if new image is uploaded
+    let oldImageKeyToDelete = selectedCategory?.image?.key || "";
 
     try {
       // 1. Upload new file if selected
       if (selectedFile) {
         const formDataForUpload = new FormData();
         formDataForUpload.append("files", selectedFile);
-        const uploaded = await uploadFiles(formDataForUpload); // uploadFiles expects FormData
+        const uploaded = await uploadFiles(formDataForUpload);
         if (uploaded && uploaded.length > 0) {
           newImageUrl = uploaded[0].url;
           newImageKey = uploaded[0].key;
         }
       } else if (!uploadedImageUrl && uploadedImageKey) {
-        // Case: Image was removed by user, and it was an existing image
+        // If no new file is selected, but there was an existing image and it's now removed
+        // (i.e., uploadedImageUrl is empty but uploadedImageKey existed before submit)
         await deleteFiles([uploadedImageKey]);
         newImageUrl = "";
         newImageKey = "";
       }
+
 
       // 2. Prepare payload for category creation/update
       const payload = {
@@ -281,7 +281,7 @@ export default function CategoryManagementPage() {
 
       // 3. Perform category creation/update
       if (selectedCategory) {
-        // If a new file was uploaded AND there was an old image, delete the old image
+        // If editing, and a new image was uploaded replacing an old one, delete the old one
         if (
           selectedFile &&
           oldImageKeyToDelete &&
@@ -295,7 +295,7 @@ export default function CategoryManagementPage() {
       }
 
       setIsDialogOpen(false);
-      await fetchCategories(); // Refresh list after successful operation
+      await fetchCategories();
     } catch (err) {
       console.error("Error submitting category form:", err);
       setError(
@@ -304,7 +304,7 @@ export default function CategoryManagementPage() {
       );
     } finally {
       setLoading(false);
-      setUploadingImage(false); // Reset image upload status
+      setUploadingImage(false);
     }
   };
 
@@ -312,10 +312,12 @@ export default function CategoryManagementPage() {
     if (!categories) return [];
 
     const potentialParents = categories.filter((cat) => {
+      // Cannot be its own parent
       if (selectedCategory && cat._id === selectedCategory._id) {
         return false;
       }
 
+      // Prevent circular hierarchy by not allowing a category to be a parent of its own descendant
       if (selectedCategory) {
         let current = cat;
         while (current && current.parentId) {
@@ -326,10 +328,12 @@ export default function CategoryManagementPage() {
         }
       }
 
+      // Only allow parents up to level 2 if current category would be level 3
       return getCategoryLevel(cat) < 3;
     });
 
     return potentialParents.sort((a, b) => {
+      // Sort by type, then by name
       if (a.type === "service" && b.type === "product") return -1;
       if (a.type === "product" && b.type === "service") return 1;
       return a.name.localeCompare(b.name);
@@ -345,66 +349,88 @@ export default function CategoryManagementPage() {
       const categoryLevel = getCategoryLevel(category);
 
       return (
-        <div key={category._id} className="border-l-2 border-gray-200">
+        <div key={category._id} className="relative">
           <div
-            className={`flex items-center gap-2 p-3 hover:bg-purple-50 transition-colors duration-200 ${
-              level > 0 ? "ml-6" : ""
-            }`}
-            style={{ paddingLeft: `${level * 24 + 12}px` }}
+            className={`
+              flex items-center gap-2 p-2 hover:bg-purple-50 transition-colors duration-200 
+              border-b border-gray-100 last:border-b-0
+            `}
+            style={{
+              paddingLeft: `${Math.max(8, level * 12 + 8)}px`,
+            }}
           >
+            {/* Hierarchy indicator line */}
+            {level > 0 && (
+              <div
+                className="absolute left-0 top-0 w-px bg-gray-200 h-full"
+                style={{
+                  left: `${level * 12 - 4}px`,
+                }}
+              />
+            )}
+
             {hasChildren ? (
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-6 w-6 p-0 text-purple-600 hover:bg-purple-100"
+                className="h-5 w-5 p-0 text-purple-600 hover:bg-purple-100 flex-shrink-0 rounded"
                 onClick={() => toggleExpanded(category._id)}
               >
                 {isExpanded ? (
-                  <ChevronDown className="h-4 w-4" />
+                  <ChevronDown className="h-3 w-3" />
                 ) : (
-                  <ChevronRight className="h-4 w-4" />
+                  <ChevronRight className="h-3 w-3" />
                 )}
               </Button>
             ) : (
-              <div className="w-6" />
+              <div className="w-5 flex-shrink-0" />
             )}
 
-            <div className="flex items-center gap-2 flex-1">
+            <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
               <img
                 src={category.image?.url || "/placeholder.svg"}
                 alt={category.name}
-                className="w-8 h-8 rounded object-cover"
+                className="w-6 h-6 rounded object-cover flex-shrink-0"
               />
 
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">{category.name}</span>
-                  <Badge
-                    className={
-                      category.type === "product"
-                        ? "bg-purple-600 text-white hover:bg-purple-700"
-                        : "bg-gray-200 text-gray-800 hover:bg-gray-300"
-                    }
-                  >
-                    {category.type === "product" ? (
-                      <Package className="w-3 h-3 mr-1" />
-                    ) : (
-                      <Wrench className="w-3 h-3 mr-1" />
-                    )}
-                    {category.type}
-                  </Badge>
-                  <Badge
-                    variant="outline"
-                    className="text-purple-600 border-purple-300"
-                  >
-                    Level {categoryLevel}
-                  </Badge>
+              <div className="flex-1 min-w-0 overflow-hidden">
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="font-medium text-sm truncate flex-1">
+                      {category.name}
+                    </span>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <Badge
+                        className={`
+                          text-xs py-0 px-1.5 h-5
+                          ${category.type === "product"
+                            ? "bg-purple-600 text-white hover:bg-purple-700"
+                            : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+                          }
+                        `}
+                      >
+                        {category.type === "product" ? (
+                          <Package className="w-2.5 h-2.5 mr-1" />
+                        ) : (
+                          <Wrench className="w-2.5 h-2.5 mr-1" />
+                        )}
+                        <span className="hidden sm:inline">{category.type}</span>
+                        <span className="sm:hidden">{category.type.charAt(0).toUpperCase()}</span>
+                      </Badge>
+                      <Badge
+                        variant="outline"
+                        className="text-xs text-purple-600 border-purple-300 py-0 px-1.5 h-5"
+                      >
+                        L{categoryLevel}
+                      </Badge>
+                    </div>
+                  </div>
+                  {category.description && (
+                    <p className="text-xs text-gray-600 line-clamp-1 pr-8">
+                      {category.description}
+                    </p>
+                  )}
                 </div>
-                {category.description && (
-                  <p className="text-sm text-gray-600 mt-1">
-                    {category.description}
-                  </p>
-                )}
               </div>
 
               <DropdownMenu>
@@ -412,33 +438,33 @@ export default function CategoryManagementPage() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="hover:bg-purple-100"
+                    className="hover:bg-purple-100 h-7 w-7 p-0 flex-shrink-0 rounded"
                   >
-                    <MoreHorizontal className="h-4 w-4" />
+                    <MoreHorizontal className="h-3.5 w-3.5" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent align="end" className="w-44">
                   <DropdownMenuItem
                     onClick={() => handleEditCategory(category)}
-                    className="hover:bg-purple-50 focus:bg-purple-50"
+                    className="hover:bg-purple-50 focus:bg-purple-50 text-sm"
                   >
-                    <Edit className="h-4 w-4 mr-2 text-purple-600" />
+                    <Edit className="h-3.5 w-3.5 mr-2 text-purple-600" />
                     Edit
                   </DropdownMenuItem>
                   {categoryLevel < 3 && (
                     <DropdownMenuItem
                       onClick={() => handleAddCategory(category._id)}
-                      className="hover:bg-purple-50 focus:bg-purple-50"
+                      className="hover:bg-purple-50 focus:bg-purple-50 text-sm"
                     >
-                      <Plus className="h-4 w-4 mr-2 text-purple-600" />
-                      Add Subcategory
+                      <Plus className="h-3.5 w-3.5 mr-2 text-purple-600" />
+                      Add Sub
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuItem
                     onClick={() => confirmDeleteCategory(category)}
-                    className="text-red-600 hover:bg-red-50 focus:bg-red-50"
+                    className="text-red-600 hover:bg-red-50 focus:bg-red-50 text-sm"
                   >
-                    <Trash2 className="h-4 w-4 mr-2" />
+                    <Trash2 className="h-3.5 w-3.5 mr-2" />
                     Delete
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -447,7 +473,7 @@ export default function CategoryManagementPage() {
           </div>
 
           {hasChildren && isExpanded && (
-            <div className="ml-6">
+            <div className="relative">
               {renderCategoryTree(category._id, level + 1)}
             </div>
           )}
@@ -459,20 +485,22 @@ export default function CategoryManagementPage() {
   // --- Loading and Error States ---
   if (loading) {
     return (
-      <div className="container mx-auto p-6 max-w-6xl flex justify-center items-center h-screen">
-        <Loader2 className="h-8 w-8 animate-spin mr-2 text-purple-600" />
-        <p className="text-lg text-purple-700">Loading categories...</p>
+      <div className="container mx-auto p-4 max-w-6xl flex justify-center items-center min-h-screen">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-purple-600" />
+          <p className="text-lg text-purple-700 mt-2">Loading categories...</p>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="container mx-auto p-6 max-w-6xl text-center text-red-600">
-        <p className="text-lg">Error: {error}</p>
+      <div className="container mx-auto p-4 max-w-6xl text-center text-red-600 min-h-screen flex flex-col justify-center">
+        <p className="text-lg mb-4">Error: {error}</p>
         <Button
           onClick={fetchCategories}
-          className="mt-4 bg-purple-600 hover:bg-purple-700 text-white"
+          className="mx-auto bg-purple-600 hover:bg-purple-700 text-white"
         >
           Try Again
         </Button>
@@ -481,71 +509,71 @@ export default function CategoryManagementPage() {
   }
 
   return (
-    <div className="container mx-auto p-6 max-w-6xl">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-purple-800">
+    <div className="container mx-auto p-3 sm:p-4 lg:p-6 max-w-6xl">
+      <div className="flex flex-col gap-4 mb-6">
+        <div className="text-center sm:text-left">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-purple-800">
             Category Management
           </h1>
-          <p className="text-gray-600 mt-2">
+          <p className="text-gray-600 mt-2 text-sm">
             Manage your product and service categories with up to 3 levels of
             hierarchy
           </p>
         </div>
         <Button
           onClick={() => handleAddCategory(null)}
-          className="bg-purple-600 hover:bg-purple-700 text-white"
+          className="bg-purple-600 hover:bg-purple-700 text-white w-full sm:w-auto sm:self-end text-sm"
         >
           <Plus className="h-4 w-4 mr-2" />
           Add Top-Level Category
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* Statistics Cards */}
-        <div className="lg:col-span-4 grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-purple-700">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
+          <Card className="border border-gray-200">
+            <CardHeader className="pb-2 p-3 sm:p-4">
+              <CardTitle className="text-xs font-medium text-purple-700">
                 Total Categories
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{categories.length}</div>
+            <CardContent className="p-3 sm:p-4 pt-0">
+              <div className="text-lg sm:text-xl lg:text-2xl font-bold">{categories.length}</div>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-purple-700">
+          <Card className="border border-gray-200">
+            <CardHeader className="pb-2 p-3 sm:p-4">
+              <CardTitle className="text-xs font-medium text-purple-700">
                 Top Level
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
+            <CardContent className="p-3 sm:p-4 pt-0">
+              <div className="text-lg sm:text-xl lg:text-2xl font-bold">
                 {categories.filter((cat) => !cat.parentId).length}
               </div>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-purple-700">
-                Product Categories
+          <Card className="border border-gray-200">
+            <CardHeader className="pb-2 p-3 sm:p-4">
+              <CardTitle className="text-xs font-medium text-purple-700">
+                Products
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
+            <CardContent className="p-3 sm:p-4 pt-0">
+              <div className="text-lg sm:text-xl lg:text-2xl font-bold">
                 {categories.filter((cat) => cat.type === "product").length}
               </div>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-purple-700">
-                Service Categories
+          <Card className="border border-gray-200">
+            <CardHeader className="pb-2 p-3 sm:p-4">
+              <CardTitle className="text-xs font-medium text-purple-700">
+                Services
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
+            <CardContent className="p-3 sm:p-4 pt-0">
+              <div className="text-lg sm:text-xl lg:text-2xl font-bold">
                 {categories.filter((cat) => cat.type === "service").length}
               </div>
             </CardContent>
@@ -553,23 +581,25 @@ export default function CategoryManagementPage() {
         </div>
 
         {/* Category Tree */}
-        <Card className="lg:col-span-4">
-          <CardHeader>
-            <CardTitle className="text-purple-800">
+        <Card className="w-full border border-gray-200">
+          <CardHeader className="p-3 sm:p-4 lg:p-6">
+            <CardTitle className="text-purple-800 text-base sm:text-lg lg:text-xl">
               Category Hierarchy
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-xs sm:text-sm">
               Manage your categories in a hierarchical structure. Click the
               arrows to expand/collapse categories.
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             {categories.length === 0 && !loading && !error ? (
-              <p className="text-center text-gray-500">
+              <p className="text-center text-gray-500 py-8 text-sm">
                 No categories found. Start by adding one!
               </p>
             ) : (
-              <div className="space-y-1">{renderCategoryTree(null)}</div>
+              <div className="border-t border-gray-100">
+                {renderCategoryTree(null)}
+              </div>
             )}
           </CardContent>
         </Card>
@@ -577,21 +607,22 @@ export default function CategoryManagementPage() {
 
       {/* Add/Edit Category Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="w-[95vw] max-w-md mx-auto max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-purple-800">
+            <DialogTitle className="text-purple-800 text-lg">
               {selectedCategory ? "Edit Category" : "Add New Category"}
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-sm">
               {selectedCategory
                 ? "Update the category details below."
                 : "Create a new category. You can nest up to 3 levels deep."}
             </DialogDescription>
           </DialogHeader>
 
+          {/* Wrap the form content inside a <form> tag */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
+              <Label htmlFor="name" className="text-sm">Name</Label>
               <Input
                 id="name"
                 value={formData.name}
@@ -600,11 +631,12 @@ export default function CategoryManagementPage() {
                 }
                 placeholder="Category name"
                 required
+                className="text-sm"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description" className="text-sm">Description</Label>
               <Textarea
                 id="description"
                 value={formData.description}
@@ -616,18 +648,19 @@ export default function CategoryManagementPage() {
                 }
                 placeholder="Category description (optional)"
                 rows={3}
+                className="text-sm resize-none"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="type">Type</Label>
+              <Label htmlFor="type" className="text-sm">Type</Label>
               <Select
                 value={formData.type}
                 onValueChange={(value) =>
                   setFormData((prev) => ({ ...prev, type: value }))
                 }
               >
-                <SelectTrigger>
+                <SelectTrigger className="text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -638,7 +671,7 @@ export default function CategoryManagementPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="parent">Parent Category</Label>
+              <Label htmlFor="parent" className="text-sm">Parent Category</Label>
               <Select
                 value={formData.parentId || "none"}
                 onValueChange={(value) =>
@@ -651,13 +684,13 @@ export default function CategoryManagementPage() {
                   selectedCategory && getCategoryLevel(selectedCategory) === 3
                 }
               >
-                <SelectTrigger>
+                <SelectTrigger className="text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">None (Top Level)</SelectItem>
                   {getParentOptions().map((cat) => (
-                    <SelectItem key={cat._id} value={cat._id}>
+                    <SelectItem key={cat._id} value={cat._id} className="text-sm">
                       {"  ".repeat(getCategoryLevel(cat) - 1)}
                       {cat.name} (Level {getCategoryLevel(cat)})
                     </SelectItem>
@@ -671,43 +704,44 @@ export default function CategoryManagementPage() {
               )}
             </div>
 
-            {/* --- Image Upload Section --- */}
+            {/* Image Upload Section */}
             <div className="space-y-2">
-              <Label htmlFor="categoryImage">Category Image</Label>
+              <Label htmlFor="categoryImage" className="text-sm">Category Image</Label>
               <Input
                 id="categoryImage"
                 type="file"
                 accept="image/*"
                 onChange={handleFileChange}
                 disabled={uploadingImage}
+                className="text-sm"
               />
-              {/* Display currently selected/uploaded image */}
               {(selectedFile || uploadedImageUrl) && (
                 <div className="flex items-center gap-2 mt-2">
                   {selectedFile ? (
                     <img
                       src={URL.createObjectURL(selectedFile)}
                       alt="Selected preview"
-                      className="w-16 h-16 object-cover rounded-md"
+                      className="w-12 h-12 object-cover rounded-md flex-shrink-0"
                     />
                   ) : (
                     uploadedImageUrl && (
                       <img
                         src={uploadedImageUrl}
                         alt="Existing image"
-                        className="w-16 h-16 object-cover rounded-md"
+                        className="w-12 h-12 object-cover rounded-md flex-shrink-0"
                       />
                     )
                   )}
-                  <div className="flex-1 text-sm text-gray-600 truncate">
+                  <div className="flex-1 text-sm text-gray-600 truncate min-w-0">
                     {selectedFile
                       ? selectedFile.name
                       : uploadedImageUrl.split("/").pop()}
                   </div>
                   <Button
+                    type="button" // Important: set type="button" to prevent this from submitting the form
                     variant="ghost"
                     size="sm"
-                    className="h-8 w-8 p-0 text-red-600 hover:bg-red-50"
+                    className="h-8 w-8 p-0 text-red-600 hover:bg-red-50 flex-shrink-0"
                     onClick={handleRemoveImage}
                     disabled={uploadingImage}
                   >
@@ -717,25 +751,25 @@ export default function CategoryManagementPage() {
               )}
               {uploadingImage && (
                 <p className="text-sm text-gray-500 flex items-center">
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin text-purple-600" />{" "}
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin text-purple-600" />
                   Uploading image...
                 </p>
               )}
             </div>
-            {/* --- End Image Upload Section --- */}
 
-            <DialogFooter>
+            <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-0 sm:justify-end">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setIsDialogOpen(false)}
+                className="w-full sm:w-auto"
               >
                 Cancel
               </Button>
               <Button
-                type="submit"
+                type="submit" // This button will now correctly submit the form
                 disabled={loading || uploadingImage}
-                className="bg-purple-600 hover:bg-purple-700 text-white"
+                className="bg-purple-600 hover:bg-purple-700 text-white w-full sm:w-auto"
               >
                 {(loading || uploadingImage) && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -752,29 +786,32 @@ export default function CategoryManagementPage() {
         open={isConfirmingDelete}
         onOpenChange={setIsConfirmingDelete}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className="w-[95vw] max-w-md mx-auto">
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-lg">Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription className="text-sm">
               This action cannot be undone. This will permanently delete the
               category
               <span className="font-bold"> {categoryToDelete?.name} </span>.
               Please ensure it has no subcategories or associated
               products/services, as the backend will prevent deletion otherwise.
               {categoryToDelete?.image?.key && (
-                <p className="mt-2 text-sm text-red-500">
+                <span className="block mt-2 text-sm text-red-500">
                   Note: The associated image will also be deleted.
-                </p>
+                </span>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setIsConfirmingDelete(false)}>
+          <AlertDialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-0 sm:justify-end">
+            <AlertDialogCancel
+              onClick={() => setIsConfirmingDelete(false)}
+              className="w-full sm:w-auto"
+            >
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirmed}
-              className="bg-red-600 text-white hover:bg-red-700"
+              className="bg-red-600 text-white hover:bg-red-700 w-full sm:w-auto"
               disabled={loading}
             >
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

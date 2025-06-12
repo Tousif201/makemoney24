@@ -117,6 +117,7 @@ export function CreateFranchiseDialog({ children }) {
 
       // --- 4. Create the franchise ---
       const result = await CreateFranchise(payload);
+      window.location.reload()
       toast.success("Franchise created successfully!", {
         id: "createFranchiseToast",
       });
