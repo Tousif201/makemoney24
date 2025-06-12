@@ -57,14 +57,20 @@ const ProductCard = ({ product }) => {
       <img
         src={product.image}
         alt={product.title}
-        className={`w-full ${isMobileOrTablet ? "h-48" : "h-80"} object-cover cursor-pointer`}
+        className={`w-full ${
+          isMobileOrTablet ? "h-48" : "h-80"
+        } object-cover cursor-pointer`}
         onClick={handleImageClick}
       />
 
       {/* Overlay icons - only show on desktop */}
       <div
         className={`absolute inset-0 transition duration-300 flex items-center justify-center gap-4
-          ${isMobileOrTablet ? "hidden" : "md:flex md:opacity-0 md:group-hover:opacity-100 md:group-hover:bg-black/10"}
+          ${
+            isMobileOrTablet
+              ? "hidden"
+              : "md:flex md:opacity-0 md:group-hover:opacity-100 md:group-hover:bg-black/10"
+          }
         `}
       >
         <button
@@ -88,12 +94,15 @@ const ProductCard = ({ product }) => {
 
       {/* Product Info Section */}
       <div className="p-4">
-        <h3 className="text-xl font-semibold text-gray-800">{product.title}</h3>
-        <p className="text-sm text-gray-500 mt-1">{product.description}</p>
+        <h3 className="text-xl font-semibold text-gray-800 line-clamp-1">
+          {product.title}
+        </h3>
+        <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+          {product.description}
+        </p>
         <div className="mt-3 text-lg text-blue-600 font-bold">
           ₹{product.price.toLocaleString("en-IN")}
         </div>
-
       </div>
     </motion.div>
   );
