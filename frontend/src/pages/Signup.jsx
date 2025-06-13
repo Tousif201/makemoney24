@@ -4,7 +4,9 @@ import { motion } from "framer-motion";
 import { registerUser } from "../../api/auth"; // Adjust path as needed
 import shop from "../assets/login/shopping.jpg";
 import { Link } from "react-router-dom";
-import { toast } from "sonner"; // Import toast from sonner
+import { toast } from "sonner";
+import { uploadFiles } from "../../api/upload";
+import { X } from "lucide-react"; // Import X icon for removing file
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -19,9 +21,9 @@ export default function Signup() {
   });
 
   const [errors, setErrors] = useState({});
-  const [isLoading, setIsLoading] = useState(false); // New loading state
+  const [isLoading, setIsLoading] = useState(false);
+  const [aadhaarFile, setAadhaarFile] = useState(null); // State for Aadhaar file
 
-  // Effect to read referralCode from URL search params on component mount
   useEffect(() => {
     const referralFromUrl = searchParams.get("referralCode");
     if (referralFromUrl) {
@@ -36,30 +38,35 @@ export default function Signup() {
     }
   };
 
-  // Validation function
+  // file
+  const handleFileChange = (setter) => (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setter(e.target.files[0]);
+    }
+  };
+
   const validateForm = () => {
     const newErrors = {};
 
-    if (!form.name.trim()) {
-      newErrors.name = "Full Name is required.";
-    }
-
+    if (!form.name.trim()) newErrors.name = "Full Name is required.";
     if (!form.email.trim()) {
       newErrors.email = "Email is required.";
     } else if (!/\S+@\S+\.\S+/.test(form.email)) {
       newErrors.email = "Email is invalid.";
     }
-
     if (!form.phone.trim()) {
       newErrors.phone = "Phone number is required.";
     } else if (!/^\d{10}$/.test(form.phone)) {
       newErrors.phone = "Phone number must be 10 digits.";
     }
-
     if (!form.password.trim()) {
       newErrors.password = "Password is required.";
     } else if (form.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters long.";
+      newErrors.password = "Password must be at least 6 characters.";
+    }
+    // Updated Aadhaar validation: check aadhaarFile state instead of form.aadhar
+    if (!aadhaarFile) {
+      newErrors.aadhaar = "Aadhaar upload is required.";
     }
 
     setErrors(newErrors);
@@ -70,21 +77,65 @@ export default function Signup() {
     e.preventDefault();
 
     if (!validateForm()) {
-      toast.error("Please correct the errors in the form."); // Sonner toast for form validation errors
+      toast.error("Please correct the errors in the form.");
       return;
     }
 
-    setIsLoading(true); // Set loading to true before API call
+    setIsLoading(true);
     try {
-      await registerUser({ ...form, referredByCode: form.referralCode });
-      toast.success("Registration successful! Please verify your email."); // Sonner toast for success
+      const filesToUpload = [];
+      const documentMap = new Map();
+
+      if (aadhaarFile) {
+        filesToUpload.push(aadhaarFile);
+        documentMap.set(aadhaarFile, "AADHAR");
+      }
+
+      let uploadedDocuments = [];
+      if (filesToUpload.length > 0) {
+        const uploadResult = await uploadFiles(filesToUpload);
+        if (uploadResult && uploadResult.length > 0) {
+          uploadedDocuments = uploadResult.map((uploadedFile) => ({
+            key: uploadedFile.key,
+            url: uploadedFile.url,
+            documentName:
+              documentMap.get(
+                filesToUpload.find(
+                  (f) =>
+                    f.name === uploadedFile.key ||
+                    f.name.includes(uploadedFile.key)
+                )
+              ) || "Other Document",
+          }));
+        } else {
+          toast.error(
+            "Document upload failed or returned empty. Please try again."
+          );
+          setIsLoading(false); // Changed from setIsSubmitting to setIsLoading
+          return;
+        }
+      }
+      
+      // Construct the payload for registration
+      const payload = {
+        name: form.name,
+        email: form.email,
+        phone: form.phone,
+        password: form.password,
+        referredByCode: form.referralCode,
+        kycDocumentImage: uploadedDocuments, // Attach the uploaded documents
+      };
+      
+      console.log(payload, "payload for frontend")
+
+      await registerUser(payload);
+      toast.success("Registration successful! Please verify your email.");
       navigate(`/otp/${encodeURIComponent(form.email)}`);
     } catch (err) {
-      const errorMessage =
-        err.message || "Something went wrong during registration.";
-      toast.error(errorMessage); // Sonner toast for API errors
+      console.error(err); // Changed from error to err for consistency
+      toast.error(err.message || "Something went wrong during registration.");
     } finally {
-      setIsLoading(false); // Set loading to false after API call (success or failure)
+      setIsLoading(false);
     }
   };
 
@@ -113,7 +164,7 @@ export default function Signup() {
                 }`}
                 onChange={handleChange}
                 value={form.name}
-                disabled={isLoading} // Disable input when loading
+                disabled={isLoading}
               />
               {errors.name && (
                 <p className="text-red-500 text-xs mt-1">{errors.name}</p>
@@ -131,7 +182,7 @@ export default function Signup() {
                 }`}
                 onChange={handleChange}
                 value={form.email}
-                disabled={isLoading} // Disable input when loading
+                disabled={isLoading}
               />
               {errors.email && (
                 <p className="text-red-500 text-xs mt-1">{errors.email}</p>
@@ -149,7 +200,7 @@ export default function Signup() {
                 }`}
                 onChange={handleChange}
                 value={form.phone}
-                disabled={isLoading} // Disable input when loading
+                disabled={isLoading}
               />
               {errors.phone && (
                 <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
@@ -167,7 +218,7 @@ export default function Signup() {
                 }`}
                 onChange={handleChange}
                 value={form.password}
-                disabled={isLoading} // Disable input when loading
+                disabled={isLoading}
               />
               {errors.password && (
                 <p className="text-red-500 text-xs mt-1">{errors.password}</p>
@@ -178,18 +229,57 @@ export default function Signup() {
               <input
                 name="referralCode"
                 type="text"
-                placeholder="Referral code (Optional)"
+                placeholder="Referral code"
                 className="w-full p-3 rounded bg-gray-100 text-black"
                 onChange={handleChange}
                 value={form.referralCode}
-                disabled={isLoading} // Disable input when loading
+                disabled={isLoading}
               />
+            </div>
+
+            {/* Aadhar file upload field - Updated */}
+            <div>
+              <label htmlFor="aadhaarFile" className="block text-sm mb-1 text-gray-700">
+                Upload Aadhaar <span className="text-red-500">*</span>
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  id="aadhaarFile"
+                  type="file"
+                  name="aadhar"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  className={`w-full p-2 rounded bg-gray-100 text-black ${
+                    errors.aadhaar ? "border-red-500 border" : ""
+                  }`}
+                  onChange={handleFileChange(setAadhaarFile)}
+                  disabled={isLoading}
+                  required
+                />
+                {aadhaarFile && (
+                  <button
+                    type="button"
+                    onClick={() => setAadhaarFile(null)}
+                    disabled={isLoading}
+                    className="ml-1 text-muted-foreground hover:text-destructive"
+                  >
+                    <X className="h-4 w-4 text-red-500" />
+                  </button>
+                )}
+              </div>
+              {aadhaarFile && (
+                <span className="text-sm text-muted-foreground">
+                  {aadhaarFile.name}
+                </span>
+              )}
+              {errors.aadhaar && (
+                <p className="text-red-500 text-xs mt-1">{errors.aadhaar}</p>
+              )}
             </div>
 
             <button
               type="submit"
               className="w-full p-3 bg-[#B641FF] hover:bg-[#B209FF] text-white rounded flex items-center justify-center"
-              disabled={isLoading} // Disable button when loading
+              disabled={isLoading}
             >
               {isLoading ? (
                 <svg
