@@ -44,10 +44,11 @@ export const uploadFiles = async (files) => {
         const percentCompleted = Math.round(
           (progressEvent.loaded * 100) / progressEvent.total
         );
-        console.log(`Upload progress: ${percentCompleted}%`);
+        // console.log(`Upload progress: ${percentCompleted}%`);
         // You could use a state update here to show progress in your UI
       },
     });
+    console.log(response ,"upload file API")
     return response.data; // Array of UploadedMediaItem
   } catch (error) {
     console.error(

@@ -364,22 +364,26 @@ export default function MembershipPage() {
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-            <Card className="border-2 border-dashed border-blue-200 hover:border-blue-400 transition-colors">
-              <CardContent style={{ textAlign: "left", marginTop: "-10px" }}>
-                <CashbackCardFront
-                  userName={user?.name || "Default User"}
-                  date={user?.createdAt || "2023-08-01"}
-                  cardNumber={user?.referralCode || "MM24 1234 5678"}
-                />
-              </CardContent>
-            </Card>
+  <Card className="border-2 border-dashed border-blue-200 text-left hover:border-blue-400 transition-colors">
+    {/* <CardContent className="text-left -mt-2"> */}
+    
+      <CashbackCardFront
+        userName={user?.name || "Default User"}
+        date={user?.createdAt || "2023-08-01"}
+        cardNumber={user?.referralCode || "MM24 1234 5678"}
+      />
+    {/* </CardContent> */}
+  </Card>
 
-            <Card className="border-2 border-dashed border-green-200 hover:border-green-400 transition-colors">
-              <CardContent style={{ textAlign: "left", marginTop: "-10px" }}>
-                <CashbackCardBack />
-              </CardContent>
-            </Card>
-          </div>
+  <Card className="border-2 text-left border-dashed border-green-200 hover:border-green-400 transition-colors">
+    {/* <CardContent className="text-left -mt-2"> */}
+     
+      <CashbackCardBack />
+      
+    {/* </CardContent> */}
+  </Card>
+</div>
+
         </div>
       )}
       <Link to="/dashboard/referrals">

@@ -37,6 +37,7 @@ export const loginUser = async (payload) => {
 export const registerUser = async (payload) => {
   try {
     const response = await apiClient.post("/register", payload);
+    console.log(response,"api response")
     return response.data;
   } catch (error) {
     console.error(error)
