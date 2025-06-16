@@ -146,6 +146,20 @@ export const adminMembershipReport = async (req, res) => {
       },
       {
         $lookup: {
+          from: "membershippackages", // Collection name for the MembershipPackages model
+          localField: "membershipPackageId",
+          foreignField: "_id",
+          as: "packageDetails",
+        },
+      },
+      {
+        $unwind: {
+          path: "$packageDetails",
+          preserveNullAndEmptyArrays: true, // Keep memberships even if package not found
+        },
+      },
+      {
+        $lookup: {
           from: "users", // Collection name for the User model (for referred users)
           localField: "userDetails._id",
           foreignField: "parent",
@@ -164,6 +178,7 @@ export const adminMembershipReport = async (req, res) => {
         $project: {
           _id: 0,
           name: { $ifNull: ["$userDetails.name", "N/A"] },
+          membershipPackageName: { $ifNull: ["$packageDetails.name", "N/A"] }, // Add membership package name
           amountPaid: "$amountPaid",
           purchasedAt: "$purchasedAt",
           noOfReferrals: { $size: "$referredUsers" },

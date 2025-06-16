@@ -29,8 +29,8 @@ export const getReferralLevelData = async (req, res) => {
       // Static commission rates as per your dummy data
       level1: "30%",
       level2: "10%",
-      level3: "5%",
-      level4: "2%",
+      level3: "2.5%",
+      level4: "2.5%",
     };
 
     // To store users at each level, mapped by their _id for efficient lookup

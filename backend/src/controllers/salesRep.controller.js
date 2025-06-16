@@ -1,5 +1,6 @@
 import { User } from "../models/User.model.js";
 import { sendEmail } from "../utils/nodeMailerOtp.js";
+import { getHashPassword } from "../utils/getPassword.js";
 // import { v4 as uuidv4 } from "uuid";
 
 export const createSalesRep = async (req, res) => {
@@ -34,6 +35,9 @@ export const createSalesRep = async (req, res) => {
             )
       : [];
 
+  const hashedPassword = await getHashPassword(password);
+
+
     // Generate unique referral code
     const referralCode = `SR-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
@@ -41,7 +45,7 @@ export const createSalesRep = async (req, res) => {
       name,
       email,
       phone,
-      password, // ⚠️ hash before save in production
+      password:hashedPassword, // ⚠️ hash before save in production
       pincode,
       roles: ["sales-rep"],
       accountStatus: "active",

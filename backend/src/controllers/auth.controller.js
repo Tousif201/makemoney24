@@ -27,6 +27,7 @@ export const registerUser = async (req, res) => {
     pincode,
     referredByCode,
     isMember,
+   kycDocumentImage,
     roles, // Allow admin to specify roles during registration
   } = req.body;
 
@@ -66,6 +67,7 @@ export const registerUser = async (req, res) => {
         verified: false,
         lastSentAt: new Date(),
       },
+      kycDocumentImage:kycDocumentImage||[]
     });
 
     // 6. If referred, link to parent and update parent's profileScore
