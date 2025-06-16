@@ -99,18 +99,28 @@ export default function MembershipReportsPage() {
   };
 
   // Dummy logic for membership level based on profileScore
-  const getMembershipBadge = (profileScore) => {
-    if (profileScore >= 200) {
-      return <Badge className="bg-purple-100 text-purple-800">Platinum</Badge>;
-    } else if (profileScore >= 100) {
-      return <Badge className="bg-yellow-100 text-yellow-800">Gold</Badge>;
-    } else if (profileScore >= 50) {
-      return <Badge className="bg-gray-100 text-gray-800">Silver</Badge>;
-    } else if (profileScore > 0) {
-      return <Badge className="bg-orange-100 text-orange-800">Bronze</Badge>;
+ // Dummy logic for membership level based on profileScore
+const getMembershipBadge = (membershipPackageName) => {
+  if (membershipPackageName) {
+    let badgeClass = "bg-gray-100 text-gray-800"; // Default badge style
+
+    // You can add conditional styling based on package names if desired
+    if (membershipPackageName.toLowerCase().includes("platinum")) {
+      badgeClass = "bg-purple-100 text-purple-800";
+    } else if (membershipPackageName.toLowerCase().includes("gold")) {
+      badgeClass = "bg-yellow-100 text-yellow-800";
+    } else if (membershipPackageName.toLowerCase().includes("silver")) {
+      badgeClass = "bg-blue-100 text-blue-800"; // Example: different color for silver
+    } else if (membershipPackageName.toLowerCase().includes("bronze")) {
+      badgeClass = "bg-orange-100 text-orange-800";
     }
-    return <Badge variant="secondary">N/A</Badge>;
-  };
+
+    return (
+      <Badge className={badgeClass}>{membershipPackageName}</Badge>
+    );
+  }
+  return <Badge variant="secondary">N/A</Badge>;
+};
 
   const totalMembershipsAmount = reportData?.totalMembership?.amount || 0;
   const totalMembershipsRate = reportData?.totalMembership?.rate || "0.00%";
@@ -330,7 +340,7 @@ export default function MembershipReportsPage() {
                           </div>
                         </TableCell>
                         <TableCell className="table-cell">
-                          {getMembershipBadge(report.profileScore)}
+                          {getMembershipBadge(report.membershipPackageName)}
                         </TableCell>
                         <TableCell className="text-xs sm:text-sm table-cell">
                           {formatDate(report.purchasedAt)}
