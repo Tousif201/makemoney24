@@ -229,3 +229,26 @@ export const adminMembershipReport = async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
+
+export const getUserMembershipDetails = async (req,res)=>{
+ try {
+  const userId = req.user._id;
+  const userMembershipDetails = await Membership.findOne({ userId: userId }).populate("membershipPackageId")
+  // console.log(userMembershipDetails);
+  res.status(200).json({
+    success: true,
+    message: "User membership details fetched successfully.",
+    data: userMembershipDetails
+  })
+
+ } catch (error) {
+    console.error("Error fetching user membership details:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error: " + error.message,
+    });
+  }
+  
+ } 
+

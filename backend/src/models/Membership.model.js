@@ -7,7 +7,7 @@ const membershipSchema = new Schema({
   userId: { type: Schema.Types.ObjectId, ref: "User" },
   amountPaid: Number,
   transactionId: { type: Schema.Types.ObjectId, ref: "Transaction" },
-membershipPackageId: { type: Schema.Types.ObjectId, ref: "MembershipPackage" },
+membershipPackageId: { type: Schema.Types.ObjectId, ref: "membershipPackage" },
   purchasedAt: { type: Date, default: Date.now },
   expiredAt: { type: Date }, // Expiry date of the membership
 },{
