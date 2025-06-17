@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { registerUser } from "../../api/auth"; // Adjust path as needed
+import { registerUser } from "../../api/auth";
 import shop from "../assets/login/shopping.jpg";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { uploadFiles } from "../../api/upload";
-import { X } from "lucide-react"; // Import X icon for removing file
+import { X } from "lucide-react";
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -18,11 +18,13 @@ export default function Signup() {
     phone: "",
     password: "",
     referralCode: "",
+    acceptTerms: false,
   });
 
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
-  const [aadhaarFile, setAadhaarFile] = useState(null); // State for Aadhaar file
+  const [aadhaarFrontFile, setAadhaarFrontFile] = useState(null);
+  const [aadhaarBackFile, setAadhaarBackFile] = useState(null);
 
   useEffect(() => {
     const referralFromUrl = searchParams.get("referralCode");
@@ -32,13 +34,14 @@ export default function Signup() {
   }, [searchParams]);
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-    if (errors[e.target.name]) {
-      setErrors((prevErrors) => ({ ...prevErrors, [e.target.name]: null }));
+    const { name, value, type, checked } = e.target;
+    setForm({ ...form, [name]: type === "checkbox" ? checked : value });
+
+    if (errors[name]) {
+      setErrors((prevErrors) => ({ ...prevErrors, [name]: null }));
     }
   };
 
-  // file
   const handleFileChange = (setter) => (e) => {
     if (e.target.files && e.target.files.length > 0) {
       setter(e.target.files[0]);
@@ -64,9 +67,16 @@ export default function Signup() {
     } else if (form.password.length < 6) {
       newErrors.password = "Password must be at least 6 characters.";
     }
-    // Updated Aadhaar validation: check aadhaarFile state instead of form.aadhar
-    if (!aadhaarFile) {
-      newErrors.aadhaar = "Aadhaar upload is required.";
+
+    if (!aadhaarFrontFile) {
+      newErrors.aadhaarFront = "Aadhaar front image is required.";
+    }
+    if (!aadhaarBackFile) {
+      newErrors.aadhaarBack = "Aadhaar back image is required.";
+    }
+
+    if (!form.acceptTerms) {
+      newErrors.acceptTerms = "You must accept the Terms & Conditions.";
     }
 
     setErrors(newErrors);
@@ -86,9 +96,13 @@ export default function Signup() {
       const filesToUpload = [];
       const documentMap = new Map();
 
-      if (aadhaarFile) {
-        filesToUpload.push(aadhaarFile);
-        documentMap.set(aadhaarFile, "AADHAR");
+      if (aadhaarFrontFile) {
+        filesToUpload.push(aadhaarFrontFile);
+        documentMap.set(aadhaarFrontFile, "AADHAR_FRONT");
+      }
+      if (aadhaarBackFile) {
+        filesToUpload.push(aadhaarBackFile);
+        documentMap.set(aadhaarBackFile, "AADHAR_BACK");
       }
 
       let uploadedDocuments = [];
@@ -111,28 +125,25 @@ export default function Signup() {
           toast.error(
             "Document upload failed or returned empty. Please try again."
           );
-          setIsLoading(false); // Changed from setIsSubmitting to setIsLoading
+          setIsLoading(false);
           return;
         }
       }
-      
-      // Construct the payload for registration
+
       const payload = {
         name: form.name,
         email: form.email,
         phone: form.phone,
         password: form.password,
         referredByCode: form.referralCode,
-        kycDocumentImage: uploadedDocuments, // Attach the uploaded documents
+        kycDocumentImage: uploadedDocuments,
       };
-      
-      console.log(payload, "payload for frontend")
 
       await registerUser(payload);
       toast.success("Registration successful! Please verify your email.");
       navigate(`/otp/${encodeURIComponent(form.email)}`);
     } catch (err) {
-      console.error(err); // Changed from error to err for consistency
+      console.error(err);
       toast.error(err.message || "Something went wrong during registration.");
     } finally {
       setIsLoading(false);
@@ -142,7 +153,6 @@ export default function Signup() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="flex w-full max-w-5xl border-amber-400 border-2 shadow-lg rounded-xl overflow-hidden">
-        {/* Form */}
         <motion.div
           className="w-full md:w-1/2 bg-white p-10"
           initial={{ x: -50, opacity: 0 }}
@@ -153,112 +163,101 @@ export default function Signup() {
             Signup
           </h2>
           <form className="space-y-4" onSubmit={handleSignup}>
-            <div>
-              <input
-                name="name"
-                type="text"
-                required
-                placeholder="Full Name"
-                className={`w-full p-3 rounded bg-gray-100 text-black ${
-                  errors.name ? "border-red-500 border" : ""
-                }`}
-                onChange={handleChange}
-                value={form.name}
-                disabled={isLoading}
-              />
-              {errors.name && (
-                <p className="text-red-500 text-xs mt-1">{errors.name}</p>
-              )}
-            </div>
+            <input
+              name="name"
+              type="text"
+              placeholder="Full Name"
+              className={`w-full p-3 rounded bg-gray-100 text-black ${
+                errors.name ? "border-red-500 border" : ""
+              }`}
+              onChange={handleChange}
+              value={form.name}
+              disabled={isLoading}
+              required
+            />
+            {errors.name && (
+              <p className="text-red-500 text-xs mt-1">{errors.name}</p>
+            )}
 
-            <div>
-              <input
-                name="email"
-                type="email"
-                required
-                placeholder="Email"
-                className={`w-full p-3 rounded bg-gray-100 text-black ${
-                  errors.email ? "border-red-500 border" : ""
-                }`}
-                onChange={handleChange}
-                value={form.email}
-                disabled={isLoading}
-              />
-              {errors.email && (
-                <p className="text-red-500 text-xs mt-1">{errors.email}</p>
-              )}
-            </div>
+            <input
+              name="email"
+              type="email"
+              placeholder="Email"
+              className={`w-full p-3 rounded bg-gray-100 text-black ${
+                errors.email ? "border-red-500 border" : ""
+              }`}
+              onChange={handleChange}
+              value={form.email}
+              disabled={isLoading}
+              required
+            />
+            {errors.email && (
+              <p className="text-red-500 text-xs mt-1">{errors.email}</p>
+            )}
 
-            <div>
-              <input
-                name="phone"
-                type="tel"
-                required
-                placeholder="Phone"
-                className={`w-full p-3 rounded bg-gray-100 text-black ${
-                  errors.phone ? "border-red-500 border" : ""
-                }`}
-                onChange={handleChange}
-                value={form.phone}
-                disabled={isLoading}
-              />
-              {errors.phone && (
-                <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
-              )}
-            </div>
+            <input
+              name="phone"
+              type="tel"
+              placeholder="Phone"
+              className={`w-full p-3 rounded bg-gray-100 text-black ${
+                errors.phone ? "border-red-500 border" : ""
+              }`}
+              onChange={handleChange}
+              value={form.phone}
+              disabled={isLoading}
+              required
+            />
+            {errors.phone && (
+              <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
+            )}
 
-            <div>
-              <input
-                name="password"
-                type="password"
-                required
-                placeholder="Password"
-                className={`w-full p-3 rounded bg-gray-100 text-black ${
-                  errors.password ? "border-red-500 border" : ""
-                }`}
-                onChange={handleChange}
-                value={form.password}
-                disabled={isLoading}
-              />
-              {errors.password && (
-                <p className="text-red-500 text-xs mt-1">{errors.password}</p>
-              )}
-            </div>
+            <input
+              name="password"
+              type="password"
+              placeholder="Password"
+              className={`w-full p-3 rounded bg-gray-100 text-black ${
+                errors.password ? "border-red-500 border" : ""
+              }`}
+              onChange={handleChange}
+              value={form.password}
+              disabled={isLoading}
+              required
+            />
+            {errors.password && (
+              <p className="text-red-500 text-xs mt-1">{errors.password}</p>
+            )}
 
-            <div>
-              <input
-                name="referralCode"
-                type="text"
-                placeholder="Referral code"
-                className="w-full p-3 rounded bg-gray-100 text-black"
-                onChange={handleChange}
-                value={form.referralCode}
-                disabled={isLoading}
-              />
-            </div>
+            <input
+              name="referralCode"
+              type="text"
+              placeholder="Referral code"
+              className="w-full p-3 rounded bg-gray-100 text-black"
+              onChange={handleChange}
+              value={form.referralCode}
+              disabled={isLoading}
+              required
+            />
 
-            {/* Aadhar file upload field - Updated */}
+            {/* Aadhaar Front */}
             <div>
-              <label htmlFor="aadhaarFile" className="block text-sm mb-1 text-gray-700">
-                Upload Aadhaar <span className="text-red-500">*</span>
+              <label className="block text-sm mb-1 text-gray-700">
+                Upload Aadhaar Front <span className="text-red-500">*</span>
               </label>
               <div className="flex items-center gap-2">
                 <input
-                  id="aadhaarFile"
                   type="file"
-                  name="aadhar"
                   accept=".pdf,.jpg,.jpeg,.png"
                   className={`w-full p-2 rounded bg-gray-100 text-black ${
-                    errors.aadhaar ? "border-red-500 border" : ""
+                    errors.aadhaarFront ? "border-red-500 border" : ""
                   }`}
-                  onChange={handleFileChange(setAadhaarFile)}
+                  onChange={handleFileChange(setAadhaarFrontFile)}
                   disabled={isLoading}
                   required
                 />
-                {aadhaarFile && (
+                {aadhaarFrontFile && (
                   <button
                     type="button"
-                    onClick={() => setAadhaarFile(null)}
+                    onClick={() => setAadhaarFrontFile(null)}
                     disabled={isLoading}
                     className="ml-1 text-muted-foreground hover:text-destructive"
                   >
@@ -266,15 +265,82 @@ export default function Signup() {
                   </button>
                 )}
               </div>
-              {aadhaarFile && (
+              {aadhaarFrontFile && (
                 <span className="text-sm text-muted-foreground">
-                  {aadhaarFile.name}
+                  {aadhaarFrontFile.name}
                 </span>
               )}
-              {errors.aadhaar && (
-                <p className="text-red-500 text-xs mt-1">{errors.aadhaar}</p>
+              {errors.aadhaarFront && (
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.aadhaarFront}
+                </p>
               )}
             </div>
+
+            {/* Aadhaar Back */}
+            <div>
+              <label className="block text-sm mb-1 text-gray-700">
+                Upload Aadhaar Back <span className="text-red-500">*</span>
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  className={`w-full p-2 rounded bg-gray-100 text-black ${
+                    errors.aadhaarBack ? "border-red-500 border" : ""
+                  }`}
+                  onChange={handleFileChange(setAadhaarBackFile)}
+                  disabled={isLoading}
+                  required
+                />
+                {aadhaarBackFile && (
+                  <button
+                    type="button"
+                    onClick={() => setAadhaarBackFile(null)}
+                    disabled={isLoading}
+                    className="ml-1 text-muted-foreground hover:text-destructive"
+                  >
+                    <X className="h-4 w-4 text-red-500" />
+                  </button>
+                )}
+              </div>
+              {aadhaarBackFile && (
+                <span className="text-sm text-muted-foreground">
+                  {aadhaarBackFile.name}
+                </span>
+              )}
+              {errors.aadhaarBack && (
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.aadhaarBack}
+                </p>
+              )}
+            </div>
+
+            {/* Terms & Conditions */}
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                name="acceptTerms"
+                checked={form.acceptTerms}
+                onChange={handleChange}
+                disabled={isLoading}
+              />
+              <label htmlFor="acceptTerms" className="text-sm text-gray-700">
+                By accepting this you are agree to our{" "}
+                <Link
+                  to="/accept-tnc"
+                  target="_blank"
+                  className="text-blue-600 underline"
+                >
+                  Terms & Conditions
+                </Link>
+              </label>
+            </div>
+            {errors.acceptTerms && (
+              <p className="text-red-500 text-xs mt-1">
+                {errors.acceptTerms}
+              </p>
+            )}
 
             <button
               type="submit"
@@ -307,6 +373,7 @@ export default function Signup() {
               )}
             </button>
           </form>
+
           <p className="text-center mt-4 text-sm text-gray-700">
             Already have an account?{" "}
             <Link to="/login" className="text-[#550b80] underline font-medium">
@@ -315,7 +382,6 @@ export default function Signup() {
           </p>
         </motion.div>
 
-        {/* Image */}
         <motion.div
           className="hidden md:block md:w-1/2"
           initial={{ x: 50, opacity: 0 }}

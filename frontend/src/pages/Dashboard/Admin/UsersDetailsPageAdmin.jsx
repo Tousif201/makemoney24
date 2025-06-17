@@ -445,7 +445,9 @@ function UsersDetailsPageAdmin() {
                <CashbackCardFront  
                  userName={userData?.name || "Default User"}      
                  date ={userData?.createdAt || "2023-08-01"}  
-                 cardNumber ={userData?.referralCode || "MM24 1234 5678"}  
+                 cardNumber ={userData?.referralCode || "MM24 1234 5678"} 
+                 validDate = { userData.membershipDate || "08/25"} 
+                 expiredDate = { userData.membershipExpiryDate || "08/26"} 
                  />  
             </CardContent>
           </Card>

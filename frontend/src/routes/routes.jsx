@@ -59,6 +59,7 @@ import VendorDetailsPage from "../components/Dashboad/Admin/vendorDetailsPage";
 import TicketListPage from "../pages/Dashboard/Ticket/TicketListPage";
 import MessagingPage from "../pages/Dashboard/Ticket/MessagingPage";
 import CategoryManagementPage from "../pages/Dashboard/Admin/CategoryManagementPage";
+import AcceptTermsAndConditionsPage from "../pages/AcceptTerm_condition";
 
 const routes = [
   {
@@ -189,6 +190,14 @@ const routes = [
     element: (
       <MainLayout>
         <TermsAndConditions />
+      </MainLayout>
+    ),
+  },
+  {
+    path: "/accept-tnc",
+    element: (
+      <MainLayout>
+        < AcceptTermsAndConditionsPage/>
       </MainLayout>
     ),
   },
