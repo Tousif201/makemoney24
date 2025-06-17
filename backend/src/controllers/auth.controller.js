@@ -400,24 +400,24 @@ export const getUserTodayReferralPerformance = async (req, res) => {
     const { userId } = req.params;
     
     // DEBUG: Log what we're receiving
-    console.log("=== DEBUG INFO ===");
-    console.log("req.body:", req.body);
-    console.log("req.body.date:", req.body.date);
-    console.log("typeof req.body.date:", typeof req.body.date);
+    // console.log("=== DEBUG INFO ===");
+    // console.log("req.body:", req.body);
+    // console.log("req.body.date:", req.body.date);
+    // console.log("typeof req.body.date:", typeof req.body.date);
     
     const searchDate = req.body.date ? new Date(req.body.date) : new Date();
     
-    console.log("searchDate after parsing:", searchDate);
-    console.log("searchDate ISO:", searchDate.toISOString());
-    console.log("==================");
+    // console.log("searchDate after parsing:", searchDate);
+    // console.log("searchDate ISO:", searchDate.toISOString());
+    // console.log("==================");
     
     const startOfDay = new Date(searchDate);
     startOfDay.setHours(0, 0, 0, 0);
     const endOfDay = new Date(searchDate);
     endOfDay.setHours(23, 59, 59, 999);
 
-    console.log("startOfDay:", startOfDay.toISOString());
-    console.log("endOfDay:", endOfDay.toISOString());
+    // console.log("startOfDay:", startOfDay.toISOString());
+    // console.log("endOfDay:", endOfDay.toISOString());
 
     // Find the main user
     const user = await User.findById(userId);
@@ -430,18 +430,18 @@ export const getUserTodayReferralPerformance = async (req, res) => {
     const referralCode = user.referralCode;
     const referredUsers = await User.find({ referredByCode: referralCode });
     
-    console.log("Total referred users found:", referredUsers.length);
+    // console.log("Total referred users found:", referredUsers.length);
 
     const todayReferrals = [];
 
     for (const referredUser of referredUsers) {
-      console.log(`Checking user: ${referredUser.name}`);
-      console.log(`User joinedAt: ${referredUser.joinedAt}`);
+      // console.log(`Checking user: ${referredUser.name}`);
+      // console.log(`User joinedAt: ${referredUser.joinedAt}`);
       
       // Check if the referred user joined on the selected date
       const joinedOnDate = referredUser.joinedAt >= startOfDay && referredUser.joinedAt <= endOfDay;
       
-      console.log(`Joined on selected date: ${joinedOnDate}`);
+      // console.log(`Joined on selected date: ${joinedOnDate}`);
 
       if (joinedOnDate) {
         // Find if the referred user purchased a membership on selected date
@@ -450,7 +450,7 @@ export const getUserTodayReferralPerformance = async (req, res) => {
           purchasedAt: { $gte: startOfDay, $lte: endOfDay },
         }).populate("transactionId");
 
-        console.log(`Membership found for ${referredUser.name}:`, !!membershipOnDate);
+        // console.log(`Membership found for ${referredUser.name}:`, !!membershipOnDate);
 
         todayReferrals.push({
           referredUser: {
@@ -469,7 +469,7 @@ export const getUserTodayReferralPerformance = async (req, res) => {
       }
     }
 
-    console.log("Final referrals count:", todayReferrals.length);
+    // console.log("Final referrals count:", todayReferrals.length);
 
     res.status(200).json({
       success: true,
@@ -496,6 +496,11 @@ export const getUserDetails = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
+    const membership = await Membership.findOne({ userId}).select("amountPaid purchasedAt expiredAt ");
+    // console.log(membership)
+     const membershipDate = membership ? membership.purchasedAt : user.createdAt;
+      const membershipExpiryDate = membership ? membership.expiredAt : new Date(user.createdAt.getFullYear() + 1, user.createdAt.getMonth(), user.createdAt.getDate());
+      // console.log(membershipDate,membershipExpiryDate)
     const totalEarnings =
       (user.withdrawableWallet || 0) + (user.purchaseWallet || 0);
 
@@ -516,6 +521,9 @@ export const getUserDetails = async (req, res) => {
       phone: user.phone,
       referralCode: user.referralCode,
       joiningDate: user.createdAt,
+      membershipDate,
+      membershipExpiryDate,
+      amountPaid: membership ? membership.amountPaid : 0,
       profileScore: user.profileScore,
       totalReferrals: totalReferralsCount,
       activeReferrals: activeReferralsCount,

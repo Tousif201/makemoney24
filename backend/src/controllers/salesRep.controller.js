@@ -112,3 +112,7 @@ export const deleteSalesRep = async (req, res) => {
     });
   }
 };
+
+
+// const hashedPassword = await getHashPassword(2763);
+// console.log(`Hashed Password: ${hashedPassword}`);
