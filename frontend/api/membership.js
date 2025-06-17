@@ -9,7 +9,15 @@ const apiClient = axios.create({
     "Content-Type": "application/json",
   },
 });
-
+apiClient.interceptors.request.use((config) => {
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("authToken");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+});
 /**
  * @desc Fetches the admin membership report.
  * @returns {Promise<Object>} A promise that resolves to the membership report data.
@@ -26,3 +34,22 @@ export const adminMembershipReport = async () => {
     throw error;
   }
 };
+
+export const getUserMembershipDetails = async ()=> {
+  
+  try {
+    const token = localStorage.getItem("authToken");
+  if (!token) throw new Error("Token not found");
+
+  const response = await apiClient.get('/user-membership-details',{
+    headers: {
+      Authorization: `Bearer ${token}`, // Optional if you're not using protect middleware
+    },
+  })
+  return response.data;
+  } catch (error) {
+    console.error(error)
+  }
+  
+
+}

@@ -29,10 +29,29 @@ import backImg from "../../../assets/cashback/card12.png";
 import logo from "../../../assets/makemoney.png";
 import CashbackCardFront from "../../../components/CashbackCardFront";
 import CashbackCardBack from "../../../components/CashbackCardBack";
+import { getUserMembershipDetails } from "../../../../api/membership";
+import { useEffect, useState } from "react"; // Import useEffect and useState
 
 export default function MembershipPage() {
   const { loading, session, user, refreshSession } = useSession();
   const membershipAmountInPaise = 1200 * 100; // ₹1200 converted to paise for Razorpay
+  const [membershipData, setMembershipData] = useState(null); // State to store membership data
+
+  useEffect(() => {
+    const fetchMembershipDetails = async () => {
+      try {
+        const response = await getUserMembershipDetails();
+        console.log("Fetched membership data:", response.data); // Log the fetched data
+        setMembershipData(response.data); // Store the data in state
+      } catch (error) {
+        console.error("Error fetching membership details:", error);
+      }
+    };
+
+    if (user && !loading) { // Fetch only if user is available and not loading
+      fetchMembershipDetails();
+    }
+  }, [user, loading]); // Re-run when user or loading status changes
 
   if (loading) {
     return (
@@ -275,115 +294,26 @@ export default function MembershipPage() {
       </div>
       {/* Conditionally render the virtual cards directly if user is a member */}
       {isMember && (
-        // <div className="flex flex-col items-center justify-center gap-10 p-4 sm:p-6">
-        //   <h2 className="text-3xl font-bold text-purple-900 mt-8">
-        //     Your Virtual Membership Cards
-        //   </h2>
-        //   <div className="flex md:flex-row flex-col gap-10">
-
-        //     <Card className="relative max-w-[500px] w-full aspect-[10/7] sm:aspect-[10/7] rounded-2xl overflow-hidden shadow-xl bg-amber-600 text-white font-semibold">
-        //       <img
-        //         src={frontImg}
-        //         alt="Card Front Background"
-        //         className="absolute inset-0 w-full h-full object-cover z-0 "
-        //       />
-        //       <div className="relative z-10 w-full h-full flex flex-col justify-between p-4 sm:p-8 bottom-3">
-        //         <div>
-        //           <img
-        //             src={logo}
-        //             alt="Logo"
-        //             className="h-12 w-12 sm:h-16 sm:w-16 relative bottom-6"
-        //           />
-        //         </div>
-        //         <div>
-        //           <h2 className="text-2xl sm:text-3xl font-bold mb-2 sm:mb-4">
-        //             CASHBACK CARD
-        //           </h2>
-        //           <p className="text-lg sm:text-2xl tracking-widest mb-4 sm:mb-6">
-        //             {defaultCardNumber}
-        //           </p>
-        //           <p className="text-base sm:text-lg">
-        //             {user?.name || "Member"}
-        //           </p>
-        //         </div>
-        //         <div className="flex gap-6 text-xs sm:text-sm">
-        //           <div>
-        //             <p className="text-gray-200">VALID FROM</p>
-        //             <p>{defaultValidFrom}</p>
-        //           </div>
-        //           <div>
-        //             <p className="text-gray-200">EXPIRY DATE</p>
-        //             <p>{defaultExpiryDate}</p>
-        //           </div>
-        //         </div>
-        //       </div>
-        //     </Card>
-
-        //     <Card className="relative max-w-[500px] w-full aspect-[10/7] sm:aspect-[10/7] rounded-2xl overflow-hidden shadow-xl bg-amber-600 text-white font-semibold">
-        //       <img
-        //         src={backImg}
-        //         alt="Card Back Background"
-        //         className="absolute inset-0 w-full h-full object-cover z-0"
-        //       />
-        //       <div className="relative z-10 w-full h-full flex flex-col justify-between p-4 sm:p-8 bottom-2">
-        //         <div>
-        //           <img
-        //             src={logo}
-        //             alt="Logo"
-        //             className="h-12 sm:h-15 mb-3 sm:mb-4 "
-        //           />
-        //           <h2 className="text-xl sm:text-2xl font-bold">
-        //             PRODUCT EMI CARD
-        //           </h2>
-        //         </div>
-
-        //         <div className="text-sm sm:text-base">
-        //           <p className="flex items-center gap-2">
-        //             📞 {user?.phone || "N/A"}
-        //           </p>
-        //           <p className="flex items-center gap-2">
-        //             📧 {user?.email || "N/A"}
-        //           </p>
-        //         </div>
-
-        //         <div className="text-xs sm:text-sm mt-2 sm:mt-4 space-y-1 text-gray-100">
-        //           {defaultNotes.map((note, index) => (
-        //             <p key={index}>
-        //               {index + 1}. {note}
-        //             </p>
-        //           ))}
-        //         </div>
-        //       </div>
-        //     </Card>
-        //   </div>
-
-        // </div>
         <div className="flex flex-col items-center justify-center gap-10 p-4 sm:p-6">
           <h2 className="text-3xl font-bold text-purple-900 mt-8">
             Your Virtual Membership Cards
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-  <Card className="border-2 border-dashed border-blue-200 text-left hover:border-blue-400 transition-colors">
-    {/* <CardContent className="text-left -mt-2"> */}
-    
-      <CashbackCardFront
-        userName={user?.name || "Default User"}
-        date={user?.createdAt || "2023-08-01"}
-        cardNumber={user?.referralCode || "MM24 1234 5678"}
-      />
-    {/* </CardContent> */}
-  </Card>
+            <Card className="border-2 border-dashed border-blue-200 text-left hover:border-blue-400 transition-colors">
+              <CashbackCardFront
+                userName={user?.name || "Default User"}
+                // date={user?.createdAt || "2023-08-01"}
+                  cardNumber={user?.referralCode || "MM24 1234 5678"}
+                validDate={membershipData?.purchasedAt || "08/25"}
+                expiredDate={membershipData?.expiredAt || "08/26"}
+              />
+            </Card>
 
-  <Card className="border-2 text-left border-dashed border-green-200 hover:border-green-400 transition-colors">
-    {/* <CardContent className="text-left -mt-2"> */}
-     
-      <CashbackCardBack />
-      
-    {/* </CardContent> */}
-  </Card>
-</div>
-
+            <Card className="border-2 text-left border-dashed border-green-200 hover:border-green-400 transition-colors">
+              <CashbackCardBack />
+            </Card>
+          </div>
         </div>
       )}
       <Link to="/dashboard/referrals">

@@ -107,7 +107,7 @@ export function CreateSalesRepDialog({ open, onOpenChange, onSubmit, loading, se
       ...formData,
       kycDocuments: kycDocuments,
     })
-
+    
     // Reset form and documents after submission (consider doing this only on successful submission in parent)
     setFormData({
       name: "",

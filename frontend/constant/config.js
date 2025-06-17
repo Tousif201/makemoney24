@@ -1,7 +1,7 @@
 export const backendConfig = {
 
-  base: " https://api.makemoney24hrs.com/api",
-  origin: "https://api.makemoney24hrs.com",
+  // base: " https://api.makemoney24hrs.com/api",
+  // origin: "https://api.makemoney24hrs.com",
 
 
 
@@ -15,8 +15,8 @@ export const backendConfig = {
 
 
 
-  // base: "https://4sr8mplp-3000.inc1.devtunnels.ms/api",
-  // origin: "https://4sr8mplp-3000.inc1.devtunnels.ms/",
+  base: "https://4sr8mplp-3000.inc1.devtunnels.ms/api",
+  origin: "https://4sr8mplp-3000.inc1.devtunnels.ms/",
 };
 
 export const sessionKey = "test";
