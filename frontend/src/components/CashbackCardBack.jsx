@@ -1,10 +1,9 @@
 import React from "react";
 import { Card } from "@/components/ui/card";
 import backImg from "../assets/cashback/cardback.png";
-import logo from "../assets/makemoney.png";
+import logo from "../assets/whitemakemoney.png";
 
 const CashbackCardBack = ({
-  phone = "+919545827264",
   email = "info@makemoney24hrs.com",
   notes = [
     "This card is only valid for people who are registered as members",
@@ -33,10 +32,10 @@ const CashbackCardBack = ({
 
         {/* Contact Information */}
         <div className="text-xs xs:text-sm sm:text-base md:text-base space-y-1 xs:space-y-2">
-          <p className="flex items-center gap-2">
+          {/* <p className="flex items-center gap-2">
             <span className="text-sm xs:text-base">📞</span> 
             <span className="break-all">{phone}</span>
-          </p>
+          </p> */}
           <p className="flex items-center ">
             <span className="text-[10px] md:text-sm xs:text-base">📧</span> 
             <span className="break-all text-[10px] md:text-sm">{email}</span>

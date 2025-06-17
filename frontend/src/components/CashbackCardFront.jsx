@@ -1,13 +1,14 @@
 import React from "react";
 import { Card } from "@/components/ui/card";
 import frontImg from "../assets/cashback/card11.png";
-import logo from "../assets/makemoney.png";
+import logo from "../assets/whitemakemoney.png";
 
 const CashbackCardFront = ({
-  userName ,date,cardNumber
+  userName ,date,cardNumber,validDate,expiredDate
   
 }) => {
-  const createdDate = new Date(date);
+ 
+  const createdDate = new Date(validDate);
 
   // Format validFrom as MM/YY
   const validFrom = createdDate.toLocaleDateString("en-US", {
@@ -16,8 +17,7 @@ const CashbackCardFront = ({
   });
 
   // Add 1 year for expiry
-  const expiryDateObj = new Date(createdDate);
-  expiryDateObj.setFullYear(expiryDateObj.getFullYear() + 1);
+  const expiryDateObj =new Date(expiredDate);
 
   const expiryDate = expiryDateObj.toLocaleDateString("en-US", {
     month: "2-digit",
@@ -45,23 +45,23 @@ const CashbackCardFront = ({
           <h2 className="text-lg xs:text-xl sm:text-2xl md:text-3xl lg:text-3xl font-bold mb-2 xs:mb-3 sm:mb-4">
             CASHBACK CARD
           </h2>
-          <p className="text-sm xs:text-base sm:text-lg md:text-xl lg:text-2xl tracking-widest mb-1 xs:mb-4 sm:mb-5 md:mb-6 font-mono">
+          <p className="text-sm xs:text-base sm:text-lg md:text-xl lg:text-2xl tracking-widest mb-0 xs:mb-4 sm:mb-3 md:mb-2 font-mono">
             {cardNumber}
           </p>
-          <p className="text-sm xs:text-base sm:text-lg md:text-lg lg:text-lg">
+          <p className="text-sm xs:text-base sm:text-lg md:text-lg lg:text-lg ">
             {userName}
           </p>
         </div>
         
         {/* Date Information */}
-        <div className="flex gap-4 xs:gap-5 sm:gap-6 text-xs xs:text-xs sm:text-sm md:text-sm ">
-          <div>
-            <p className="text-gray-200 mb-1">VALID FROM</p>
-            <p className="font-semibold">{validFrom}</p>
+        <div className="flex gap-2 xs:gap-5 sm:gap-6 text-[7px] xs:text-[7px] sm:text-[10px] md:text-xs mt-2 ">
+          <div className="flex gap-2">
+            <p className="text-gray-200  mb-1">VALID <p>FROM</p></p>
+            <p className="font-semibold text-[15px]">{validFrom}</p>
           </div>
-          <div>
-            <p className="text-gray-200 mb-1">EXPIRY DATE</p>
-            <p className="font-semibold">{expiryDate}</p>
+          <div className="flex gap-2">
+            <p className="text-gray-200 mb-1">EXPIRY <p>DATE</p></p>
+            <p className="font-semibold text-[15px]">{expiryDate}</p>
           </div>
         </div>
       </div>
