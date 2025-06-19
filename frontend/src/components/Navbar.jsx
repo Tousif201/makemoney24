@@ -292,24 +292,24 @@ export default function Navbar() {
           {/* Explicit Mobile Nav Links for consistency */}
           <NavLinkItem
             to="/"
-            className="block text-gray-700 hover:text-purple-600 text-lg py-2"
+            className="block text-gray-700 hover:text-purple-600 "
             onClick={() => setIsOpen(false)} // Close menu on click
           >
             Products
           </NavLinkItem>
           <NavLinkItem
             to="/services"
-            className="block text-gray-700 hover:text-purple-600 text-lg py-2"
+            className="block text-gray-700 hover:text-purple-600 "
             onClick={() => setIsOpen(false)} // Close menu on click
           >
             Services
           </NavLinkItem>
 
           {/* Browse Section for Mobile */}
-          <div className="border-b pb-3 mb-3 border-gray-100">
+          <div className="border-b  border-gray-100">
             <Button
               variant="ghost"
-              className="w-full justify-between text-lg font-semibold text-gray-800 hover:bg-gray-50 px-0 rounded-none"
+              className="w-full justify-between  font-semibold text-gray-800 hover:bg-gray-50 px-0 rounded-none"
               onClick={() => handleMobileCategoryToggle("browse-main")}
             >
               Browse
@@ -322,14 +322,14 @@ export default function Navbar() {
             {mobileExpandedCategory === "browse-main" && (
               <div className="mt-2 space-y-2 pl-4 border-l border-gray-200">
                 {loadingCategories ? (
-                  <div className="text-gray-500 flex items-center py-2">
+                  <div className="text-gray-500 flex items-center ">
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading
                     Categories...
                   </div>
                 ) : errorCategories ? (
-                  <div className="text-red-500 py-2">{errorCategories}</div>
+                  <div className="text-red-500 ">{errorCategories}</div>
                 ) : categories.length === 0 ? (
-                  <div className="text-gray-500 py-2">No categories found.</div>
+                  <div className="text-gray-500 ">No categories found.</div>
                 ) : (
                   <ScrollArea className="h-72">
                     {categories.map((category) => (
@@ -358,7 +358,7 @@ export default function Navbar() {
                                 <Link
                                   key={subCategory._id}
                                   to={`/browse?categories=${subCategory._id}`}
-                                  className="block text-gray-600 hover:text-purple-600 transition-colors duration-200 text-sm py-1.5"
+                                  className="block text-gray-600 hover:text-purple-600 transition-colors duration-200 text-sm "
                                   onClick={() => setIsOpen(false)}
                                 >
                                   {subCategory.name}
@@ -371,7 +371,7 @@ export default function Navbar() {
                           category.children.length === 0) && (
                           <Link
                             to={`/browse?categories=${category._id}`}
-                            className="block text-gray-700 hover:text-purple-600 transition-colors duration-200 text-base py-1.5"
+                            className="block text-gray-700 hover:text-purple-600 transition-colors duration-200 text-base "
                             onClick={() => setIsOpen(false)}
                           >
                             {category.name}
@@ -384,7 +384,7 @@ export default function Navbar() {
                 {categories.length > 0 && (
                   <Link
                     to="/browse"
-                    className="block text-blue-600 font-semibold hover:text-blue-700 transition-colors duration-200 text-base py-1.5 mt-2"
+                    className="block text-blue-600 font-semibold hover:text-blue-700 transition-colors duration-200 text-base  "
                     onClick={() => setIsOpen(false)}
                   >
                     View All Browse Items
@@ -396,7 +396,7 @@ export default function Navbar() {
 
           <NavLinkItem
             to="/about"
-            className="block text-gray-700 hover:text-purple-600 text-lg py-2"
+            className="block text-gray-700 hover:text-purple-600"
             onClick={() => setIsOpen(false)} // Close menu on click
           >
             About
@@ -404,28 +404,28 @@ export default function Navbar() {
 
            <NavLinkItem
             to="/buisness-plan"
-            className="block text-gray-700 hover:text-purple-600 text-lg py-2"
+            className="block text-gray-700 hover:text-purple-600  "
             onClick={() => setIsOpen(false)} // Close menu on click
           >
             Business Plan
           </NavLinkItem>
             <NavLinkItem
             to="/tnc"
-            className="block text-gray-700 hover:text-purple-600 text-lg py-2"
+            className="block text-gray-700 hover:text-purple-600 "
             onClick={() => setIsOpen(false)} // Close menu on click
           >
              Terms & Conditions
           </NavLinkItem>
             <NavLinkItem
             to="/privacy-policy"
-            className="block text-gray-700 hover:text-purple-600 text-lg py-2"
+            className="block text-gray-700 hover:text-purple-600 "
             onClick={() => setIsOpen(false)} // Close menu on click
           >
             Privacy Policy
           </NavLinkItem>
             <NavLinkItem
             to="/company-policy"
-            className="block text-gray-700 hover:text-purple-600 text-lg py-2"
+            className="block text-gray-700 hover:text-purple-600 "
             onClick={() => setIsOpen(false)} // Close menu on click
           >
            Company Policy
