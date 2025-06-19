@@ -60,6 +60,7 @@ import TicketListPage from "../pages/Dashboard/Ticket/TicketListPage";
 import MessagingPage from "../pages/Dashboard/Ticket/MessagingPage";
 import CategoryManagementPage from "../pages/Dashboard/Admin/CategoryManagementPage";
 import AcceptTermsAndConditionsPage from "../pages/AcceptTerm_condition";
+import ExchangeReturn from "../pages/ExchangeReturn";
 
 const routes = [
   {
@@ -206,6 +207,15 @@ const routes = [
     element: (
       <MainLayout>
         <PrivacyPolicy />
+      </MainLayout>
+    ),
+  },
+
+    {
+    path: "/Return",
+    element: (
+      <MainLayout>
+        <ExchangeReturn />
       </MainLayout>
     ),
   },
