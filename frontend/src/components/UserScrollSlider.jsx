@@ -96,27 +96,46 @@ const UserScrollSlider = () => {
       onScroll={handleScroll}
     >
       <div className="flex gap-2 sm:gap-4 w-max">
-        {categories.map((item) => (
-          <Link
-            to={`/browse?categories=${item._id}`}
-            key={item._id}
-            className="flex flex-col items-center justify-start shrink-0 w-20 sm:w-32"
-          >
-            <img
-              src={item.img}
-              alt={item.name}
-              className="w-16 h-16 sm:w-28 sm:h-28 object-cover rounded-full"
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src =
-                  "https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png";
-              }}
-            />
-            <p className="text-center text-xs sm:text-sm mt-1 sm:mt-2 px-1 leading-tight">
-              {item.name}
-            </p>
-          </Link>
-        ))}
+        {categories.map((item) => {
+          const isEmiCategory = item.name.toLowerCase().includes("emi");
+          return (
+            <Link
+              to={`/browse?categories=${item._id}`}
+              key={item._id}
+              className={`flex flex-col items-center justify-start shrink-0 w-20 sm:w-32 relative ${
+                isEmiCategory
+                  ? "border-2 border-amber-500 shadow-lg scale-105 transition-all duration-300 ease-in-out z-10 rounded-xl p-2 bg-amber-50"
+                  : ""
+              }`}
+              style={isEmiCategory ? { transform: "scale(1.05)" } : {}}
+            >
+              <img
+                src={item.img}
+                alt={item.name}
+                className={`w-16 h-16 sm:w-28 sm:h-28 object-cover rounded-full ${
+                  isEmiCategory ? "border-2 border-amber-400" : ""
+                }`}
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src =
+                    "https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png";
+                }}
+              />
+              <p
+                className={`text-center text-xs sm:text-sm mt-1 sm:mt-2 px-1 leading-tight ${
+                  isEmiCategory ? "text-amber-700 font-bold" : ""
+                }`}
+              >
+                {item.name}
+              </p>
+              {isEmiCategory && (
+                <span className="absolute -top-2 -right-2 bg-amber-500 text-white text-[0.6rem] px-1.5 py-0.5 rounded-full font-bold">
+                  EMI
+                </span>
+              )}
+            </Link>
+          );
+        })}
       </div>
     </div>
   );

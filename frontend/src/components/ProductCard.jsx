@@ -20,6 +20,18 @@ const ProductCard = ({ product }) => {
     return () => window.removeEventListener("resize", checkScreen);
   }, []);
 
+  // Calculate discounted price
+  const calculateDiscountedPrice = () => {
+    if (product.discountRate && product.discountRate > 0 && product.discountRate <= 100) {
+      const discountAmount = (product.price * product.discountRate) / 100;
+      return product.price - discountAmount;
+    }
+    return product.price; // No discount or invalid discount rate
+  };
+
+  const discountedPrice = calculateDiscountedPrice();
+  const showDiscount = product.discountRate && product.discountRate > 0 && product.discountRate <= 100;
+
   // Add product to cart and show success toast
   const handleAddToCart = () => {
     addToCart(product);
@@ -45,6 +57,8 @@ const ProductCard = ({ product }) => {
 
   const handleViewDetails = () => {
     console.log(`Viewing details for product: ${product.title}`);
+    // This function might not be strictly necessary if Link is used directly,
+    // but kept for consistency with your original code.
   };
 
   return (
@@ -100,8 +114,29 @@ const ProductCard = ({ product }) => {
         <p className="text-sm text-gray-500 mt-1 line-clamp-2">
           {product.description}
         </p>
-        <div className="mt-3 text-lg text-blue-600 font-bold">
-          ₹{product.price.toLocaleString("en-IN")}
+
+        <div className="mt-3 flex items-baseline space-x-2">
+          {showDiscount ? (
+            <>
+              {/* Original price, struck out */}
+              <span className="text-sm text-gray-400 line-through">
+                ₹{product.price.toLocaleString("en-IN")}
+              </span>
+              {/* Discounted price */}
+              <span className="text-lg text-blue-600 font-bold">
+                ₹{discountedPrice.toLocaleString("en-IN")}
+              </span>
+              {/* Discount percentage badge (optional, but good for UX) */}
+              <span className="text-xs font-medium text-green-700 bg-green-100 px-2 py-0.5 rounded-full">
+                {product.discountRate}% OFF
+              </span>
+            </>
+          ) : (
+            // Only show price if no discount
+            <span className="text-lg text-blue-600 font-bold">
+              ₹{product.price.toLocaleString("en-IN")}
+            </span>
+          )}
         </div>
       </div>
     </motion.div>
