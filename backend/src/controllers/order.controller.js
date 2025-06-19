@@ -476,3 +476,106 @@ export const getAdminSalesReport = async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
+/**
+ * @desc    Get all orders placed today
+ * @route   GET /api/orders/today
+ * @access  Public (or protected)
+ */
+export const getTodaysOrders = async (req, res) => {
+  try {
+    // Set the start and end of the current day
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Beginning of the day
+
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1); // Beginning of the next day
+
+    // Find orders placed within the calculated date range
+    const todaysOrders = await Order.find({
+      placedAt: {
+        $gte: today,
+        $lt: tomorrow,
+      },
+    })
+      .populate({
+        path: 'userId',
+        select: 'name', // Assumes 'name' field in User model
+      })
+      .populate({
+        path: 'vendorId',
+        select: 'name', // Assumes 'name' field in Vendor model
+      })
+      .populate({
+        path: 'items.productServiceId', // Populate productServiceId within the items array
+        select: 'title', // Assumes 'title' field in ProductService model
+      })
+      .sort({ placedAt: -1 }); // Optional: sort by most recent
+
+    if (!todaysOrders || todaysOrders.length === 0) {
+      return res.status(200).json({ success: true, data: [], message: 'No orders found for today.' });
+    }
+
+    // Format the response to send only the required fields
+    const formattedOrders = todaysOrders.map((order) => ({
+      orderId: order._id,
+      vendorName: order.vendorId ? order.vendorId.name : 'N/A',
+      userName: order.userId ? order.userId.name : 'N/A',
+      orderDate: order.placedAt,
+      orderStatus: order.orderStatus,
+      paymentStatus: order.paymentStatus,
+      isAdminApproved: order.isAdminApproved,
+      products: order.items.map(item => ({
+        productTitle: item.productServiceId ? item.productServiceId.title : 'N/A',
+        quantity: item.quantity,
+        price: item.price,
+      })),
+    }));
+
+    // Send the successful response (the "View")
+    res.status(200).json(formattedOrders);
+
+  } catch (error) {
+    console.error("Error fetching today's orders:", error);
+    res.status(500).json({ message: 'Server error while fetching orders.' });
+  }
+};
+
+
+/**
+ * @desc    Reject an order by admin
+ * @route   PATCH /api/orders/:id/reject
+ * @access  Private/Admin
+ */
+export const rejectOrder = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // 1. Validate if the provided ID is a valid MongoDB ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid Order ID format.' });
+    }
+
+    // 2. Find the order by its ID and update the isAdminApproved status
+    const updatedOrder = await Order.findByIdAndUpdate(
+      id,
+      { isAdminApproved: 'rejected' },
+      { new: true } // This option returns the modified document
+    );
+
+    // 3. Check if an order was found and updated
+    if (!updatedOrder) {
+      return res.status(404).json({ message: 'Order not found.' });
+    }
+
+    // 4. Send the successful response with the updated order
+    res.status(200).json({
+      message: 'Order has been rejected successfully.',
+      order: updatedOrder,
+    });
+
+  } catch (error) {
+    console.error("Error rejecting order:", error);
+    res.status(500).json({ message: 'Server error while rejecting the order.' });
+  }
+};

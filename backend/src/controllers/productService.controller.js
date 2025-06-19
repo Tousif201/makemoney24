@@ -5,7 +5,7 @@ import { ProductService } from "../models/ProductService.model.js";
 import mongoose from "mongoose";
 import { Review } from "../models/Review.model.js";
 import { Vendor } from "../models/Vendor.model.js";
-import {Category} from "../models/Category.model.js"
+import { Category } from "../models/Category.model.js"
 // Helper function to validate ObjectId
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
@@ -30,6 +30,9 @@ export const createProductService = async (req, res) => {
       pincode,
       isBookable,
       isInStock,
+      isEmiEligible,
+      details,
+      discountRate, // Destructure the discountRate
     } = req.body;
 
     // Basic validation for required fields
@@ -69,6 +72,14 @@ export const createProductService = async (req, res) => {
       return res.status(400).json({ message: "Price cannot be negative." });
     }
 
+    // --- New Validation for Discount Rate ---
+    // Ensure discountRate is a number and within 0-100 range
+    const parsedDiscountRate = parseFloat(discountRate);
+    if (isNaN(parsedDiscountRate) || parsedDiscountRate < 0 || parsedDiscountRate > 100) {
+      return res.status(400).json({ message: "Discount rate must be a number between 0 and 100." });
+    }
+    // --- End New Validation ---
+
     // Prepare portfolio array
     const productPortfolio = Array.isArray(portfolio)
       ? portfolio.map((item) => ({
@@ -102,6 +113,7 @@ export const createProductService = async (req, res) => {
       categoryId,
       type,
       title,
+      details,
       description,
       price,
       portfolio: productPortfolio,
@@ -109,6 +121,8 @@ export const createProductService = async (req, res) => {
       pincode,
       isBookable: finalIsBookable,
       isInStock: isInStock !== undefined ? isInStock : true,
+      isEmiEligible: isEmiEligible !== undefined ? isEmiEligible : false,
+      discountRate: parsedDiscountRate, // Use the parsed and validated discount rate
     });
 
     const savedProductService = await newProductService.save();
@@ -118,6 +132,7 @@ export const createProductService = async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
 /**
  * @desc Get all products/services with advanced filtering, sorting, pagination, and population
  * @route GET /api/product-services
@@ -146,17 +161,17 @@ const getAllDescendantCategoryIds = async (initialCategoryIds) => {
 
   // Use a Set to store final IDs to prevent duplicates
   const finalIds = new Set(initialCategoryIds);
-  
+
   // A queue to hold the IDs whose children we need to find
   let queue = [...initialCategoryIds];
 
   while (queue.length > 0) {
     // Find all categories whose parent is in the current queue
     const children = await Category.find({ parentId: { $in: queue } }).select("_id");
-    
+
     // Get just the IDs of the children
     const childrenIds = children.map(c => c._id.toString());
-    
+
     // Clear the queue for the next iteration
     queue = [];
 

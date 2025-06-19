@@ -24,7 +24,7 @@ import {
   Loader2,
   XCircle,
 } from "lucide-react";
-
+import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useSession } from "../../../context/SessionContext";
 import { deleteFiles, uploadFiles } from "../../../../api/upload";
@@ -42,6 +42,7 @@ export default function CreateProduct() {
     title: "",
     description: "",
     price: "",
+    details: "",
     variants: [],
     pincode: "",
     localMediaFiles: [], // For main product/service portfolio
@@ -49,6 +50,7 @@ export default function CreateProduct() {
     portfolio: [], // For main product/service portfolio
     isBookable: false,
     isInStock: true,
+    discountRate: "",
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -357,59 +359,92 @@ export default function CreateProduct() {
   };
 
   // --- End Variant Handlers ---
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     setFormError(null);
+
     setFormSuccess(null);
+
     setIsSubmitting(true);
+
     setIsUploading(true); // Set to true for the entire upload process
 
     if (!session?.id) {
       setFormError("Authentication error: Vendor ID not found. Please log in.");
+
       setIsSubmitting(false);
+
       setIsUploading(false);
+
       return;
     }
 
     let currentPortfolio = [...formData.portfolio]; // Will be updated with uploaded main media
-    let currentVariants = (formData.variants); // Deep copy to modify
+
+    let currentVariants = formData.variants; // Deep copy to modify
 
     const uploadPromises = [];
+
     const uploadErrors = []; // To collect all errors
 
     // Promise for main product/service media upload
+
     if (formData.localMediaFiles.length > 0) {
       const mainUploadPromise = uploadFiles(formData.localMediaFiles)
         .then((uploadedMediaArray) => {
           currentPortfolio = [...currentPortfolio, ...uploadedMediaArray];
         })
+
         .catch((error) => {
-          uploadErrors.push(`Main media upload failed: ${error.response?.data?.message || error.message}`);
+          uploadErrors.push(
+            `Main media upload failed: ${
+              error.response?.data?.message || error.message
+            }`
+          );
+
           console.error("Error during main media upload:", error);
         });
+
       uploadPromises.push(mainUploadPromise);
     }
+
     // Promises for variant media uploads (if type is product)
+
     if (formData.type === "product") {
       currentVariants.forEach((variant, index) => {
         if (variant.localVariantMediaFiles.length > 0) {
-          const variantUploadPromise = uploadFiles(variant.localVariantMediaFiles)
+          const variantUploadPromise = uploadFiles(
+            variant.localVariantMediaFiles
+          )
             .then((uploadedVariantImages) => {
               variant.images = [
                 ...variant.images,
+
                 ...uploadedVariantImages.map((item) => ({
                   url: item.url,
+
                   key: item.key,
+
                   type: item.type,
                 })),
               ];
             })
+
             .catch((error) => {
-              uploadErrors.push(`Variant ${index} media upload failed: ${error.response?.data?.message || error.message}`);
-              console.error(`Error during variant ${index} media upload:`, error);
+              uploadErrors.push(
+                `Variant ${index} media upload failed: ${
+                  error.response?.data?.message || error.message
+                }`
+              );
+
+              console.error(
+                `Error during variant ${index} media upload:`,
+
+                error
+              );
             });
+
           uploadPromises.push(variantUploadPromise);
         }
       });
@@ -417,56 +452,90 @@ export default function CreateProduct() {
 
     try {
       // Wait for all uploads to settle (succeed or fail)
+
       await Promise.allSettled(uploadPromises); // Use allSettled to ensure all promises run
 
       if (uploadErrors.length > 0) {
         setFormError(uploadErrors.join("; "));
+
         setIsSubmitting(false);
+
         setIsUploading(false);
+
         return;
       }
 
       // Update formData with the new portfolio and variant images, and clear local files
+
       setFormData((prev) => ({
         ...prev,
+
         portfolio: currentPortfolio,
+
         localMediaFiles: [], // Clear after successful processing
+
         localMediaPreviews: [], // Clear after successful processing
-        variants: currentVariants.map(v => ({
+
+        variants: currentVariants.map((v) => ({
           ...v,
+
           localVariantMediaFiles: [], // Clear after successful processing
+
           localVariantMediaPreviews: [], // Clear after successful processing
         })),
       }));
 
-
       const productServicePayload = {
         vendorId: session.id,
+
+        discountRate: formData.discountRate,
+
         categoryId: formData.categoryId,
+
         type: formData.type,
+
         title: formData.title,
+        details: formData.details,
         description: formData.description,
+
         price: parseFloat(formData.price),
-        portfolio: currentPortfolio.map((item) => ({ // Use the updated currentPortfolio
+
+        portfolio: currentPortfolio.map((item) => ({
+          // Use the updated currentPortfolio
+
           type: item.type,
+
           url: item.url,
+
           key: item.key,
         })),
+
         pincode: formData.pincode,
+
         isBookable: formData.type === "service" ? formData.isBookable : false,
+
         isInStock: formData.isInStock,
+
         variants:
           formData.type === "product"
-            ? currentVariants.map((variant) => ({ // Use the updated currentVariants
+            ? currentVariants.map((variant) => ({
+                // Use the updated currentVariants
+
                 color: variant.color,
+
                 size: variant.size,
+
                 sku: variant.sku,
+
                 quantity: parseInt(variant.quantity) || 0,
-                images: variant.images.map(({url}) => (url)),
+
+                images: variant.images.map(({ url }) => url),
               }))
             : [],
       };
+
       // --- Validation Checks ---
+
       if (
         !productServicePayload.vendorId ||
         !productServicePayload.categoryId || // categoryId is now mandatory
@@ -477,72 +546,113 @@ export default function CreateProduct() {
         setFormError(
           "Please fill all required fields: Vendor ID, Category, Type, Title, Price."
         );
+
         setIsSubmitting(false);
+
         setIsUploading(false); // Make sure to set to false
+
         return;
       }
 
       if (productServicePayload.price < 0) {
         setFormError("Price cannot be negative.");
+
         setIsSubmitting(false);
+
         setIsUploading(false); // Make sure to set to false
+
         return;
       }
 
       if (!["product", "service"].includes(productServicePayload.type)) {
         setFormError('Type must be "product" or "service".');
+
         setIsSubmitting(false);
+
         setIsUploading(false); // Make sure to set to false
+
         return;
       }
 
       const selectedCategory = allCategories.find(
         (cat) => cat._id === formData.categoryId
       );
+
       if (!selectedCategory) {
         setFormError("Selected category is invalid.");
+
         setIsSubmitting(false);
+
         setIsUploading(false); // Make sure to set to false
+
         return;
       }
+
       const categoryLevel = getCategoryLevel(selectedCategory, allCategories);
+
       if (categoryLevel !== 2 && categoryLevel !== 3) {
         setFormError("Please select a category from Level 2 or Level 3.");
+
         setIsSubmitting(false);
+
         setIsUploading(false); // Make sure to set to false
+
         return;
       }
 
-      if (formData.type === "product" && productServicePayload.variants.some(v => v.quantity < 0)) {
+      if (
+        formData.type === "product" &&
+        productServicePayload.variants.some((v) => v.quantity < 0)
+      ) {
         setFormError("Variant quantity cannot be negative.");
+
         setIsSubmitting(false);
+
         setIsUploading(false); // Make sure to set to false
+
         return;
       }
-      // --- End Validation Checks ---
 
+      // --- End Validation Checks ---
 
       const createdProduct = await createProductService(productServicePayload);
 
+      toast.success("Product/Service created successfully!");
+
       setFormSuccess("Product/Service created successfully!");
+
       // Reset form after successful submission
+
       setFormData({
         vendorId: session.id, // Keep vendorId
+
         categoryId: "",
+
         type: "",
+
         title: "",
+
         description: "",
+
         price: "",
+        discountRate: "",
         variants: [], // Reset variants to empty array
+
         pincode: "",
+
         localMediaFiles: [],
+
         localMediaPreviews: [],
+
         portfolio: [], // Reset portfolio here as well
+
         isBookable: false,
+
         isInStock: true,
       });
     } catch (apiError) {
       console.error("Error creating product:", apiError);
+
       setFormError(
         `Failed to create product: ${
           apiError.response?.data?.message || apiError.message
@@ -550,6 +660,7 @@ export default function CreateProduct() {
       );
     } finally {
       setIsSubmitting(false);
+
       setIsUploading(false); // Ensure this is always called at the very end
     }
   };
@@ -568,12 +679,12 @@ export default function CreateProduct() {
 
   // Update SKU when product title changes
   useEffect(() => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      variants: prev.variants.map(variant => ({
+      variants: prev.variants.map((variant) => ({
         ...variant,
-        sku: generateSku(prev.title, variant.color, variant.size)
-      }))
+        sku: generateSku(prev.title, variant.color, variant.size),
+      })),
     }));
   }, [formData.title]);
 
@@ -627,7 +738,6 @@ export default function CreateProduct() {
 
     return filteredCategories;
   };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 md:p-6 lg:p-8">
       <div className="max-w-4xl mx-auto">
@@ -793,6 +903,24 @@ export default function CreateProduct() {
               </div>
               <div className="space-y-2">
                 <Label
+                  htmlFor="details"
+                  className="text-sm font-medium text-slate-700"
+                >
+                  Product Details
+                </Label>
+
+                <PortableTextEditor
+                  onChange={(val) => {
+                    setFormData((prevFormData) => ({
+                      ...prevFormData, // Spread the existing formData to keep other properties
+                      details: val, // Update the 'details' property with the new 'val'
+                    }));
+                  }}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label
                   htmlFor="description"
                   className="text-sm font-medium text-slate-700"
                 >
@@ -807,7 +935,6 @@ export default function CreateProduct() {
                   className="min-h-[120px] resize-none"
                 />
               </div>
-              {/* <PortableTextEditor/> */}
             </CardContent>
           </Card>
 
@@ -818,7 +945,7 @@ export default function CreateProduct() {
                 Pricing & Variants
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-6 space-x-2 grid grid-cols-1 md:grid-cols-2">
               <div className="space-y-2">
                 <Label
                   htmlFor="price"
@@ -836,7 +963,24 @@ export default function CreateProduct() {
                   className="h-11"
                 />
               </div>
-
+              <div className="space-y-2">
+                <Label
+                  htmlFor="discountRate"
+                  className="text-sm font-medium text-slate-700"
+                >
+                  Discount Rate(%)
+                </Label>
+                <Input
+                  id="discountRate"
+                  name="discountRate"
+                  type="number"
+                  value={formData.discountRate}
+                  onChange={handleChange}
+                  placeholder="0.00"
+                  className="h-11"
+                  max="100"
+                />
+              </div>
               {/* Variant Section */}
               {formData.type === "product" && (
                 <div className="space-y-4">
@@ -851,7 +995,7 @@ export default function CreateProduct() {
                   {formData.variants.map((variant, index) => (
                     <div
                       key={index}
-                      className="border p-3 rounded-md bg-slate-50 relative"
+                      className="border p-3 rounded-md bg-slate-50 relative col-span-2"
                     >
                       <Button
                         type="button"
@@ -889,7 +1033,9 @@ export default function CreateProduct() {
                           />
                         </div>
                         <div className="flex flex-col space-y-1.5">
-                          <Label htmlFor={`sku-${index}`}>SKU (Auto-generated)</Label>
+                          <Label htmlFor={`sku-${index}`}>
+                            SKU (Auto-generated)
+                          </Label>
                           <Input
                             id={`sku-${index}`}
                             value={variant.sku}
@@ -972,7 +1118,10 @@ export default function CreateProduct() {
                                     <X className="h-3 w-3" />
                                   </button>
                                   <div className="absolute bottom-1 left-1">
-                                    <Badge variant="secondary" className="text-xs">
+                                    <Badge
+                                      variant="secondary"
+                                      className="text-xs"
+                                    >
                                       Local
                                     </Badge>
                                   </div>
@@ -982,7 +1131,9 @@ export default function CreateProduct() {
                             {/* Uploaded Variant Images */}
                             {variant.images.map((img, i) => (
                               <div
-                                key={`variant-uploaded-${index}-${img.key || i}`}
+                                key={`variant-uploaded-${index}-${
+                                  img.key || i
+                                }`}
                                 className="relative group aspect-square border border-green-400 rounded-md overflow-hidden bg-slate-50"
                               >
                                 <img

@@ -9,6 +9,7 @@ const productServiceSchema = new Schema({
   type: { type: String, enum: ["product", "service"], required: true },
   title: { type: String, required: true, trim: true },
   description: { type: String, trim: true },
+  details: { type: String },
   price: { type: Number, required: true, min: 0 },
   isAdminApproved: { type: String, enum: ["approved", "pending", "rejected"], default: "approved" },
   // Portfolio with media type
@@ -33,7 +34,10 @@ const productServiceSchema = new Schema({
 
   // ✅ Allows vendors to toggle product/service availability
   isInStock: { type: Boolean, default: true },
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now },
+  // New fields for EMI eligibility and discount rate
+  isEmiEligible: { type: Boolean, default: false }, // User's EMI model is being incorporated.
+  discountRate: { type: Number, default: 0, min: 0, max: 100 } // Assuming discount rate is a percentage
 }, {
   timestamps: true // <--- ADD THIS LINE
 });
@@ -42,5 +46,8 @@ const productServiceSchema = new Schema({
 productServiceSchema.index({ vendorId: 1, type: 1 });
 productServiceSchema.index({ categoryId: 1, type: 1 });
 productServiceSchema.index({ pincode: 1 });
+// Add an index for isEmiEligible if it will be frequently queried
+productServiceSchema.index({ isEmiEligible: 1 });
+
 
 export const ProductService = model("ProductService", productServiceSchema);
