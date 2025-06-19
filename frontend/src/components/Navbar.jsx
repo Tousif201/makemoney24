@@ -402,6 +402,37 @@ export default function Navbar() {
             About
           </NavLinkItem>
 
+           <NavLinkItem
+            to="/buisness-plan"
+            className="block text-gray-700 hover:text-purple-600 text-lg py-2"
+            onClick={() => setIsOpen(false)} // Close menu on click
+          >
+            Business Plan
+          </NavLinkItem>
+            <NavLinkItem
+            to="/tnc"
+            className="block text-gray-700 hover:text-purple-600 text-lg py-2"
+            onClick={() => setIsOpen(false)} // Close menu on click
+          >
+             Terms & Conditions
+          </NavLinkItem>
+            <NavLinkItem
+            to="/privacy-policy"
+            className="block text-gray-700 hover:text-purple-600 text-lg py-2"
+            onClick={() => setIsOpen(false)} // Close menu on click
+          >
+            Privacy Policy
+          </NavLinkItem>
+            <NavLinkItem
+            to="/company-policy"
+            className="block text-gray-700 hover:text-purple-600 text-lg py-2"
+            onClick={() => setIsOpen(false)} // Close menu on click
+          >
+           Company Policy
+          </NavLinkItem>
+
+
+
           {isLoggedIn ? (
             <Button
               variant="ghost"
