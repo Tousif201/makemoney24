@@ -393,11 +393,13 @@ export default function ProductDetailPage() {
     : [];
 
   const availableSizes = product?.variants
-    ? [...new Set(
-        product.variants
-          .filter((v) => v.color === selectedColor)
-          .map((v) => v.size)
-      )]
+    ? [
+        ...new Set(
+          product.variants
+            .filter((v) => v.color === selectedColor)
+            .map((v) => v.size)
+        ),
+      ]
     : [];
 
   // Determine which set of images to display based on selectedVariant
@@ -740,7 +742,9 @@ export default function ProductDetailPage() {
                       onValueChange={(value) =>
                         setQuantity(Number.parseInt(value))
                       }
-                      disabled={!selectedVariant || selectedVariant.quantity <= 0} // Disable if no variant selected or out of stock
+                      disabled={
+                        !selectedVariant || selectedVariant.quantity <= 0
+                      } // Disable if no variant selected or out of stock
                     >
                       <SelectTrigger className="w-32 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-200 shadow-sm focus:ring-blue-500">
                         <SelectValue placeholder="Select Qty" />
@@ -1058,6 +1062,9 @@ export default function ProductDetailPage() {
                 </CardContent>
               </Card>
             )}
+            <div className="md:hidden text-sm text-center ">
+              Click here to check out <a href={"/Return"}> Exchange policy</a>
+            </div>
           </motion.div>
         </motion.div>
       </div>
