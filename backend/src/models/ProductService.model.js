@@ -10,7 +10,7 @@ const productServiceSchema = new Schema({
   title: { type: String, required: true, trim: true },
   description: { type: String, trim: true },
   price: { type: Number, required: true, min: 0 },
- isAdminApproved:{type:String,enum:["approved","pending","rejected"],default : "pending"},
+  isAdminApproved: { type: String, enum: ["approved", "pending", "rejected"], default: "approved" },
   // Portfolio with media type
   portfolio: [
     {
@@ -34,7 +34,7 @@ const productServiceSchema = new Schema({
   // ✅ Allows vendors to toggle product/service availability
   isInStock: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now }
-},{
+}, {
   timestamps: true // <--- ADD THIS LINE
 });
 

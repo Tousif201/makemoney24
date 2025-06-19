@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 // import html2pdf from "html2pdf.js";
-import * as htmlToImage from 'html-to-image';
+import * as htmlToImage from "html-to-image";
 import {
   Calendar,
   ChevronLeft,
@@ -19,6 +19,7 @@ import {
   CreditCard,
   FileText,
   IndianRupee,
+  Pencil,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -55,12 +56,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useParams } from "react-router-dom";
 import CashbackCardFront from "../../../components/CashbackCardFront";
 import CashbackCardBack from "../../../components/CashbackCardBack";
-import { fetchUserDetails, fetchUserReferralPerformance } from "../../../../api/auth";
+import {
+  fetchUserDetails,
+  fetchUserReferralPerformance,
+} from "../../../../api/auth";
 import { fetchUserEmiDetails } from "../../../../api/emi";
 
 import jsPDF from "jspdf";
+import { TopUpUserProfileScore } from "../../../components/Dialogs/TopUpUserProfileScore";
 // import html2canvas from "html2canvas";
-
 
 function UsersDetailsPageAdmin() {
   const pdfRef = useRef();
@@ -82,12 +86,12 @@ function UsersDetailsPageAdmin() {
       return "Select Date";
     }
     const validDate = date instanceof Date ? date : new Date(date);
-    
+
     // Check if the date is valid
     if (isNaN(validDate.getTime())) {
       return "Invalid Date";
     }
-    
+
     return validDate.toLocaleDateString("en-US", {
       year: "numeric",
       month: "long",
@@ -95,17 +99,17 @@ function UsersDetailsPageAdmin() {
     });
   };
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      if (id) {
-        try {
-          const data = await fetchUserDetails(id);
-          setUserData(data.data);
-        } catch (error) {
-          console.error("Error fetching user data:", error);
-        }
+  const fetchUser = async () => {
+    if (id) {
+      try {
+        const data = await fetchUserDetails(id);
+        setUserData(data.data);
+      } catch (error) {
+        console.error("Error fetching user data:", error);
       }
-    };
+    }
+  };
+  useEffect(() => {
 
     fetchUser();
   }, [id]);
@@ -114,10 +118,16 @@ function UsersDetailsPageAdmin() {
     const fetchReferrals = async () => {
       if (id) {
         try {
-          const formattedDate = selectedDate ? selectedDate.toISOString().split('T')[0] : null;
+          const formattedDate = selectedDate
+            ? selectedDate.toISOString().split("T")[0]
+            : null;
           console.log("Selected date:", selectedDate);
           console.log("Formatted date being sent to API:", formattedDate);
-          const data = await fetchUserReferralPerformance(id,formattedDate,authToken);
+          const data = await fetchUserReferralPerformance(
+            id,
+            formattedDate,
+            authToken
+          );
           console.log("Referral frontend data:", data);
           setReferralData(data.referrals);
         } catch (error) {
@@ -134,7 +144,7 @@ function UsersDetailsPageAdmin() {
       if (id) {
         try {
           const data = await fetchUserEmiDetails(id);
-          console.log("front end emi", data)
+          console.log("front end emi", data);
           setEmiHistory(data.data.emiDetails);
           console.log(data.data, "Emi History Data");
         } catch (error) {
@@ -207,10 +217,17 @@ function UsersDetailsPageAdmin() {
 
   const filteredReferrals = (referralData || []).filter((referral) => {
     const matchesSearch =
-      referral.referredUser.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      referral.referredUser.email.toLowerCase().includes(searchTerm.toLowerCase());
+      referral.referredUser.name
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      referral.referredUser.email
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
     const matchesStatus =
-      statusFilter === "all" || (referral.membership && referral.membership.amountPaid ? "active" : "inactive") === statusFilter;
+      statusFilter === "all" ||
+      (referral.membership && referral.membership.amountPaid
+        ? "active"
+        : "inactive") === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
@@ -219,48 +236,51 @@ function UsersDetailsPageAdmin() {
   const handleExportPDF = async () => {
     if (!pdfRef.current) return;
     setIsExporting(true);
-  
+
     try {
       // 📱 Mobile view के लिए longer delay
       await new Promise((resolve) => setTimeout(resolve, 500));
-  
+
       // 🎯 Mobile detection और appropriate settings
       const isMobile = window.innerWidth <= 768;
-      
+
       // 📐 Mobile के लिए higher pixel ratio और better quality
       const pixelRatio = isMobile ? 3 : 2;
-      
+
       // 🖼️ Canvas generation with mobile-optimized settings
       const canvas = await htmlToImage.toCanvas(pdfRef.current, {
         pixelRatio: pixelRatio,
         useCORS: true,
         allowTaint: true,
-        backgroundColor: '#ffffff',
+        backgroundColor: "#ffffff",
         // 📱 Mobile के लिए specific width/height constraints
         width: isMobile ? pdfRef.current.scrollWidth : undefined,
         height: isMobile ? pdfRef.current.scrollHeight : undefined,
         // 🎨 Better quality for mobile
         quality: 1.0,
       });
-  
+
       const imgData = canvas.toDataURL("image/png", 1.0);
-  
+
       // 📄 PDF configuration - mobile के लिए optimized
       const pdf = new jsPDF({
         unit: "mm",
         format: isMobile ? "a4" : "letter", // Mobile के लिए A4 better है
-        orientation: "portrait"
+        orientation: "portrait",
       });
-  
+
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
-      
+
       // 🔢 Aspect ratio calculation
       const canvasAspectRatio = canvas.width / canvas.height;
       const pdfAspectRatio = pdfWidth / pdfHeight;
-      
-      let finalWidth, finalHeight, offsetX = 0, offsetY = 0;
-      
+
+      let finalWidth,
+        finalHeight,
+        offsetX = 0,
+        offsetY = 0;
+
       // 📏 Mobile के लिए better fitting logic
       if (canvasAspectRatio > pdfAspectRatio) {
         // Canvas is wider - fit to width
@@ -273,33 +293,32 @@ function UsersDetailsPageAdmin() {
         finalWidth = pdfHeight * canvasAspectRatio;
         offsetX = (pdfWidth - finalWidth) / 2;
       }
-  
+
       // 🖼️ Add image with proper centering
       pdf.addImage(
-        imgData, 
-        "PNG", 
-        offsetX, 
-        offsetY, 
-        finalWidth, 
+        imgData,
+        "PNG",
+        offsetX,
+        offsetY,
+        finalWidth,
         finalHeight,
         undefined,
-        'FAST' // Better compression for mobile
+        "FAST" // Better compression for mobile
       );
-  
+
       // 💾 Create PDF blob
       const timestamp = new Date().toISOString().slice(0, 10);
       const filename = `cashback_card_${timestamp}.pdf`;
-      
-      const pdfBlob = new Blob([pdf.output("arraybuffer")], { 
-        type: "application/pdf" 
+
+      const pdfBlob = new Blob([pdf.output("arraybuffer")], {
+        type: "application/pdf",
       });
-      
+
       // 📥 Direct download for all devices (mobile + desktop)
       downloadPDF(pdfBlob, filename);
-  
     } catch (error) {
       console.error("PDF export failed:", error);
-      
+
       // 🚨 Mobile के लिए user-friendly error message
       if (window.innerWidth <= 768) {
         alert("PDF export problem ! Please try again।");
@@ -308,7 +327,7 @@ function UsersDetailsPageAdmin() {
       setIsExporting(false);
     }
   };
-  
+
   // 📥 Helper function for download
   const downloadPDF = (blob, filename) => {
     const url = URL.createObjectURL(blob);
@@ -318,7 +337,7 @@ function UsersDetailsPageAdmin() {
     a.style.display = "none";
     document.body.appendChild(a);
     a.click();
-    
+
     // Cleanup with slight delay for mobile compatibility
     setTimeout(() => {
       document.body.removeChild(a);
@@ -375,9 +394,11 @@ function UsersDetailsPageAdmin() {
               </div>
               <div>
                 <p className="text-sm text-gray-600">Join Date</p>
-                <p className="font-semibold">{new Date(userData.joiningDate).toLocaleDateString()}</p>
+                <p className="font-semibold">
+                  {new Date(userData.joiningDate).toLocaleDateString()}
+                </p>
               </div>
-              <div>
+              <div className="relative">
                 <p className="text-sm text-gray-600">Salary Score</p>
                 <div className="flex items-center gap-2">
                   <p
@@ -388,6 +409,15 @@ function UsersDetailsPageAdmin() {
                     {userData.profileScore}
                   </p>
                 </div>
+                <TopUpUserProfileScore
+                  icon={<Pencil />}
+                  variant={"icon"}
+                  triggerClass={"absolute right-0 top-0 cursor-pointer"}
+                  email={userData.email}
+                  userName={userData.name}
+                  userId={id}
+                  onTopUpSuccess={fetchUser}
+                />
               </div>
             </div>
 
@@ -432,29 +462,34 @@ function UsersDetailsPageAdmin() {
           <button
             onClick={handleExportPDF}
             disabled={isExporting}
-            className={`flex items-center gap-2 ${isExporting ? "opacity-50 cursor-not-allowed" : "cursor-pointer"} bg-blue-100 text-black border rounded-sm py-1 px-3`}
+            className={`flex items-center gap-2 ${
+              isExporting ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+            } bg-blue-100 text-black border rounded-sm py-1 px-3`}
           >
             {isExporting ? "Exporting..." : "Export"}
             <Download className="h-4 w-4" />
           </button>
         </div>
 
-        <div ref={pdfRef} className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+        <div
+          ref={pdfRef}
+          className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2"
+        >
           <Card className="border-2 border-dashed border-blue-200 hover:border-blue-400 transition-colors">
-            <CardContent  className="p-6">
-               <CashbackCardFront  
-                 userName={userData?.name || "Default User"}      
-                 date ={userData?.createdAt || "2023-08-01"}  
-                 cardNumber ={userData?.referralCode || "MM24 1234 5678"} 
-                 validDate = { userData.membershipDate || "08/25"} 
-                 expiredDate = { userData.membershipExpiryDate || "08/26"} 
-                 />  
+            <CardContent className="p-6">
+              <CashbackCardFront
+                userName={userData?.name || "Default User"}
+                date={userData?.createdAt || "2023-08-01"}
+                cardNumber={userData?.referralCode || "MM24 1234 5678"}
+                validDate={userData.membershipDate || "08/25"}
+                expiredDate={userData.membershipExpiryDate || "08/26"}
+              />
             </CardContent>
           </Card>
 
           <Card className="border-2 border-dashed border-green-200 hover:border-green-400 transition-colors">
             <CardContent className="p-6">
-              <CashbackCardBack />         
+              <CashbackCardBack />
             </CardContent>
           </Card>
         </div>
@@ -477,7 +512,10 @@ function UsersDetailsPageAdmin() {
                       Daily Performance
                     </CardTitle>
                     <CardDescription>
-                      Referral performance for {selectedDate ? formatDate(selectedDate) : "Select a date to view performance"}
+                      Referral performance for{" "}
+                      {selectedDate
+                        ? formatDate(selectedDate)
+                        : "Select a date to view performance"}
                     </CardDescription>
                   </div>
 
@@ -486,7 +524,9 @@ function UsersDetailsPageAdmin() {
                       <PopoverTrigger asChild>
                         <Button variant="outline" className="justify-start">
                           <Calendar className="w-4 h-4 mr-2" />
-                          {selectedDate ? formatDate(selectedDate) : "Select Date"}
+                          {selectedDate
+                            ? formatDate(selectedDate)
+                            : "Select Date"}
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="end">
@@ -553,13 +593,23 @@ function UsersDetailsPageAdmin() {
                           <TableCell>
                             {getMembershipStatusBadge(
                               referral.membership ? "active" : "inactive",
-                              referral.membership?.amountPaid ? "Premium" : "Basic"
+                              referral.membership?.amountPaid
+                                ? "Premium"
+                                : "Basic"
                             )}
                           </TableCell>
                           <TableCell className="font-semibold">
-                            ₹{referral.membership?.amountPaid?.toLocaleString() || '-'}
+                            ₹
+                            {referral.membership?.amountPaid?.toLocaleString() ||
+                              "-"}
                           </TableCell>
-                          <TableCell>{referral.membership?.purchasedAt ? new Date(referral.membership.purchasedAt).toLocaleDateString() : '-'}</TableCell>
+                          <TableCell>
+                            {referral.membership?.purchasedAt
+                              ? new Date(
+                                  referral.membership.purchasedAt
+                                ).toLocaleDateString()
+                              : "-"}
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -608,60 +658,72 @@ function UsersDetailsPageAdmin() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {Array.isArray(emiHistory) ? emiHistory.map((emi) => (
-                        <TableRow key={emi._id}>
-                          <TableCell className="font-medium">
-                            {emi.orderId ? 'Order ID: ' + emi.orderId : 'N/A'}
-                          </TableCell>
-                          <TableCell className="font-semibold">
-                            ₹{emi.totalAmount?.toLocaleString()}
-                          </TableCell>
-                          <TableCell className="text-green-600">
-                            ₹{(emi.paidInstallments * emi.installmentAmount)?.toLocaleString()}
-                          </TableCell>
-                          <TableCell className="text-red-600">
-                            ₹{emi.remainingAmount?.toLocaleString()}
-                          </TableCell>
-                          <TableCell>
-                            ₹{emi.installmentAmount?.toLocaleString()}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <div className="flex-1 bg-gray-200 rounded-full h-2">
-                                <div
-                                  className="bg-blue-600 h-2 rounded-full"
-                                  style={{
-                                    width: `${(emi.paidInstallments /
-                                      emi.totalInstallments) *
-                                      100
+                      {Array.isArray(emiHistory) ? (
+                        emiHistory.map((emi) => (
+                          <TableRow key={emi._id}>
+                            <TableCell className="font-medium">
+                              {emi.orderId ? "Order ID: " + emi.orderId : "N/A"}
+                            </TableCell>
+                            <TableCell className="font-semibold">
+                              ₹{emi.totalAmount?.toLocaleString()}
+                            </TableCell>
+                            <TableCell className="text-green-600">
+                              ₹
+                              {(
+                                emi.paidInstallments * emi.installmentAmount
+                              )?.toLocaleString()}
+                            </TableCell>
+                            <TableCell className="text-red-600">
+                              ₹{emi.remainingAmount?.toLocaleString()}
+                            </TableCell>
+                            <TableCell>
+                              ₹{emi.installmentAmount?.toLocaleString()}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <div className="flex-1 bg-gray-200 rounded-full h-2">
+                                  <div
+                                    className="bg-blue-600 h-2 rounded-full"
+                                    style={{
+                                      width: `${
+                                        (emi.paidInstallments /
+                                          emi.totalInstallments) *
+                                        100
                                       }%`,
-                                  }}
-                                ></div>
+                                    }}
+                                  ></div>
+                                </div>
+                                <span className="text-sm text-gray-600">
+                                  {emi.paidInstallments}/{emi.totalInstallments}
+                                </span>
                               </div>
-                              <span className="text-sm text-gray-600">
-                                {emi.paidInstallments}/{emi.totalInstallments}
-                              </span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {emi.nextDueDate ? (
-                              <div className="text-sm">
-                                <p className="font-medium">
-                                  {new Date(emi.nextDueDate).toLocaleDateString()}
-                                </p>
-                              </div>
-                            ) : (
-                              <span className="text-gray-400">Completed</span>
-                            )}
-                          </TableCell>
-                          <TableCell>{getStatusBadge(emi.status)}</TableCell>
-                          <TableCell className="text-red-700 font-semibold">
-                            {emi.overdueAmount > 0 ? `₹${emi.overdueAmount.toLocaleString()}` : '-'}
-                          </TableCell>
-                        </TableRow>
-                      )) : (
+                            </TableCell>
+                            <TableCell>
+                              {emi.nextDueDate ? (
+                                <div className="text-sm">
+                                  <p className="font-medium">
+                                    {new Date(
+                                      emi.nextDueDate
+                                    ).toLocaleDateString()}
+                                  </p>
+                                </div>
+                              ) : (
+                                <span className="text-gray-400">Completed</span>
+                              )}
+                            </TableCell>
+                            <TableCell>{getStatusBadge(emi.status)}</TableCell>
+                            <TableCell className="text-red-700 font-semibold">
+                              {emi.overdueAmount > 0
+                                ? `₹${emi.overdueAmount.toLocaleString()}`
+                                : "-"}
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
                         <TableRow>
-                          <TableCell colSpan={10} className="text-center py-4">No EMI data available</TableCell>
+                          <TableCell colSpan={10} className="text-center py-4">
+                            No EMI data available
+                          </TableCell>
                         </TableRow>
                       )}
                     </TableBody>
@@ -675,7 +737,8 @@ function UsersDetailsPageAdmin() {
                       <span className="text-sm text-blue-600">Active EMIs</span>
                     </div>
                     <p className="text-2xl font-bold text-blue-700">
-                      {emiHistory?.filter((emi) => emi.status === "ongoing").length || 0}
+                      {emiHistory?.filter((emi) => emi.status === "ongoing")
+                        .length || 0}
                     </p>
                   </div>
                   <div className="bg-red-50 p-4 rounded-lg">
@@ -684,7 +747,8 @@ function UsersDetailsPageAdmin() {
                       <span className="text-sm text-red-600">Overdue</span>
                     </div>
                     <p className="text-2xl font-bold text-red-700">
-                      {emiHistory?.filter((emi) => emi.status === "defaulted").length || 0}
+                      {emiHistory?.filter((emi) => emi.status === "defaulted")
+                        .length || 0}
                     </p>
                   </div>
                   <div className="bg-green-50 p-4 rounded-lg">
@@ -697,8 +761,14 @@ function UsersDetailsPageAdmin() {
                     <p className="text-2xl font-bold text-green-700">
                       ₹
                       {emiHistory
-                        ?.reduce((sum, emi) => sum + (emi.totalAmount - (emi.paidInstallments * emi.installmentAmount)), 0)
-                        ?.toLocaleString() || '0'}
+                        ?.reduce(
+                          (sum, emi) =>
+                            sum +
+                            (emi.totalAmount -
+                              emi.paidInstallments * emi.installmentAmount),
+                          0
+                        )
+                        ?.toLocaleString() || "0"}
                     </p>
                   </div>
                 </div>

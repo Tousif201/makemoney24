@@ -31,6 +31,7 @@ import { deleteFiles, uploadFiles } from "../../../../api/upload";
 import { createProductService } from "../../../../api/vendor";
 // Updated imports for categories API: Using getAllCategoriesFlat
 import { getAllCategoriesFlat } from "../../../../api/categories";
+import PortableTextEditor from "./RichTextEditor";
 
 export default function CreateProduct() {
   const { session, loading: sessionLoading } = useSession();
@@ -43,9 +44,9 @@ export default function CreateProduct() {
     price: "",
     variants: [],
     pincode: "",
-    localMediaFiles: [],
-    localMediaPreviews: [],
-    portfolio: [],
+    localMediaFiles: [], // For main product/service portfolio
+    localMediaPreviews: [], // For main product/service portfolio
+    portfolio: [], // For main product/service portfolio
     isBookable: false,
     isInStock: true,
   });
@@ -221,30 +222,140 @@ export default function CreateProduct() {
   };
 
   // --- Variant Handlers ---
+  const generateSku = (title, color, size) => {
+    const cleanTitle = title.replace(/\s+/g, "-").toUpperCase();
+    const cleanColor = color ? color.replace(/\s+/g, "-").toUpperCase() : "";
+    const cleanSize = size ? size.replace(/\s+/g, "-").toUpperCase() : "";
+
+    let skuParts = [cleanTitle];
+    if (cleanColor) skuParts.push(cleanColor);
+    if (cleanSize) skuParts.push(cleanSize);
+
+    return skuParts.filter(Boolean).join("-") || `SKU-${Date.now()}`;
+  };
+
   const handleAddVariant = () => {
-    setFormData((prev) => ({
-      ...prev,
-      variants: [
-        ...prev.variants,
-        { color: "", size: "", sku: "", quantity: 0, images: [] },
-      ],
-    }));
+    setFormData((prev) => {
+      const newVariant = {
+        color: "",
+        size: "",
+        sku: generateSku(prev.title, "", ""), // Initial SKU based on title
+        quantity: 0,
+        images: [], // Stores URLs of uploaded variant images
+        localVariantMediaFiles: [], // Stores File objects for variant images
+        localVariantMediaPreviews: [], // Stores Object URLs for variant image previews
+      };
+      return {
+        ...prev,
+        variants: [...prev.variants, newVariant],
+      };
+    });
   };
 
   const handleVariantChange = (index, field, value) => {
     setFormData((prev) => {
       const newVariants = [...prev.variants];
       newVariants[index] = { ...newVariants[index], [field]: value };
+
+      // Auto-generate SKU when color, size, or title changes
+      if (field === "color" || field === "size" || field === "title") {
+        newVariants[index].sku = generateSku(
+          prev.title,
+          newVariants[index].color,
+          newVariants[index].size
+        );
+      }
       return { ...prev, variants: newVariants };
     });
   };
 
   const handleRemoveVariant = (indexToRemove) => {
-    setFormData((prev) => ({
-      ...prev,
-      variants: prev.variants.filter((_, index) => index !== indexToRemove),
-    }));
+    setFormData((prev) => {
+      const variantToRemove = prev.variants[indexToRemove];
+      // Revoke object URLs for local variant media previews
+      variantToRemove.localVariantMediaPreviews.forEach(URL.revokeObjectURL);
+
+      return {
+        ...prev,
+        variants: prev.variants.filter((_, index) => index !== indexToRemove),
+      };
+    });
   };
+
+  const handleVariantMediaChange = (index, e) => {
+    const newFiles = Array.from(e.target.files);
+    const validNewFiles = newFiles.filter((file) => {
+      const isValidSize = file.size <= 5 * 1024 * 1024; // 5MB for variant images
+      const isImage = file.type.startsWith("image/");
+      return isValidSize && isImage;
+    });
+
+    const newPreviews = validNewFiles.map((file) => URL.createObjectURL(file));
+
+    setFormData((prev) => {
+      const newVariants = [...prev.variants];
+      newVariants[index] = {
+        ...newVariants[index],
+        localVariantMediaFiles: [
+          ...newVariants[index].localVariantMediaFiles,
+          ...validNewFiles,
+        ],
+        localVariantMediaPreviews: [
+          ...newVariants[index].localVariantMediaPreviews,
+          ...newPreviews,
+        ],
+      };
+      return { ...prev, variants: newVariants };
+    });
+    e.target.value = null; // Clear the input so same file can be selected again
+  };
+
+  const removeLocalVariantMedia = (variantIndex, mediaIndex) => {
+    setFormData((prev) => {
+      const newVariants = [...prev.variants];
+      const variant = newVariants[variantIndex];
+      if (variant) {
+        URL.revokeObjectURL(variant.localVariantMediaPreviews[mediaIndex]);
+        variant.localVariantMediaFiles = variant.localVariantMediaFiles.filter(
+          (_, i) => i !== mediaIndex
+        );
+        variant.localVariantMediaPreviews =
+          variant.localVariantMediaPreviews.filter((_, i) => i !== mediaIndex);
+      }
+      return { ...prev, variants: newVariants };
+    });
+  };
+
+  const removeUploadedVariantMedia = async (variantIndex, key, url) => {
+    if (!key) return;
+
+    setFormSuccess(null);
+    setFormError(null);
+    setIsUploading(true); // Re-using global upload state for simplicity
+
+    try {
+      await deleteFiles([key]); // Assuming deleteFiles can handle variant image keys
+      setFormData((prev) => {
+        const newVariants = [...prev.variants];
+        const variant = newVariants[variantIndex];
+        if (variant) {
+          variant.images = variant.images.filter((img) => img.key !== key);
+        }
+        return { ...prev, variants: newVariants };
+      });
+      setFormSuccess("Variant media deleted successfully!");
+    } catch (error) {
+      console.error("Failed to delete variant media:", error);
+      setFormError(
+        `Failed to delete variant media: ${
+          error.response?.data?.message || error.message
+        }`
+      );
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   // --- End Variant Handlers ---
 
   const handleSubmit = async (e) => {
@@ -253,45 +364,81 @@ export default function CreateProduct() {
     setFormError(null);
     setFormSuccess(null);
     setIsSubmitting(true);
+    setIsUploading(true); // Set to true for the entire upload process
 
     if (!session?.id) {
       setFormError("Authentication error: Vendor ID not found. Please log in.");
       setIsSubmitting(false);
+      setIsUploading(false);
       return;
     }
 
-    let finalPortfolio = [...formData.portfolio];
+    let currentPortfolio = [...formData.portfolio]; // Will be updated with uploaded main media
+    let currentVariants = (formData.variants); // Deep copy to modify
+
+    const uploadPromises = [];
+    const uploadErrors = []; // To collect all errors
+
+    // Promise for main product/service media upload
+    if (formData.localMediaFiles.length > 0) {
+      const mainUploadPromise = uploadFiles(formData.localMediaFiles)
+        .then((uploadedMediaArray) => {
+          currentPortfolio = [...currentPortfolio, ...uploadedMediaArray];
+        })
+        .catch((error) => {
+          uploadErrors.push(`Main media upload failed: ${error.response?.data?.message || error.message}`);
+          console.error("Error during main media upload:", error);
+        });
+      uploadPromises.push(mainUploadPromise);
+    }
+    // Promises for variant media uploads (if type is product)
+    if (formData.type === "product") {
+      currentVariants.forEach((variant, index) => {
+        if (variant.localVariantMediaFiles.length > 0) {
+          const variantUploadPromise = uploadFiles(variant.localVariantMediaFiles)
+            .then((uploadedVariantImages) => {
+              variant.images = [
+                ...variant.images,
+                ...uploadedVariantImages.map((item) => ({
+                  url: item.url,
+                  key: item.key,
+                  type: item.type,
+                })),
+              ];
+            })
+            .catch((error) => {
+              uploadErrors.push(`Variant ${index} media upload failed: ${error.response?.data?.message || error.message}`);
+              console.error(`Error during variant ${index} media upload:`, error);
+            });
+          uploadPromises.push(variantUploadPromise);
+        }
+      });
+    }
 
     try {
-      if (formData.localMediaFiles.length > 0) {
-        setIsUploading(true);
-        try {
-          // Assuming uploadFiles takes an array of File objects and returns [{url, key, type}]
-          const uploadedMediaArray = await uploadFiles(
-            formData.localMediaFiles
-          );
-          finalPortfolio = [...finalPortfolio, ...uploadedMediaArray];
+      // Wait for all uploads to settle (succeed or fail)
+      await Promise.allSettled(uploadPromises); // Use allSettled to ensure all promises run
 
-          setFormData((prev) => ({
-            ...prev,
-            portfolio: finalPortfolio, // Update portfolio here as well for consistency
-            localMediaFiles: [],
-            localMediaPreviews: [],
-          }));
-        } catch (uploadError) {
-          console.error("Error during media upload:", uploadError);
-          setFormError(
-            `Media upload failed: ${
-              uploadError.response?.data?.message || uploadError.message
-            }`
-          );
-          setIsSubmitting(false);
-          setIsUploading(false);
-          return;
-        } finally {
-          setIsUploading(false);
-        }
+      if (uploadErrors.length > 0) {
+        setFormError(uploadErrors.join("; "));
+        setIsSubmitting(false);
+        setIsUploading(false);
+        return;
       }
+
+      // Update formData with the new portfolio and variant images, and clear local files
+      setFormData((prev) => ({
+        ...prev,
+        portfolio: currentPortfolio,
+        localMediaFiles: [], // Clear after successful processing
+        localMediaPreviews: [], // Clear after successful processing
+        variants: currentVariants.map(v => ({
+          ...v,
+          localVariantMediaFiles: [], // Clear after successful processing
+          localVariantMediaPreviews: [], // Clear after successful processing
+        })),
+      }));
+
 
       const productServicePayload = {
         vendorId: session.id,
@@ -300,8 +447,8 @@ export default function CreateProduct() {
         title: formData.title,
         description: formData.description,
         price: parseFloat(formData.price),
-        portfolio: finalPortfolio.map((item) => ({
-          type: item.type, // Make sure item.type is correctly set during upload
+        portfolio: currentPortfolio.map((item) => ({ // Use the updated currentPortfolio
+          type: item.type,
           url: item.url,
           key: item.key,
         })),
@@ -310,13 +457,15 @@ export default function CreateProduct() {
         isInStock: formData.isInStock,
         variants:
           formData.type === "product"
-            ? formData.variants.map((variant) => ({
-                ...variant,
-                quantity: parseInt(variant.quantity) || 0, // Ensure quantity is number
+            ? currentVariants.map((variant) => ({ // Use the updated currentVariants
+                color: variant.color,
+                size: variant.size,
+                sku: variant.sku,
+                quantity: parseInt(variant.quantity) || 0,
+                images: variant.images.map(({url}) => (url)),
               }))
             : [],
       };
-
       // --- Validation Checks ---
       if (
         !productServicePayload.vendorId ||
@@ -329,18 +478,21 @@ export default function CreateProduct() {
           "Please fill all required fields: Vendor ID, Category, Type, Title, Price."
         );
         setIsSubmitting(false);
+        setIsUploading(false); // Make sure to set to false
         return;
       }
 
       if (productServicePayload.price < 0) {
         setFormError("Price cannot be negative.");
         setIsSubmitting(false);
+        setIsUploading(false); // Make sure to set to false
         return;
       }
 
       if (!["product", "service"].includes(productServicePayload.type)) {
         setFormError('Type must be "product" or "service".');
         setIsSubmitting(false);
+        setIsUploading(false); // Make sure to set to false
         return;
       }
 
@@ -350,20 +502,29 @@ export default function CreateProduct() {
       if (!selectedCategory) {
         setFormError("Selected category is invalid.");
         setIsSubmitting(false);
+        setIsUploading(false); // Make sure to set to false
         return;
       }
       const categoryLevel = getCategoryLevel(selectedCategory, allCategories);
       if (categoryLevel !== 2 && categoryLevel !== 3) {
         setFormError("Please select a category from Level 2 or Level 3.");
         setIsSubmitting(false);
+        setIsUploading(false); // Make sure to set to false
+        return;
+      }
+
+      if (formData.type === "product" && productServicePayload.variants.some(v => v.quantity < 0)) {
+        setFormError("Variant quantity cannot be negative.");
+        setIsSubmitting(false);
+        setIsUploading(false); // Make sure to set to false
         return;
       }
       // --- End Validation Checks ---
 
+
       const createdProduct = await createProductService(productServicePayload);
 
       setFormSuccess("Product/Service created successfully!");
-      console.log(createdProduct);
       // Reset form after successful submission
       setFormData({
         vendorId: session.id, // Keep vendorId
@@ -380,8 +541,6 @@ export default function CreateProduct() {
         isBookable: false,
         isInStock: true,
       });
-      // Reset category selection UI states
-      setAllCategories([]); // Re-fetch all categories to ensure fresh state
     } catch (apiError) {
       console.error("Error creating product:", apiError);
       setFormError(
@@ -391,15 +550,32 @@ export default function CreateProduct() {
       );
     } finally {
       setIsSubmitting(false);
+      setIsUploading(false); // Ensure this is always called at the very end
     }
   };
 
-  // Cleanup for local media previews
+  // Cleanup for local media previews (main and variant)
   useEffect(() => {
     return () => {
       formData.localMediaPreviews.forEach(URL.revokeObjectURL);
+      formData.variants.forEach((variant) => {
+        if (variant.localVariantMediaPreviews) {
+          variant.localVariantMediaPreviews.forEach(URL.revokeObjectURL);
+        }
+      });
     };
-  }, [formData.localMediaPreviews]);
+  }, [formData.localMediaPreviews, formData.variants]);
+
+  // Update SKU when product title changes
+  useEffect(() => {
+    setFormData(prev => ({
+      ...prev,
+      variants: prev.variants.map(variant => ({
+        ...variant,
+        sku: generateSku(prev.title, variant.color, variant.size)
+      }))
+    }));
+  }, [formData.title]);
 
   if (sessionLoading) {
     return (
@@ -631,6 +807,7 @@ export default function CreateProduct() {
                   className="min-h-[120px] resize-none"
                 />
               </div>
+              {/* <PortableTextEditor/> */}
             </CardContent>
           </Card>
 
@@ -712,14 +889,13 @@ export default function CreateProduct() {
                           />
                         </div>
                         <div className="flex flex-col space-y-1.5">
-                          <Label htmlFor={`sku-${index}`}>SKU (Optional)</Label>
+                          <Label htmlFor={`sku-${index}`}>SKU (Auto-generated)</Label>
                           <Input
                             id={`sku-${index}`}
                             value={variant.sku}
-                            onChange={(e) =>
-                              handleVariantChange(index, "sku", e.target.value)
-                            }
-                            placeholder="e.g. PROD-RED-M"
+                            readOnly
+                            className="bg-gray-100 cursor-not-allowed"
+                            title="SKU is auto-generated based on product title, color, and size"
                           />
                         </div>
                         <div className="flex flex-col space-y-1.5">
@@ -738,6 +914,105 @@ export default function CreateProduct() {
                             min="0"
                           />
                         </div>
+                      </div>
+
+                      {/* Variant Image Upload Section */}
+                      <div className="mt-6 space-y-3">
+                        <Label className="text-sm font-medium text-slate-700">
+                          Variant Images (Max 5MB each, Image only)
+                        </Label>
+                        <div className="border-2 border-dashed border-slate-300 rounded-lg p-4 text-center hover:border-slate-400 transition-colors relative">
+                          <Upload className="h-8 w-8 text-slate-400 mx-auto mb-2" />
+                          <p className="text-slate-600 font-medium text-sm">
+                            Click to upload or drag and drop
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            PNG, JPG, GIF up to 5MB each
+                          </p>
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            onChange={(e) => handleVariantMediaChange(index, e)}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                            disabled={isUploading || isSubmitting}
+                          />
+                          {isUploading && ( // This applies to all uploads, could make more granular
+                            <div className="absolute inset-0 flex items-center justify-center bg-white/70 backdrop-blur-sm z-10">
+                              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                              <span className="ml-1 text-sm">Uploading...</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {(variant.localVariantMediaPreviews?.length > 0 ||
+                          variant.images?.length > 0) && (
+                          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+                            {/* Local Variant Image Previews */}
+                            {variant.localVariantMediaPreviews.map((src, i) => {
+                              const file = variant.localVariantMediaFiles[i];
+                              return (
+                                <div
+                                  key={`variant-local-${index}-${i}`}
+                                  className="relative group aspect-square border border-slate-200 rounded-md overflow-hidden bg-slate-50"
+                                >
+                                  <img
+                                    src={src}
+                                    alt={`variant-preview-${index}-${i}`}
+                                    className="w-full h-full object-cover"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      removeLocalVariantMedia(index, i)
+                                    }
+                                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                                    disabled={isUploading || isSubmitting}
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                  <div className="absolute bottom-1 left-1">
+                                    <Badge variant="secondary" className="text-xs">
+                                      Local
+                                    </Badge>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                            {/* Uploaded Variant Images */}
+                            {variant.images.map((img, i) => (
+                              <div
+                                key={`variant-uploaded-${index}-${img.key || i}`}
+                                className="relative group aspect-square border border-green-400 rounded-md overflow-hidden bg-slate-50"
+                              >
+                                <img
+                                  src={img.url}
+                                  alt={`variant-uploaded-${index}-${i}`}
+                                  className="w-full h-full object-cover"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    removeUploadedVariantMedia(
+                                      index,
+                                      img.key,
+                                      img.url
+                                    )
+                                  }
+                                  className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                                  disabled={isUploading || isSubmitting}
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                                <div className="absolute bottom-1 left-1">
+                                  <Badge variant="success" className="text-xs">
+                                    Uploaded
+                                  </Badge>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -758,13 +1033,13 @@ export default function CreateProduct() {
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center gap-2 text-xl">
                 <ImageIcon className="h-5 w-5 text-purple-600" />
-                Media Upload
+                Product/Service Media
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-4">
                 <Label className="text-sm font-medium text-slate-700">
-                  Upload Images/Videos
+                  Upload Images/Videos for Main Listing
                 </Label>
                 <div className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center hover:border-slate-400 transition-colors relative">
                   <Upload className="h-12 w-12 text-slate-400 mx-auto mb-4" />
@@ -796,13 +1071,13 @@ export default function CreateProduct() {
                   formData.portfolio.length > 0) && (
                   <div className="space-y-3">
                     <Label className="text-sm font-medium text-slate-700">
-                      Preview (
+                      Main Media Preview (
                       {formData.localMediaPreviews.length +
                         formData.portfolio.length}{" "}
                       files)
                     </Label>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                      {/* Render locally selected media previews */}
+                      {/* Render locally selected main media previews */}
                       {formData.localMediaPreviews.map((src, index) => {
                         const file = formData.localMediaFiles[index];
                         if (!file) return null;
@@ -842,7 +1117,7 @@ export default function CreateProduct() {
                           </div>
                         );
                       })}
-                      {/* Render already uploaded media from portfolio state */}
+                      {/* Render already uploaded main media from portfolio state */}
                       {formData.portfolio.map((item, index) => (
                         <div
                           key={`uploaded-${item.key || index}`}

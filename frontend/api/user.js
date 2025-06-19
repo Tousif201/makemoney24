@@ -167,3 +167,37 @@ export const uploadProfileImage = async (data) => {
     throw error; // Re-throw the error for the calling component to handle
   }
 };
+
+/**
+ * @typedef {Object} TopUpProfileScoreResponse
+ * @property {boolean} success - Indicates if the request was successful.
+ * @property {string} message - A success message indicating the new score.
+ * @property {Object} user - Details of the user whose profile score was updated.
+ * @property {string} user.id - The ID of the user.
+ * @property {string} user.email - The email of the user.
+ * @property {number} user.profileScore - The new profile score of the user.
+ */
+
+/**
+ * Tops up a user's profile score with a specified amount.
+ * This function is typically used by administrators.
+ *
+ * @param {string} userId - The ID of the user whose profile score is to be topped up.
+ * @param {number} amount - The amount to add to the user's profile score.
+ * @returns {Promise<TopUpProfileScoreResponse>} A promise that resolves to the top-up success response.
+ * @throws {Error} If the API request fails (e.g., user not found, invalid user ID, invalid amount).
+ */
+export const topUpProfileScore = async (userId, amount) => {
+  try {
+    const response = await apiClient.post(`/topup-profile-score/${userId}`, {
+      amount,
+    });
+    return response.data;
+  } catch (error) {
+    console.error(
+      `Error topping up profile score for user ${userId}:`,
+      error.response?.data || error.message
+    );
+    throw error; // Re-throw the error for the calling component to handle
+  }
+};

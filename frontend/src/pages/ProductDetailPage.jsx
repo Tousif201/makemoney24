@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { motion, AnimatePresence } from "framer-motion"; // Import motion and AnimatePresence
+import { motion, AnimatePresence } from "framer-motion";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,8 +25,8 @@ import {
   Shield,
   Truck,
   UserCircle,
-  X, // Import X icon for closing modal
-  PlayCircle, // For video overlay on thumbnails
+  X,
+  PlayCircle,
 } from "lucide-react";
 import { useCart } from "../context/CartContext";
 import { getProductServiceById } from "../../api/productService";
@@ -62,7 +62,7 @@ const thumbnailVariants = {
   initial: { opacity: 0, scale: 0.8 },
   animate: { opacity: 1, scale: 1, transition: { duration: 0.3 } },
   hover: { scale: 1.05, transition: { type: "spring", stiffness: 300 } },
-  active: { borderColor: "var(--blue-500)" }, // Using custom property for active border
+  active: { borderColor: "var(--blue-500)" },
 };
 
 const reviewItemVariants = {
@@ -97,17 +97,15 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
+  // Changed to hold the whole variant object
+  const [selectedVariant, setSelectedVariant] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-
-  // New state for media viewer modal
   const [isMediaViewerOpen, setIsMediaViewerOpen] = useState(false);
-  const [currentMedia, setCurrentMedia] = useState({ url: "", type: "" }); // Stores URL and type of media to display
+  const [currentMedia, setCurrentMedia] = useState({ url: "", type: "" });
 
   const { addItem } = useCart();
 
-  // Encapsulate fetch logic in useCallback to make it stable
   const fetchProductDetails = useCallback(async () => {
     if (!productId) {
       setLoading(false);
@@ -121,9 +119,17 @@ export default function ProductDetailPage() {
 
       const { data } = await getProductServiceById(productId);
       setProduct(data);
-      console.log("Fetched product data with reviews:", data);
 
-      setSelectedVariantIndex(0);
+      // Set initial selected variant if product type is 'product' and has variants
+      if (
+        data.type === "product" &&
+        data.variants &&
+        data.variants.length > 0
+      ) {
+        setSelectedVariant(data.variants[0]); // Select the first variant by default
+      } else {
+        setSelectedVariant(null); // No variant selected for services or products without variants
+      }
       setQuantity(1);
       setSelectedImageIndex(0);
     } catch (err) {
@@ -147,11 +153,21 @@ export default function ProductDetailPage() {
     } finally {
       setLoading(false);
     }
-  }, [productId]); // productId is the only dependency
+  }, [productId]);
 
   useEffect(() => {
     fetchProductDetails();
-  }, [fetchProductDetails]); // Depend on the memoized fetch function
+  }, [fetchProductDetails]);
+
+  // Effect to reset selectedImageIndex when selectedVariant changes
+  useEffect(() => {
+    if (
+      selectedVariant ||
+      (product && product.portfolio && product.portfolio.length > 0)
+    ) {
+      setSelectedImageIndex(0); // Reset to the first image of the newly selected variant or portfolio
+    }
+  }, [selectedVariant, product]);
 
   const handleAddToCart = () => {
     if (!product) {
@@ -159,36 +175,34 @@ export default function ProductDetailPage() {
       return;
     }
 
-    const currentVariant = product.variants?.[selectedVariantIndex];
-
+    // Use selectedVariant directly
     if (
       product.type === "product" &&
       product.variants &&
       product.variants.length > 0 &&
-      !currentVariant
+      !selectedVariant
     ) {
       toast.error("Please select a variant.");
       return;
     }
     if (
       product.type === "product" &&
-      currentVariant &&
-      quantity > currentVariant.quantity
+      selectedVariant &&
+      quantity > selectedVariant.quantity
     ) {
       toast.error(
-        `Not enough stock. Only ${currentVariant.quantity} items available.`
+        `Not enough stock. Only ${selectedVariant.quantity} items available.`
       );
       return;
     }
     if (
       product.type === "product" &&
       !product.isInStock &&
-      (!currentVariant || currentVariant.quantity <= 0)
+      (!selectedVariant || selectedVariant.quantity <= 0)
     ) {
       toast.error("This product is currently out of stock.");
       return;
     }
-
     const itemToAdd = {
       id: `${product._id}`,
       productId: product._id,
@@ -197,17 +211,18 @@ export default function ProductDetailPage() {
       price: product.price,
       originalPrice: product.originalPrice,
       quantity: quantity,
+      // Prioritize selected variant image, then portfolio, then placeholder
       image:
+        selectedVariant?.images?.[0]?.url ||
         product.portfolio?.[selectedImageIndex]?.url ||
-        currentVariant?.images?.[0]?.url ||
         "/placeholder.svg",
-      vendor: product.vendorId || "Unknown Vendor", // Access vendor name if populated
+      vendor: product.vendorId || "Unknown Vendor",
       type: product.type,
-      variant: currentVariant
+      variant: selectedVariant
         ? {
-            color: currentVariant.color,
-            size: currentVariant.size,
-            sku: currentVariant.sku,
+            color: selectedVariant.color,
+            size: selectedVariant.size,
+            sku: selectedVariant.sku,
           }
         : undefined,
     };
@@ -228,19 +243,16 @@ export default function ProductDetailPage() {
     });
   };
 
-  // Function to open the media viewer modal
   const openMediaViewer = (url, type) => {
     setCurrentMedia({ url, type });
     setIsMediaViewerOpen(true);
   };
 
-  // Function to close the media viewer modal
   const closeMediaViewer = () => {
     setIsMediaViewerOpen(false);
     setCurrentMedia({ url: "", type: "" });
   };
 
-  // --- Conditional Rendering for Loading/Error/Not Found ---
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -329,16 +341,23 @@ export default function ProductDetailPage() {
     );
   }
 
-  // Calculate average rating if needed (though backend can provide it)
   const averageRating =
     product.reviews && product.reviews.length > 0
       ? (
           product.reviews.reduce((acc, review) => acc + review.rating, 0) /
           product.reviews.length
         ).toFixed(1)
-      : (product.rating || 0).toFixed(1); // Use backend rating if no reviews or fallback
+      : (product.rating || 0).toFixed(1);
 
   const totalReviewsCount = product.reviews ? product.reviews.length : 0;
+
+  // Determine which set of images to display based on selectedVariant
+  const currentProductImages =
+    product.type === "product" &&
+    selectedVariant &&
+    selectedVariant.images?.length > 0
+      ? selectedVariant.images
+      : product.portfolio || [];
 
   return (
     <motion.div
@@ -349,8 +368,6 @@ export default function ProductDetailPage() {
       exit="exit"
     >
       <div className="container mx-auto px-4 py-12 lg:py-16">
-        {" "}
-        {/* Increased padding */}
         <motion.div
           className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 mb-12"
           variants={sectionVariants}
@@ -359,22 +376,20 @@ export default function ProductDetailPage() {
         >
           {/* Product Images */}
           <motion.div className="space-y-6" variants={itemVariants}>
-            {" "}
-            {/* Increased space-y */}
             <motion.div
-              className="relative aspect-square overflow-hidden rounded-xl bg-white dark:bg-gray-800 shadow-lg" // Added shadow, more rounded
+              className="relative aspect-square overflow-hidden rounded-xl bg-white dark:bg-gray-800 shadow-lg"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5, ease: "easeOut" }}
             >
               <img
                 src={
-                  product.portfolio?.[selectedImageIndex]?.url ||
-                  product.variants?.[selectedVariantIndex]?.images?.[0]?.url ||
+                  currentProductImages[selectedImageIndex]?.url ||
+                  currentProductImages[selectedImageIndex] ||
                   "/placeholder.svg"
                 }
                 alt={product.title}
-                className="object-contain w-full h-full p-4" // Use object-contain and add padding
+                className="object-contain w-full h-full p-4"
               />
               {product.originalPrice &&
                 product.originalPrice > product.price && (
@@ -391,49 +406,35 @@ export default function ProductDetailPage() {
                 )}
             </motion.div>
             <motion.div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-4 gap-4">
-              {[
-                ...(product.portfolio || []),
-                ...(product.variants?.[selectedVariantIndex]?.images || []),
-              ]
-                .filter(
-                  (item, index, self) =>
-                    item &&
-                    item.url &&
-                    self.findIndex((t) => t.url === item.url) === index
-                )
-                .map((item, index) => (
-                  <motion.button
-                    key={index}
-                    onClick={() => setSelectedImageIndex(index)}
-                    className={`relative aspect-square overflow-hidden rounded-lg border-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      selectedImageIndex === index
-                        ? "border-blue-500 shadow-md"
-                        : "border-gray-200 dark:border-gray-700 hover:border-blue-300"
-                    }`}
-                    variants={thumbnailVariants}
-                    initial="initial"
-                    animate="animate"
-                    whileHover="hover"
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <img
-                      src={item.url || "/placeholder.svg"}
-                      alt={`Product thumbnail ${index + 1}`}
-                      className="object-cover w-full h-full"
-                    />
-                  </motion.button>
-                ))}
+              {currentProductImages.map((item, index) => (
+                <motion.button
+                  key={index}
+                  onClick={() => setSelectedImageIndex(index)}
+                  className={`relative aspect-square overflow-hidden rounded-lg border-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    selectedImageIndex === index
+                      ? "border-blue-500 shadow-md"
+                      : "border-gray-200 dark:border-gray-700 hover:border-blue-300"
+                  }`}
+                  variants={thumbnailVariants}
+                  initial="initial"
+                  animate="animate"
+                  whileHover="hover"
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <img
+                    src={item || "/placeholder.svg"}
+                    alt={`Product thumbnail ${index + 1}`}
+                    className="object-cover w-full h-full"
+                  />
+                </motion.button>
+              ))}
             </motion.div>
           </motion.div>
 
           {/* Product Details */}
           <motion.div className="space-y-8" variants={itemVariants}>
-            {" "}
-            {/* Increased space-y */}
             <motion.div variants={itemVariants}>
               <div className="flex items-center gap-3 mb-2">
-                {" "}
-                {/* Increased gap */}
                 <Badge
                   variant="outline"
                   className="text-sm px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-200 border-blue-200 dark:border-blue-700"
@@ -448,8 +449,6 @@ export default function ProductDetailPage() {
                 </Badge>
               </div>
               <h1 className="text-4xl lg:text-5xl font-extrabold mb-4 leading-tight text-gray-900 dark:text-white">
-                {" "}
-                {/* Larger, bolder title */}
                 {product.title}
               </h1>
               <div className="flex items-center gap-4 mb-4">
@@ -458,7 +457,6 @@ export default function ProductDetailPage() {
                     <Star
                       key={i}
                       className={`h-6 w-6 ${
-                        // Larger stars
                         i < Math.floor(averageRating)
                           ? "fill-yellow-400 text-yellow-400"
                           : "text-gray-300"
@@ -471,11 +469,8 @@ export default function ProductDetailPage() {
                 </div>
               </div>
               <div className="flex items-baseline gap-4 mb-6">
-                {" "}
-                {/* Align baseline */}
                 <span className="text-4xl font-bold text-gray-900 dark:text-white">
-                  {" "}
-                  {/* Larger price */}₹{product.price.toLocaleString()}
+                  ₹{product.price.toLocaleString()}
                 </span>
                 {product.originalPrice &&
                   product.originalPrice > product.price && (
@@ -503,14 +498,13 @@ export default function ProductDetailPage() {
                       Color
                     </h3>
                     <div className="flex flex-wrap gap-3">
-                      {" "}
-                      {/* Use flex-wrap for responsiveness */}
                       {product.variants.map((variant, index) => (
                         <motion.button
-                          key={index}
-                          onClick={() => setSelectedVariantIndex(index)}
+                          key={variant._id || index} // Use _id for a more robust key if available
+                          onClick={() => setSelectedVariant(variant)} // Set the whole variant object
                           className={`px-5 py-2 border rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                            selectedVariantIndex === index
+                            selectedVariant &&
+                            selectedVariant._id === variant._id // Compare by _id for selection
                               ? "border-blue-600 bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-200"
                               : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                           }`}
@@ -532,20 +526,16 @@ export default function ProductDetailPage() {
                       onValueChange={(value) =>
                         setQuantity(Number.parseInt(value))
                       }
+                      disabled={!selectedVariant} // Disable if no variant is selected
                     >
                       <SelectTrigger className="w-32 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-200 shadow-sm focus:ring-blue-500">
-                        {" "}
-                        {/* Wider trigger */}
-                        <SelectValue />
+                        <SelectValue placeholder="Select Qty" />
                       </SelectTrigger>
                       <SelectContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200">
+                        {/* Use selectedVariant's quantity */}
                         {[
                           ...Array(
-                            Math.min(
-                              10, // Max quantity to show in dropdown
-                              product.variants[selectedVariantIndex]
-                                ?.quantity || 1
-                            )
+                            Math.min(10, selectedVariant?.quantity || 1)
                           ),
                         ].map((_, i) => (
                           <SelectItem key={i + 1} value={(i + 1).toString()}>
@@ -555,8 +545,9 @@ export default function ProductDetailPage() {
                       </SelectContent>
                     </Select>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                      {product.variants[selectedVariantIndex]?.quantity} items
-                      available
+                      {selectedVariant
+                        ? `${selectedVariant.quantity} items available`
+                        : "Select a variant to see stock"}
                     </p>
                   </div>
                 </motion.div>
@@ -569,10 +560,12 @@ export default function ProductDetailPage() {
                   className="flex-1 bg-blue-600 hover:bg-blue-700 text-white shadow-lg transition-all duration-200 text-base py-3 rounded-lg"
                   onClick={handleAddToCart}
                   disabled={
-                    product.type === "product" &&
-                    product.variants &&
-                    product.variants.length > 0 &&
-                    product.variants[selectedVariantIndex]?.quantity <= 0
+                    (product.type === "product" &&
+                      product.variants &&
+                      product.variants.length > 0 &&
+                      (!selectedVariant || selectedVariant?.quantity <= 0)) || // Disable if no variant selected or out of stock
+                    (!product.isInStock &&
+                      (!selectedVariant || selectedVariant.quantity <= 0)) // Also disable if overall product is out of stock (less common, but good to have)
                   }
                   whileTap={{ scale: 0.95 }}
                 >
@@ -582,13 +575,9 @@ export default function ProductDetailPage() {
               </div>
 
               <Card className="mb-12 rounded-xl shadow-lg dark:bg-gray-800 dark:border-gray-700">
-                {" "}
-                {/* Added shadow, more rounded */}
                 <CardContent className="p-6">
                   <Tabs defaultValue="description" className="w-full">
                     <TabsList className="grid w-full grid-cols-2  bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
-                      {" "}
-                      {/* Styled TabList */}
                       <TabsTrigger
                         value="description"
                         className="data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-600 data-[state=active]:font-semibold rounded-md transition-all duration-200 dark:data-[state=active]:bg-gray-900 dark:data-[state=active]:text-white"
@@ -601,14 +590,13 @@ export default function ProductDetailPage() {
                       >
                         Reviews ({totalReviewsCount})
                       </TabsTrigger>
-                      {/* Add other tabs if you have them, e.g., "Shipping", "Vendor Info" */}
                     </TabsList>
                     <TabsContent value="description" className="mt-6">
                       <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.4 }}
-                        className="prose max-w-none dark:prose-invert" // Added prose-invert for dark mode
+                        className="prose max-w-none dark:prose-invert"
                       >
                         <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-base">
                           {product.description}
@@ -621,12 +609,10 @@ export default function ProductDetailPage() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.4 }}
-                        className="space-y-8" // Increased space-y
+                        className="space-y-8"
                       >
                         {/* Overall Review Summary */}
                         <div className="flex items-center gap-8 bg-blue-50 dark:bg-blue-950 p-6 rounded-lg shadow-inner">
-                          {" "}
-                          {/* Styled summary */}
                           <div className="text-center">
                             <div className="text-4xl font-extrabold text-blue-700 dark:text-blue-200">
                               {averageRating}
@@ -647,7 +633,6 @@ export default function ProductDetailPage() {
                               {totalReviewsCount} reviews
                             </div>
                           </div>
-                          {/* Could add rating breakdown bars here (e.g., 5-star, 4-star, etc.) */}
                           <div className="text-gray-700 dark:text-gray-300 text-lg font-medium">
                             Customer satisfaction is key!
                           </div>
@@ -658,7 +643,7 @@ export default function ProductDetailPage() {
                         <LeaveReviewForm
                           productId={productId}
                           itemType={product.type}
-                          onReviewSubmitted={fetchProductDetails} // Pass the fetch function to re-fetch reviews
+                          onReviewSubmitted={fetchProductDetails}
                         />
                         <Separator className="bg-gray-200 dark:bg-gray-700" />
 
@@ -667,32 +652,30 @@ export default function ProductDetailPage() {
                           Customer Reviews
                         </h3>
                         <div className="space-y-8">
-                          {" "}
-                          {/* Increased space-y */}
                           {totalReviewsCount > 0 ? (
                             product.reviews
                               .sort(
                                 (a, b) =>
                                   new Date(b.createdAt) - new Date(a.createdAt)
-                              ) // Sort newest first
+                              )
                               .map((review, index) => (
                                 <motion.div
                                   key={review._id}
-                                  className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700" // Styled individual review card
+                                  className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700"
                                   variants={reviewItemVariants}
                                   initial="hidden"
                                   animate="visible"
-                                  custom={index} // Pass index for staggered animation
+                                  custom={index}
                                 >
                                   <div className="flex items-center gap-3 mb-3">
-                                    {review.userId?.avatar ? ( // Display user avatar if available
+                                    {review.userId?.avatar ? (
                                       <img
                                         src={review.userId.avatar}
                                         alt={review.userId.name || "User"}
                                         className="h-10 w-10 rounded-full object-cover border-2 border-gray-100 dark:border-gray-700"
                                       />
                                     ) : (
-                                      <UserCircle className="h-10 w-10 text-gray-400 dark:text-gray-500" /> // Fallback icon
+                                      <UserCircle className="h-10 w-10 text-gray-400 dark:text-gray-500" />
                                     )}
                                     <div className="flex flex-col">
                                       <span className="font-semibold text-gray-900 dark:text-white text-lg">
@@ -729,8 +712,6 @@ export default function ProductDetailPage() {
                                   </p>
                                   {review.media && review.media.length > 0 && (
                                     <div className="flex flex-wrap gap-3 mt-4">
-                                      {" "}
-                                      {/* Use flex-wrap for responsiveness */}
                                       {review.media.map((mediaItem, idx) => (
                                         <motion.button
                                           key={idx}
@@ -764,7 +745,7 @@ export default function ProductDetailPage() {
                                                 muted
                                                 loop
                                                 playsInline
-                                                preload="metadata" // Optimize video loading
+                                                preload="metadata"
                                               />
                                               <div className="absolute inset-0 flex items-center justify-center bg-black/40 group-hover:bg-black/60 transition-colors duration-200">
                                                 <PlayCircle className="h-8 w-8 text-white" />
@@ -792,23 +773,22 @@ export default function ProductDetailPage() {
             </motion.div>
           </motion.div>
         </motion.div>
-        {/* Product Details Tabs */}
       </div>
 
       {/* Media Viewer Modal */}
       <AnimatePresence>
         {isMediaViewerOpen && (
           <motion.div
-            className="fixed inset-0 bg-black bg-opacity-85 flex items-center justify-center z-[100] p-4 backdrop-blur-sm" // Increased z-index, darker backdrop, blur
-            onClick={closeMediaViewer} // Close when clicking outside content
+            className="fixed inset-0 bg-black bg-opacity-85 flex items-center justify-center z-[100] p-4 backdrop-blur-sm"
+            onClick={closeMediaViewer}
             variants={modalBackdropVariants}
             initial="hidden"
             animate="visible"
             exit="exit"
           >
             <motion.div
-              className="relative bg-gray-900 p-2 rounded-xl shadow-2xl max-w-5xl max-h-[90vh] overflow-hidden" // Darker background, larger max-w, more rounded, shadow
-              onClick={(e) => e.stopPropagation()} // Prevent closing when clicking on content
+              className="relative bg-gray-900 p-2 rounded-xl shadow-2xl max-w-5xl max-h-[90vh] overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
               variants={modalContentVariants}
               initial="hidden"
               animate="visible"
@@ -817,7 +797,7 @@ export default function ProductDetailPage() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="absolute top-4 right-4 z-10 bg-white/20 text-white hover:bg-white/40 hover:text-white rounded-full p-2 transition-all duration-200" // More prominent close button
+                className="absolute top-4 right-4 z-10 bg-white/20 text-white hover:bg-white/40 hover:text-white rounded-full p-2 transition-all duration-200"
                 onClick={closeMediaViewer}
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
@@ -828,7 +808,7 @@ export default function ProductDetailPage() {
                 <img
                   src={currentMedia.url}
                   alt="Enlarged media"
-                  className="max-w-full max-h-[85vh] object-contain mx-auto my-auto rounded-lg" // Added rounded-lg
+                  className="max-w-full max-h-[85vh] object-contain mx-auto my-auto rounded-lg"
                 />
               ) : (
                 <video
@@ -836,7 +816,7 @@ export default function ProductDetailPage() {
                   controls
                   autoPlay
                   loop
-                  className="max-w-full max-h-[85vh] object-contain mx-auto my-auto rounded-lg" // Added rounded-lg
+                  className="max-w-full max-h-[85vh] object-contain mx-auto my-auto rounded-lg"
                 >
                   Your browser does not support the video tag.
                 </video>
