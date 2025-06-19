@@ -110,3 +110,24 @@ export const getAdminSalesReportApi = async () => {
     throw error;
   }
 };
+
+export const fetchOrders = async () => {
+  try {
+    const response = await apiClient.get('/todays-order'); // Replace with your actual API endpoint
+    console.log("Orders fetched:", response.data);
+    return response.data; // Returns the array of orders
+  } catch (error) {
+    console.error("Error fetching orders:", error);
+    throw error; // Re-throws the error for handling in the component
+  }
+};
+export const rejectOrders = async (orderId) => {
+  try {
+    const response = await apiClient.patch(`/reject/${orderId}`); // Replace with your actual API endpoint
+    console.log("Orders rejected:", response.data);
+    return response.data; // Returns the array of orders
+  } catch (error) {
+    console.error("Error rejecting orders:", error);
+    throw error; // Re-throws the error for handling in the component
+  }
+};

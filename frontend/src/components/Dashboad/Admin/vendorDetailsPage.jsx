@@ -29,6 +29,17 @@ import {
 } from "@/components/ui/dialog"
 import { toast } from "sonner"
 import { useParams } from "react-router-dom"
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction
+} from "@/components/ui/alert-dialog";
 
 // Helper function to format dates
 const formatDate = (dateString) => {
@@ -412,17 +423,30 @@ export default function VendorDetailsPage({ }) { // Accept vendorId as a prop
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            {product.isAdminApproved === "pending" && (
-                              <>
-                                <Button size="sm" variant="outline" className="text-green-600 hover:text-green-700" onClick={() => handleProductStatusUpdate(product._id, 'approved')}>
-                                  <Check className="h-3 w-3 mr-1" />Approve
-                                </Button>
-                                <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700" onClick={() => handleProductStatusUpdate(product._id, 'rejected')}>
-                                  <X className="h-3 w-3 mr-1" />Reject
-                                </Button>
-                              </>
+                            {product.isAdminApproved === "approved" && (
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700">
+                                    <X className="h-3 w-3 mr-1" /> Reject
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Reject this product?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Are you sure you want to reject this product? This action cannot be undone.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleProductStatusUpdate(product._id, 'rejected')} className="bg-red-500">
+                                      Reject
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
                             )}
-                            <Button variant="ghost" size="sm"><Eye className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="sm"></Button>
                           </div>
                         </TableCell>
                       </TableRow>
