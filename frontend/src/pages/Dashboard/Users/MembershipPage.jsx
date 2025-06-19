@@ -177,9 +177,9 @@ export default function MembershipPage() {
                 <div className="text-5xl font-extrabold text-purple-900 mb-2">
                   ₹1,298
                 </div>
-                <p className="text-purple-600 text-sm">
+                {/* <p className="text-purple-600 text-sm">
                   ₹1,100 + 18% GST (198)
-                </p>
+                </p> */}
                 <p className="text-purple-600 text-base">One-time payment</p>
               </div>
 

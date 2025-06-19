@@ -169,13 +169,6 @@ export const getAdminDashboardData = async (req, res) => {
   }
 };
 
-/**
- * @desc Upgrade a user's status to member and record the membership and transaction.
- * @route POST /api/users/upgrade/:userId
- * @access Private (e.g., Admin or system process after payment confirmation)
- */
-
-
 
 /**
  * @desc    Upgrade a user to membership, record transaction & membership,
@@ -384,3 +377,62 @@ res.status(200).json({
     })
   }
 }
+
+/**
+ * @desc Tops up a user's profile score.
+ * @route POST /api/users/topup-profile-score/:userId
+ * @access Private (Admin only)
+ * @param {string} req.params.userId - The ID of the user to top up.
+ * @param {object} req.body - The request body.
+ * @param {number} req.body.amount - The amount to add to the profile score.
+ */
+export const topUpProfileScore = async (req, res) => {
+  const { userId } = req.params;
+  const { amount } = req.body;
+
+  // Validate userId
+  if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Invalid user ID provided." });
+  }
+
+  // Validate amount
+  if (typeof amount !== "number" || amount <= 0) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid amount provided. Must be a positive number.",
+    });
+  }
+
+  try {
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found." });
+    }
+
+    // Initialize profileScore to 0 if it doesn't exist, then add the amount
+    user.profileScore = (user.profileScore || 0) + amount;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: `User profile score topped up by ${amount}. New score: ${user.profileScore}.`,
+      user: {
+        id: user._id,
+        email: user.email,
+        profileScore: user.profileScore,
+      },
+    });
+  } catch (error) {
+    console.error("Error topping up profile score:", error);
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while topping up profile score.",
+      error: error.message,
+    });
+  }
+};
