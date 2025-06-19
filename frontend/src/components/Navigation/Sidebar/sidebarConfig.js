@@ -27,6 +27,7 @@ import {
   IndianRupee,
   Ticket,
   Proportions,
+  ShoppingBag,
 } from "lucide-react";
 
 export const sidebarConfig = {
@@ -278,6 +279,11 @@ export const sidebarConfig = {
       label: "Categories",
       icon: Proportions,
       href: "/dashboard/category"
+    },
+    {
+      label: "Orders",
+      icon: ShoppingBag ,
+      href: "/dashboard/admin/today-orders"
     }
   ],
 };

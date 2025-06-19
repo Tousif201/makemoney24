@@ -61,6 +61,7 @@ import MessagingPage from "../pages/Dashboard/Ticket/MessagingPage";
 import CategoryManagementPage from "../pages/Dashboard/Admin/CategoryManagementPage";
 import AcceptTermsAndConditionsPage from "../pages/AcceptTerm_condition";
 import ExchangeReturn from "../pages/ExchangeReturn";
+import TodayOrders from "../pages/Dashboard/Admin/TodayOrders";
 
 const routes = [
   {
@@ -506,6 +507,14 @@ const routes = [
     element: (
       <DashboardLayout>
         <BannersPage />
+      </DashboardLayout>
+    ),
+  },
+  {
+    path: "/dashboard/admin/today-orders",
+    element: (
+      <DashboardLayout>
+        <TodayOrders />
       </DashboardLayout>
     ),
   },

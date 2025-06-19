@@ -10,9 +10,7 @@ export const backendConfig = {
 
 
   // base: "https://4sr8mplp-3000.inc1.devtunnels.ms/api",
-
   // origin: "http://localhost:3000/",
-
 
 
   // base: "https://4sr8mplp-3000.inc1.devtunnels.ms/api",
