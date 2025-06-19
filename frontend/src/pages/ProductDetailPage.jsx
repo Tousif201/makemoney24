@@ -17,21 +17,27 @@ import {
 } from "@/components/ui/select";
 import {
   Star,
-  Heart,
   Share2,
   ShoppingCart,
-  MapPin,
-  Clock,
-  Shield,
-  Truck,
   UserCircle,
   X,
   PlayCircle,
+  Facebook, // Import Facebook icon
+  Twitter, // Import Twitter icon
+  Linkedin, // Import LinkedIn icon
+  Link, // Import Link icon for copy link
 } from "lucide-react";
 import { useCart } from "../context/CartContext";
 import { getProductServiceById } from "../../api/productService";
 import LeaveReviewForm from "../components/LeaveReviewForm";
 import { useSession } from "../context/SessionContext";
+
+// Import Popover components
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 // --- Framer Motion Variants ---
 const pageVariants = {
@@ -103,6 +109,11 @@ export default function ProductDetailPage() {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isMediaViewerOpen, setIsMediaViewerOpen] = useState(false);
   const [currentMedia, setCurrentMedia] = useState({ url: "", type: "" });
+  const [isSharePopoverOpen, setIsSharePopoverOpen] = useState(false); // New state for share popover
+
+  // New states for independent color and size selection
+  const [selectedColor, setSelectedColor] = useState(null);
+  const [selectedSize, setSelectedSize] = useState(null);
 
   const { addItem } = useCart();
 
@@ -126,9 +137,12 @@ export default function ProductDetailPage() {
         data.variants &&
         data.variants.length > 0
       ) {
-        setSelectedVariant(data.variants[0]); // Select the first variant by default
+        // Set initial color and size to the first variant's color and size
+        setSelectedColor(data.variants[0].color);
+        setSelectedSize(data.variants[0].size);
       } else {
-        setSelectedVariant(null); // No variant selected for services or products without variants
+        setSelectedColor(null);
+        setSelectedSize(null);
       }
       setQuantity(1);
       setSelectedImageIndex(0);
@@ -159,6 +173,26 @@ export default function ProductDetailPage() {
     fetchProductDetails();
   }, [fetchProductDetails]);
 
+  // Effect to update selectedVariant whenever selectedColor or selectedSize changes
+  useEffect(() => {
+    if (product && product.type === "product" && product.variants) {
+      if (selectedColor && selectedSize) {
+        const foundVariant = product.variants.find(
+          (v) => v.color === selectedColor && v.size === selectedSize
+        );
+        setSelectedVariant(foundVariant || null);
+      } else if (selectedColor) {
+        // If only color is selected, find the first variant with that color (for image display)
+        const variantWithColor = product.variants.find(
+          (v) => v.color === selectedColor
+        );
+        setSelectedVariant(variantWithColor || null);
+      } else {
+        setSelectedVariant(null);
+      }
+    }
+  }, [selectedColor, selectedSize, product]);
+
   // Effect to reset selectedImageIndex when selectedVariant changes
   useEffect(() => {
     if (
@@ -182,7 +216,7 @@ export default function ProductDetailPage() {
       product.variants.length > 0 &&
       !selectedVariant
     ) {
-      toast.error("Please select a variant.");
+      toast.error("Please select both color and size.");
       return;
     }
     if (
@@ -203,18 +237,34 @@ export default function ProductDetailPage() {
       toast.error("This product is currently out of stock.");
       return;
     }
+
+    // --- Start: Price Calculation with Discount Rate ---
+    let finalPrice = product.price;
+    let originalPriceForCart = product.price; // This will hold the original price for display if needed
+
+    // Check if a valid discount rate exists and apply it
+    if (
+      product.discountRate &&
+      product.discountRate > 0 &&
+      product.discountRate <= 100
+    ) {
+      const discountAmount = (product.price * product.discountRate) / 100;
+      finalPrice = product.price - discountAmount;
+    }
+    // --- End: Price Calculation with Discount Rate ---
+
     const itemToAdd = {
-      id: `${product._id}`,
+      id: `${product._id}-${selectedVariant?._id || "default"}`, // Unique ID for cart item
       productId: product._id,
-      productServiceId: productId,
+      productServiceId: productId, // Assuming productId is defined in this scope
       title: product.title,
-      price: product.price,
-      originalPrice: product.originalPrice,
+      price: finalPrice, // Use the calculated final price
+      originalPrice: originalPriceForCart, // Keep the original price for reference if you need to show it in cart
       quantity: quantity,
       // Prioritize selected variant image, then portfolio, then placeholder
       image:
-        selectedVariant?.images?.[0]?.url ||
-        product.portfolio?.[selectedImageIndex]?.url ||
+        selectedVariant?.images?.[0] || // Direct URL from selectedVariant.images
+        product.portfolio?.[selectedImageIndex]?.url || // Assuming selectedImageIndex is defined
         "/placeholder.svg",
       vendor: product.vendorId || "Unknown Vendor",
       type: product.type,
@@ -223,11 +273,12 @@ export default function ProductDetailPage() {
             color: selectedVariant.color,
             size: selectedVariant.size,
             sku: selectedVariant.sku,
+            variantId: selectedVariant._id, // Include variant ID for easier tracking
           }
         : undefined,
     };
 
-    addItem(itemToAdd);
+    addItem(itemToAdd); // Assuming addItem is provided by useCart()
 
     toast.success("Item Added Successfully", {
       description: `${itemToAdd.title} ${itemToAdd.variant?.color || ""} ${
@@ -253,6 +304,113 @@ export default function ProductDetailPage() {
     setCurrentMedia({ url: "", type: "" });
   };
 
+  const currentProductUrl = `${window.location.origin}/products/${productId}`; // Adjust as per your routing
+  const shareTitle = `Check out this ${
+    product?.type || "item"
+  } on [Your App Name]!`;
+  const shareText = product?.title
+    ? `Discover "${product.title}" - `
+    : "Discover this amazing item!";
+  const shareDescription =
+    product?.description || "Find great products and services here!";
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url: currentProductUrl,
+        });
+        toast.success("Shared successfully!");
+      } catch (error) {
+        if (error.name !== "AbortError") {
+          console.error("Error sharing:", error);
+          toast.error("Failed to share.");
+        }
+      }
+    } else {
+      setIsSharePopoverOpen(true);
+    }
+  };
+
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(currentProductUrl);
+      toast.success("Link copied to clipboard!");
+      setIsSharePopoverOpen(false); // Close popover after copying
+    } catch (err) {
+      console.error("Failed to copy: ", err);
+      toast.error("Failed to copy link.");
+    }
+  };
+
+  const shareOnFacebook = () => {
+    window.open(
+      `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
+        currentProductUrl
+      )}&quote=${encodeURIComponent(shareText + product.title)}`,
+      "_blank",
+      "noopener,noreferrer"
+    );
+  };
+
+  const shareOnTwitter = () => {
+    window.open(
+      `https://twitter.com/intent/tweet?url=${encodeURIComponent(
+        currentProductUrl
+      )}&text=${encodeURIComponent(shareText + product.title)}`,
+      "_blank",
+      "noopener,noreferrer"
+    );
+  };
+
+  const shareOnWhatsapp = () => {
+    window.open(
+      `https://api.whatsapp.com/send?text=${encodeURIComponent(
+        shareText + product.title + " " + currentProductUrl
+      )}`,
+      "_blank",
+      "noopener,noreferrer"
+    );
+  };
+
+  const shareOnLinkedIn = () => {
+    window.open(
+      `https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(
+        currentProductUrl
+      )}&title=${encodeURIComponent(shareTitle)}&summary=${encodeURIComponent(
+        shareDescription
+      )}`,
+      "_blank",
+      "noopener,noreferrer"
+    );
+  };
+
+  // Derived states for variant selection
+  const availableColors = product?.variants
+    ? [...new Set(product.variants.map((v) => v.color))]
+    : [];
+
+  const availableSizes = product?.variants
+    ? [...new Set(
+        product.variants
+          .filter((v) => v.color === selectedColor)
+          .map((v) => v.size)
+      )]
+    : [];
+
+  // Determine which set of images to display based on selectedVariant
+  // This logic is crucial: if a color is selected, we want to show its specific images
+  // even if a size hasn't been picked yet.
+  const currentProductImages =
+    product?.type === "product" &&
+    selectedVariant &&
+    selectedVariant.images?.length > 0
+      ? selectedVariant.images // If selectedVariant has images, use them directly (they are already URLs)
+      : (product?.portfolio || []).map((item) => item.url); // Otherwise, map product.portfolio to extract URLs
+
+  console.log(product);
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -351,14 +509,6 @@ export default function ProductDetailPage() {
 
   const totalReviewsCount = product.reviews ? product.reviews.length : 0;
 
-  // Determine which set of images to display based on selectedVariant
-  const currentProductImages =
-    product.type === "product" &&
-    selectedVariant &&
-    selectedVariant.images?.length > 0
-      ? selectedVariant.images
-      : product.portfolio || [];
-
   return (
     <motion.div
       className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200"
@@ -384,23 +534,17 @@ export default function ProductDetailPage() {
             >
               <img
                 src={
-                  currentProductImages[selectedImageIndex]?.url ||
-                  currentProductImages[selectedImageIndex] ||
-                  "/placeholder.svg"
+                  currentProductImages[selectedImageIndex] || "/placeholder.svg"
                 }
                 alt={product.title}
                 className="object-contain w-full h-full p-4"
               />
-              {product.originalPrice &&
-                product.originalPrice > product.price && (
+              {product.discountRate &&
+                product.discountRate > 0 &&
+                product.discountRate <= 100 && (
                   <div className="absolute top-4 left-4">
                     <Badge className="bg-red-600 hover:bg-red-700 text-white text-sm font-semibold px-3 py-1 rounded-full shadow-md">
-                      {Math.round(
-                        ((product.originalPrice - product.price) /
-                          product.originalPrice) *
-                          100
-                      )}
-                      % OFF
+                      {Math.round(product.discountRate)}% OFF
                     </Badge>
                   </div>
                 )}
@@ -421,11 +565,35 @@ export default function ProductDetailPage() {
                   whileHover="hover"
                   whileTap={{ scale: 0.95 }}
                 >
-                  <img
-                    src={item || "/placeholder.svg"}
-                    alt={`Product thumbnail ${index + 1}`}
-                    className="object-cover w-full h-full"
-                  />
+                  {/* Check if item is a string (direct URL) or an object (with url and type) */}
+                  {typeof item === "string" ? ( // Assuming direct URLs for images from selectedVariant.images
+                    <img
+                      src={item || "/placeholder.svg"}
+                      alt={`Product thumbnail ${index + 1}`}
+                      className="object-cover w-full h-full"
+                    />
+                  ) : item.type === "video" ? (
+                    <div className="relative w-full h-full">
+                      <video
+                        src={item.url}
+                        className="w-full h-full object-cover"
+                        controls={false}
+                        muted
+                        loop
+                        playsInline
+                        preload="metadata"
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/40 group-hover:bg-black/60 transition-colors duration-200">
+                        <PlayCircle className="h-6 w-6 text-white" />
+                      </div>
+                    </div>
+                  ) : (
+                    <img
+                      src={item.url || "/placeholder.svg"}
+                      alt={`Product thumbnail ${index + 1}`}
+                      className="object-cover w-full h-full"
+                    />
+                  )}
                 </motion.button>
               ))}
             </motion.div>
@@ -469,20 +637,31 @@ export default function ProductDetailPage() {
                 </div>
               </div>
               <div className="flex items-baseline gap-4 mb-6">
+                {/* Display the discounted price prominently */}
                 <span className="text-4xl font-bold text-gray-900 dark:text-white">
-                  ₹{product.price.toLocaleString()}
+                  ₹
+                  {(
+                    product.price *
+                    (1 - (product.discountRate || 0) / 100)
+                  ).toLocaleString()}
                 </span>
-                {product.originalPrice &&
-                  product.originalPrice > product.price && (
+
+                {/* Conditionally display original price and savings if there's a discount */}
+                {product.discountRate &&
+                  product.discountRate > 0 &&
+                  product.discountRate <= 100 && (
                     <>
+                      {/* Original price, struck out */}
                       <span className="text-xl text-gray-500 line-through">
-                        ₹{product.originalPrice.toLocaleString()}
+                        ₹{product.price.toLocaleString()}
                       </span>
+
+                      {/* Discount percentage badge */}
                       <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 font-semibold px-3 py-1 rounded-full">
-                        Save ₹
-                        {(
-                          product.originalPrice - product.price
-                        ).toLocaleString()}
+                        Save {product.discountRate}%{" "}
+                        {/* Showing percentage saved */}
+                        {/* Or if you want to show exact amount saved: */}
+                        {/* Save ₹{((product.price * (product.discountRate / 100))).toLocaleString()} */}
                       </Badge>
                     </>
                   )}
@@ -493,30 +672,65 @@ export default function ProductDetailPage() {
               product.variants &&
               product.variants.length > 0 && (
                 <motion.div className="space-y-6" variants={itemVariants}>
+                  {/* Color Selection */}
                   <div>
                     <h3 className="font-semibold text-lg mb-3 text-gray-700 dark:text-gray-300">
                       Color
                     </h3>
                     <div className="flex flex-wrap gap-3">
-                      {product.variants.map((variant, index) => (
+                      {availableColors.map((color, index) => (
                         <motion.button
-                          key={variant._id || index} // Use _id for a more robust key if available
-                          onClick={() => setSelectedVariant(variant)} // Set the whole variant object
+                          key={color || `color-${index}`}
+                          onClick={() => {
+                            setSelectedColor(color);
+                            // Reset selected size when color changes
+                            setSelectedSize(null);
+                            setQuantity(1); // Reset quantity
+                          }}
                           className={`px-5 py-2 border rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                            selectedVariant &&
-                            selectedVariant._id === variant._id // Compare by _id for selection
+                            selectedColor === color
                               ? "border-blue-600 bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-200"
                               : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                           }`}
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
                         >
-                          {variant.color}
+                          {color}
                         </motion.button>
                       ))}
                     </div>
                   </div>
 
+                  {/* Size Selection (conditionally rendered based on selectedColor) */}
+                  {selectedColor && availableSizes.length > 0 && (
+                    <div>
+                      <h3 className="font-semibold text-lg mb-3 text-gray-700 dark:text-gray-300">
+                        Size
+                      </h3>
+                      <div className="flex flex-wrap gap-3">
+                        {availableSizes.map((size, index) => (
+                          <motion.button
+                            key={size || `size-${index}`}
+                            onClick={() => {
+                              setSelectedSize(size);
+                              setQuantity(1); // Reset quantity
+                            }}
+                            className={`px-5 py-2 border rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                              selectedSize === size
+                                ? "border-blue-600 bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-200"
+                                : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                            }`}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                          >
+                            {size}
+                          </motion.button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Quantity Selection */}
                   <div>
                     <h3 className="font-semibold text-lg mb-3 text-gray-700 dark:text-gray-300">
                       Quantity
@@ -526,7 +740,7 @@ export default function ProductDetailPage() {
                       onValueChange={(value) =>
                         setQuantity(Number.parseInt(value))
                       }
-                      disabled={!selectedVariant} // Disable if no variant is selected
+                      disabled={!selectedVariant || selectedVariant.quantity <= 0} // Disable if no variant selected or out of stock
                     >
                       <SelectTrigger className="w-32 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-200 shadow-sm focus:ring-blue-500">
                         <SelectValue placeholder="Select Qty" />
@@ -546,8 +760,10 @@ export default function ProductDetailPage() {
                     </Select>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
                       {selectedVariant
-                        ? `${selectedVariant.quantity} items available`
-                        : "Select a variant to see stock"}
+                        ? selectedVariant.quantity > 0
+                          ? `${selectedVariant.quantity} items available`
+                          : "Out of stock for this selection"
+                        : "Select color and size to see stock"}
                     </p>
                   </div>
                 </motion.div>
@@ -572,6 +788,66 @@ export default function ProductDetailPage() {
                   <ShoppingCart className="mr-2 h-5 w-5" />
                   Add to Cart
                 </Button>
+
+                {/* Share Button with Popover */}
+                <Popover
+                  open={isSharePopoverOpen}
+                  onOpenChange={setIsSharePopoverOpen}
+                >
+                  <PopoverTrigger asChild>
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      className="w-10 h-10 p-0 flex-shrink-0 border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 rounded-lg"
+                      onClick={handleShare}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <Share2 className="h-3 w-3" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-56 p-2 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700">
+                    <div className="grid gap-2">
+                      <Button
+                        variant="ghost"
+                        className="justify-start gap-3 w-full text-left"
+                        onClick={shareOnFacebook}
+                      >
+                        <Facebook className="h-5 w-5 text-blue-600" /> Share on
+                        Facebook
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        className="justify-start gap-3 w-full text-left"
+                        onClick={shareOnTwitter}
+                      >
+                        <Twitter className="h-5 w-5 text-blue-400" /> Share on
+                        Twitter
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        className="justify-start gap-3 w-full text-left"
+                        onClick={shareOnWhatsapp}
+                      >
+                        Share on WhatsApp
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        className="justify-start gap-3 w-full text-left"
+                        onClick={shareOnLinkedIn}
+                      >
+                        <Linkedin className="h-5 w-5 text-blue-700" /> Share on
+                        LinkedIn
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        className="justify-start gap-3 w-full text-left"
+                        onClick={copyToClipboard}
+                      >
+                        <Link className="h-5 w-5 text-gray-500" /> Copy Link
+                      </Button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
 
               <Card className="mb-12 rounded-xl shadow-lg dark:bg-gray-800 dark:border-gray-700">
@@ -771,6 +1047,17 @@ export default function ProductDetailPage() {
                 </CardContent>
               </Card>
             </motion.div>
+            {product.details && ( // Conditionally render only if product.details exists
+              <Card>
+                <CardContent>
+                  <motion.div
+                    className="prose max-w-none dark:prose-invert mt-8" // Tailwind CSS `prose` class for basic styling of HTML content
+                    dangerouslySetInnerHTML={{ __html: product.details }}
+                    variants={itemVariants}
+                  ></motion.div>
+                </CardContent>
+              </Card>
+            )}
           </motion.div>
         </motion.div>
       </div>

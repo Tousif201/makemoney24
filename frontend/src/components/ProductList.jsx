@@ -198,7 +198,6 @@ const ProductList = () => {
     resetSearch();
   };
 
-
   // --- JSX (Rendering Logic) ---
   // The structure remains mostly the same, but now it always renders the `products` state.
 
@@ -311,6 +310,7 @@ const ProductList = () => {
                 title: product.title,
                 description: product.description,
                 price: product.price,
+                discountRate: product.discountRate,
                 type: product.type,
                 image:
                   product.portfolio?.length > 0
