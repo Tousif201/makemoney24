@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Checkbox } from "@/components/ui/checkbox"; // Keep Checkbox for the main filter sidebar
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import {
@@ -16,18 +16,15 @@ import {
 } from "@/components/ui/select";
 import {
   Search,
-  Filter,
+  Filter, // Added Filter icon back for the general filters section
   Star,
   Grid,
   List,
-  ChevronDown,
-  ChevronRight,
   Loader2,
-} from "lucide-react"; // Added Chevron icons and Loader2
-import { ScrollArea } from "@/components/ui/scroll-area";
+} from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area"; // Keep ScrollArea for category list
 
-// Updated category import to include getCategoriesByParentId
-import { getCategoriesByParentId } from "../../../api/categories";
+import { getCategoriesWithSubcategories } from "../../../api/categories"; // This API is perfect for your UI
 import { getProductServices } from "../../../api/productService";
 import { useSession } from "../../context/SessionContext";
 
@@ -36,114 +33,42 @@ const DEFAULT_PRICE_MAX = 50000;
 export default function BrowsePage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { session, loading: sessionLoading } = useSession();
 
-  // State derived from URL search parameters, or default values
-  const [searchQuery, setSearchQuery] = useState(
-    searchParams.get("search") || ""
-  );
-  const [selectedType, setSelectedType] = useState(
-    searchParams.get("type") || "all"
-  );
-  const [selectedCategories, setSelectedCategories] = useState(
-    searchParams.get("categories")
-      ? searchParams.get("categories").split(",")
-      : []
-  );
-  const [priceRange, setPriceRange] = useState(() => {
-    const minPrice = parseInt(searchParams.get("minPrice") || "0");
-    const maxPrice = parseInt(
-      searchParams.get("maxPrice") || String(DEFAULT_PRICE_MAX)
-    );
-    return [minPrice, maxPrice];
-  });
-  const [vendorIdFilter, setVendorIdFilter] = useState(
-    searchParams.get("vendorId") || ""
-  );
+  // --- State Management ---
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedType, setSelectedType] = useState("all");
+  // selectedCategories will now hold IDs of both main and sub categories chosen for filtering
+  const [selectedCategories, setSelectedCategories] = useState([]);
+  const [priceRange, setPriceRange] = useState([0, DEFAULT_PRICE_MAX]);
+  const [vendorIdFilter, setVendorIdFilter] = useState("");
 
-  // Pagination states
-  const [currentPage, setCurrentPage] = useState(
-    parseInt(searchParams.get("page") || "1")
-  );
-  const [itemsPerPage, setItemsPerPage] = useState(
-    parseInt(searchParams.get("limit") || "10")
-  );
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
-  // Sorting states
-  const [sortBy, setSortBy] = useState(
-    searchParams.get("sortBy") || "createdAt"
-  );
-  const [sortOrder, setSortOrder] = useState(
-    searchParams.get("order") || "desc"
-  );
+  // Sorting
+  const [sortBy, setSortBy] = useState("createdAt");
+  const [sortOrder, setSortOrder] = useState("desc");
+  const [viewMode, setViewMode] = useState("grid");
 
-  const [viewMode, setViewMode] = useState(
-    searchParams.get("viewMode") || "grid"
-  );
+  // Category data for the two-column UI
+  const [categoriesData, setCategoriesData] = useState([]); // Stores main categories with their subcategories
+  const [currentCategory, setCurrentCategory] = useState(null); // The currently selected main category in the left sidebar
 
-  // --- NEW Category Management States ---
-  const [topLevelCategories, setTopLevelCategories] = useState([]);
-  const [nestedCategories, setNestedCategories] = useState({}); // { parentId: [childCat1, childCat2] }
-  const [expandedCategories, setExpandedCategories] = useState([]); // Which parents are expanded in the UI
-  // --- END NEW Category Management States ---
-
+  // Product/Service Items State
   const [items, setItems] = useState([]);
+
+  // Loading and error states
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [loadingItems, setLoadingItems] = useState(true);
   const [errorCategories, setErrorCategories] = useState(null);
   const [errorItems, setErrorItems] = useState(null);
-  const { session, loading: sessionLoading } = useSession();
+  const [debounceTimer, setDebounceTimer] = useState(null);
 
-  // --- Category Fetching: Fetch top-level categories on initial load ---
-  useEffect(() => {
-    const fetchTopLevelCategories = async () => {
-      try {
-        setLoadingCategories(true);
-        setErrorCategories(null);
-        // Fetch top-level categories (parentId: null)
-        const fetched = await getCategoriesByParentId(
-          "null",
-          selectedType !== "all" ? selectedType : undefined
-        );
-        setTopLevelCategories(fetched);
-      } catch (err) {
-        console.error("Error fetching top-level categories:", err);
-        setErrorCategories("Failed to load categories.");
-      } finally {
-        setLoadingCategories(false);
-      }
-    };
-    fetchTopLevelCategories();
-  }, [selectedType]); // Re-fetch top-level categories if type changes
-
-  // --- Function to fetch subcategories for a given parent ---
-  const fetchSubcategoriesForParent = useCallback(
-    async (parentId) => {
-      if (!parentId || nestedCategories[parentId]) return; // Don't re-fetch if already loaded
-
-      try {
-        // You might want a specific loading state for subcategories if this becomes slow
-        const fetchedChildren = await getCategoriesByParentId(
-          parentId,
-          selectedType !== "all" ? selectedType : undefined
-        );
-        setNestedCategories((prev) => ({
-          ...prev,
-          [parentId]: fetchedChildren,
-        }));
-      } catch (err) {
-        console.error(
-          `Error fetching subcategories for parent ${parentId}:`,
-          err
-        );
-        // Optionally, set an error for this specific parent or handle it generally
-      }
-    },
-    [nestedCategories, selectedType]
-  );
-
-  // --- Synchronize state with URL search parameters ---
+  // --- Synchronize state with URL search parameters on initial load ---
   useEffect(() => {
     setSearchQuery(searchParams.get("search") || "");
     setSelectedType(searchParams.get("type") || "all");
@@ -167,7 +92,7 @@ export default function BrowsePage() {
     setViewMode(searchParams.get("viewMode") || "grid");
   }, [searchParams]);
 
-  // --- Update URL search parameters whenever state changes ---
+  // --- Update URL search parameters whenever relevant state changes ---
   useEffect(() => {
     const newSearchParams = new URLSearchParams();
 
@@ -202,11 +127,42 @@ export default function BrowsePage() {
     setSearchParams,
   ]);
 
-  // --- Main Product/Service Fetching: Debounced and optimized ---
+  // --- Category Fetching: For the two-column UI (main and subcategories) ---
+  useEffect(() => {
+    const fetchAllCategories = async () => {
+      setLoadingCategories(true);
+      setErrorCategories(null);
+      try {
+        const res = await getCategoriesWithSubcategories({
+          type: selectedType,
+        });
+        setCategoriesData(res);
+        // Set initial currentCategory if none is selected or type changes
+        if (
+          res.length > 0 &&
+          (!currentCategory ||
+            !res.find((cat) => cat._id === currentCategory._id))
+        ) {
+          setCurrentCategory(res[0]);
+        } else if (res.length === 0) {
+          setCurrentCategory(null);
+        }
+      } catch (err) {
+        console.error("Error fetching categories with subcategories:", err);
+        setErrorCategories("Failed to load categories.");
+      } finally {
+        setLoadingCategories(false);
+      }
+    };
+    fetchAllCategories();
+  }, [selectedType, currentCategory]); // Re-fetch if type changes or currentCategory is somehow invalid
+
+  // --- Main Product/Service Fetching ---
   const fetchProductsAndServices = useCallback(async () => {
     setLoadingItems(true);
     setErrorItems(null);
 
+    // Build params for API call
     const params = {
       title: searchQuery || undefined,
       type: selectedType !== "all" ? selectedType : undefined,
@@ -220,7 +176,7 @@ export default function BrowsePage() {
     };
 
     if (selectedCategories.length > 0) {
-      params.categoryId = selectedCategories.join(",");
+      params.categoryId = selectedCategories.join(","); // Send multiple category IDs as a comma-separated string
     }
 
     try {
@@ -237,7 +193,7 @@ export default function BrowsePage() {
         image:
           item.portfolio && item.portfolio.length > 0
             ? item.portfolio[0].url
-            : "/placeholder.svg",
+            : "https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png", // Fallback placeholder
         rating: item.rating || 0,
         vendor: item.vendorId ? item.vendorId.name : "N/A",
         category: item.categoryId ? item.categoryId.name : "N/A",
@@ -260,6 +216,34 @@ export default function BrowsePage() {
   }, [
     searchQuery,
     selectedType,
+    selectedCategories, // Added selectedCategories as a dependency
+    priceRange,
+    vendorIdFilter,
+    currentPage,
+    itemsPerPage,
+    sortBy,
+    sortOrder,
+  ]);
+
+  // Effect to trigger data fetching with debounce for search query and other filters
+  useEffect(() => {
+    if (debounceTimer) {
+      clearTimeout(debounceTimer);
+    }
+    const handler = setTimeout(() => {
+      fetchProductsAndServices();
+    }, 300); // Debounce by 300ms
+    setDebounceTimer(handler);
+
+    return () => {
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
+    };
+  }, [
+    fetchProductsAndServices,
+    searchQuery,
+    selectedType,
     selectedCategories,
     priceRange,
     vendorIdFilter,
@@ -269,68 +253,7 @@ export default function BrowsePage() {
     sortOrder,
   ]);
 
-  // Effect to trigger data fetching with debounce
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      fetchProductsAndServices();
-    }, 300);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [fetchProductsAndServices]);
-
   // --- Handlers for User Interactions ---
-  // Updated handleCategoryChange for hierarchical selection
-  const handleCategoryChange = useCallback(
-    (categoryId, checked, isParent = false) => {
-      setSelectedCategories((prevCategories) => {
-        let newCategories = new Set(prevCategories); // Use Set for efficient add/delete
-
-        if (checked) {
-          newCategories.add(categoryId);
-          // If it's a parent, expand it and fetch its children if not already fetched
-          if (isParent) {
-            setExpandedCategories((prevExpanded) => [
-              ...prevExpanded,
-              categoryId,
-            ]);
-            fetchSubcategoriesForParent(categoryId);
-            // If a parent is checked, all its *currently loaded* direct children should also be checked.
-            // This ensures a consistent selection for the filter.
-            // For now, we only check direct children. For deeply nested, a recursive function would be needed.
-            if (nestedCategories[categoryId]) {
-              nestedCategories[categoryId].forEach((child) =>
-                newCategories.add(child._id)
-              );
-            }
-          }
-        } else {
-          newCategories.delete(categoryId);
-          // If unchecking a parent, also uncheck all its children (and recursively, grandchildren)
-          if (isParent) {
-            setExpandedCategories((prevExpanded) =>
-              prevExpanded.filter((id) => id !== categoryId)
-            );
-            // Recursively uncheck children. This might need a helper function for deep nesting.
-            const uncheckChildren = (parent_id) => {
-              if (nestedCategories[parent_id]) {
-                nestedCategories[parent_id].forEach((child) => {
-                  newCategories.delete(child._id);
-                  uncheckChildren(child._id); // Recursive call for nested children
-                });
-              }
-            };
-            uncheckChildren(categoryId);
-          }
-        }
-        return Array.from(newCategories);
-      });
-      setCurrentPage(1); // Reset to page 1 on filter change
-    },
-    [nestedCategories, fetchSubcategoriesForParent]
-  ); // Depend on nestedCategories and fetchSubcategoriesForParent
-
   const handlePriceRangeChange = (newRange) => {
     setPriceRange(newRange);
     setCurrentPage(1); // Reset to page 1 on filter change
@@ -339,10 +262,10 @@ export default function BrowsePage() {
   const handleTypeChange = (newType) => {
     setSelectedType(newType);
     setCurrentPage(1); // Reset to page 1 on filter change
-    setTopLevelCategories([]); // Clear categories to force re-fetch
-    setNestedCategories({}); // Clear nested categories
-    setExpandedCategories([]); // Collapse all
-    setSelectedCategories([]); // Clear category selection
+    // When type changes, re-fetch categories and clear current category/selection
+    setCategoriesData([]);
+    setCurrentCategory(null);
+    setSelectedCategories([]);
   };
 
   const handleSearchQueryChange = (e) => {
@@ -363,19 +286,14 @@ export default function BrowsePage() {
     }
   };
 
-  const toggleCategoryExpand = useCallback(
-    (categoryId) => {
-      setExpandedCategories((prevExpanded) => {
-        if (prevExpanded.includes(categoryId)) {
-          return prevExpanded.filter((id) => id !== categoryId);
-        } else {
-          fetchSubcategoriesForParent(categoryId); // Fetch children when expanding
-          return [...prevExpanded, categoryId];
-        }
-      });
-    },
-    [fetchSubcategoriesForParent]
-  );
+  const handleSidebarCategoryClick = useCallback((category) => {
+    setCurrentCategory(category);
+    // When a main category is clicked, only that specific category is selected
+    // If you want to automatically select its subcategories too, add logic here.
+    // For now, it just sets the currentCategory for subcategory display.
+    setSelectedCategories([category._id]); // Select only the clicked main category by default
+    setCurrentPage(1); // Reset page on category click
+  }, []);
 
   // --- Memoized Values for Rendering ---
   const displayedItems = useMemo(() => items, [items]);
@@ -395,80 +313,6 @@ export default function BrowsePage() {
     }
     return range;
   }, [currentPage, totalPages]);
-
-  // Helper function to render categories recursively (or just two levels for now)
-  const renderCategoryCheckboxes = useCallback(
-    (categoriesToRender, level = 0) => {
-      return categoriesToRender.map((category) => (
-        <div key={category._id} className="relative">
-          <div
-            className="flex items-center space-x-2"
-            style={{ paddingLeft: `${level * 16}px` }}
-          >
-            {category.hasChildren ||
-            (nestedCategories[category._id] &&
-              nestedCategories[category._id].length > 0) ? (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6"
-                onClick={() => toggleCategoryExpand(category._id)}
-              >
-                {expandedCategories.includes(category._id) ? (
-                  <ChevronDown className="h-4 w-4" />
-                ) : (
-                  <ChevronRight className="h-4 w-4" />
-                )}
-              </Button>
-            ) : (
-              <div className="h-6 w-6 flex items-center justify-center"></div> // Placeholder for alignment
-            )}
-            <Checkbox
-              id={category._id}
-              checked={selectedCategories.includes(category._id)}
-              onCheckedChange={
-                (checked) =>
-                  handleCategoryChange(
-                    category._id,
-                    checked,
-                    category.parentId === null
-                  ) // Pass true if it's a top-level category
-              }
-            />
-            <Label
-              htmlFor={category._id}
-              className="text-sm flex-1 cursor-pointer"
-            >
-              {category.name}
-            </Label>
-            {/* Optional: Show loading spinner if children are being fetched */}
-            {expandedCategories.includes(category._id) &&
-              !nestedCategories[category._id] && (
-                <Loader2 className="ml-2 h-4 w-4 animate-spin text-gray-400" />
-              )}
-          </div>
-          {expandedCategories.includes(category._id) &&
-            nestedCategories[category._id] && (
-              <div className="pl-4 border-l ml-4 border-gray-200">
-                {" "}
-                {/* Indent children */}
-                {renderCategoryCheckboxes(
-                  nestedCategories[category._id],
-                  level + 1
-                )}
-              </div>
-            )}
-        </div>
-      ));
-    },
-    [
-      selectedCategories,
-      expandedCategories,
-      nestedCategories,
-      handleCategoryChange,
-      toggleCategoryExpand,
-    ]
-  );
 
   if (sessionLoading) {
     return (
@@ -505,80 +349,171 @@ export default function BrowsePage() {
           </div>
         </div>
 
+        {/* Main Layout: Filters + Categories + Results */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Filters Sidebar */}
-          <div className="lg:col-span-1">
-            <Card className="sticky top-10">
-              <CardContent className="p-6">
-                <div className="flex items-center mb-6">
-                  <Filter className="h-5 w-5 mr-2" />
-                  <h2 className="text-lg font-semibold">Filters</h2>
-                </div>
+          {/* General Filters (Left Column - first part) */}
+          <div className="lg:col-span-1 bg-white shadow-md rounded-lg p-6    top-8">
+            {" "}
+            {/* Added sticky and h-fit for better layout */}
+            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              <Filter className="h-5 w-5" /> Filters
+            </h2>
+            <div className="space-y-6">
+              {/* Type Filter */}
+              <div>
+                <Label htmlFor="type-filter" className="mb-2 block font-medium">
+                  Type
+                </Label>
+                <Select value={selectedType} onValueChange={handleTypeChange}>
+                  <SelectTrigger id="type-filter" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="product">Products</SelectItem>
+                    <SelectItem value="service">Services</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-                {/* Type Filter */}
-                <div className="mb-6">
-                  <h3 className="font-medium mb-3">Type</h3>
-                  <Select value={selectedType} onValueChange={handleTypeChange}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Items</SelectItem>
-                      <SelectItem value="product">Products</SelectItem>
-                      <SelectItem value="service">Services</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <ScrollArea className="h-72  ">
-                  {/* Category Filter - Updated for Subcategories */}
-                  <div className="mb-6">
-                    <h3 className="font-medium mb-3">Categories</h3>
-                    {loadingCategories ? (
-                      <p className="text-gray-500 flex items-center">
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
-                        Loading categories...
-                      </p>
-                    ) : errorCategories ? (
-                      <p className="text-red-500">{errorCategories}</p>
-                    ) : topLevelCategories.length === 0 &&
-                      selectedType !== "all" ? (
-                      <p className="text-gray-500">
-                        No main categories found for "{selectedType}".
-                      </p>
-                    ) : topLevelCategories.length === 0 &&
-                      selectedType === "all" ? (
-                      <p className="text-gray-500">No categories available.</p>
-                    ) : (
-                      <div className="space-y-3">
-                        {renderCategoryCheckboxes(topLevelCategories)}
-                      </div>
-                    )}
-                  </div>
-                </ScrollArea>
-                {/* Price Range */}
-                <div className="mb-6">
-                  <h3 className="font-medium mb-3">Price Range</h3>
-                  <div className="px-2">
-                    <Slider
-                      value={priceRange}
-                      onValueChange={handlePriceRangeChange}
-                      max={DEFAULT_PRICE_MAX}
-                      step={500}
-                      className="mb-4"
-                    />
-                    <div className="flex justify-between text-sm text-gray-600">
-                      <span>₹{priceRange[0].toLocaleString()}</span>
-                      <span>₹{priceRange[1].toLocaleString()}</span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+              {/* Price Range Filter */}
+              <div>
+                <Label htmlFor="price-range" className="mb-4 block font-medium">
+                  Price Range: ₹{priceRange[0].toLocaleString()} - ₹
+                  {priceRange[1].toLocaleString()}
+                </Label>
+                <Slider
+                  id="price-range"
+                  min={0}
+                  max={DEFAULT_PRICE_MAX}
+                  step={100}
+                  value={priceRange}
+                  onValueChange={handlePriceRangeChange}
+                  range
+                  className="w-full"
+                />
+              </div>
+
+              {/* You can add more filters here if needed (e.g., Vendor Filter) */}
+            </div>
           </div>
 
-          {/* Results */}
+          {/* Category Browse Section (Middle Section - span 3 columns on desktop) */}
           <div className="lg:col-span-3">
-            {/* Results Header */}
+            {" "}
+            {/* This div was causing layout issues before */}
+            <div className="flex bg-gray-100 font-sans rounded-lg shadow-md">
+              {/* Main Categories Sidebar (Your original left panel) */}
+              <div className="w-[30%] lg:w-[18%] bg-white shadow-md border-r p-2 border-gray-200 h-[27rem] overflow-y-scroll overflow-x-hidden scrollbar-thin scrollbar-thumb-red-300 scrollbar-track-transparent rounded-l-xl flex flex-col items-center">
+                <nav className="mt-2 w-full space-y-2">
+                  {loadingCategories ? (
+                    <div className="flex justify-center items-center h-full">
+                      <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                    </div>
+                  ) : errorCategories ? (
+                    <p className="text-red-500 text-center text-sm p-4">
+                      {errorCategories}
+                    </p>
+                  ) : categoriesData.length === 0 ? (
+                    <p className="text-gray-500 text-center text-sm p-4">
+                      No categories found.
+                    </p>
+                  ) : (
+                    categoriesData.map((category) => (
+                      <div
+                        onClick={() => handleSidebarCategoryClick(category)}
+                        key={category._id}
+                        className={`flex flex-col items-center justify-center mt-5 cursor-pointer border-b border-gray-100 transition rounded-lg p-2
+                          ${
+                            currentCategory?._id === category._id
+                              ? "bg-gray-100 border-l-4 border-purple-500 text-black"
+                              : "bg-white text-gray-700"
+                          }`}
+                      >
+                        <img
+                          src={
+                            category.image?.url ||
+                            "https://via.placeholder.com/80"
+                          } // Fallback image
+                          className="h-20 w-20 object-cover rounded-lg mb-2"
+                          alt={category.name}
+                        />
+                        <p className="text-sm font-medium text-center">
+                          {category.name}
+                        </p>
+                      </div>
+                    ))
+                  )}
+                </nav>
+              </div>
+
+              {/* Subcategories Display (Your original right panel) */}
+              <div className="flex-1 p-4 overflow-y-auto min-h-[20vh] rounded-r-xl">
+                {currentCategory && currentCategory.subcategories && (
+                  <section className="mb-8">
+                    <h3 className="text-xl font-semibold mb-4">
+                      Subcategories of {currentCategory.name}
+                    </h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                      {currentCategory.subcategories.length === 0 ? (
+                        <p className="text-gray-500 col-span-full">
+                          No subcategories for this category.
+                        </p>
+                      ) : (
+                        currentCategory.subcategories.map((subCategory) => (
+                          <div
+                            key={subCategory._id}
+                            onClick={() =>
+                              setSelectedCategories([subCategory._id])
+                            } // Select only this subcategory
+                            className={`bg-white w-full rounded-lg shadow-sm p-2 flex flex-col items-center justify-center text-center border cursor-pointer transition
+                              ${
+                                selectedCategories.includes(subCategory._id)
+                                  ? "border-purple-500 ring-2 ring-purple-200"
+                                  : "border-gray-200 hover:border-gray-300"
+                              }`}
+                          >
+                            <div className="relative">
+                              <img
+                                src={
+                                  subCategory.image?.url ||
+                                  "https://via.placeholder.com/60"
+                                } // Fallback image
+                                alt={subCategory.name}
+                                className="w-16 h-16 object-cover rounded-md"
+                              />
+                            </div>
+                            <p className="mt-2 text-sm font-medium text-gray-800">
+                              {subCategory.name}
+                            </p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </section>
+                )}
+                {!currentCategory &&
+                  !loadingCategories &&
+                  categoriesData.length > 0 && (
+                    <p className="text-gray-500 text-center mt-10">
+                      Select a category from the left to view its subcategories.
+                    </p>
+                  )}
+                {loadingCategories && !currentCategory && (
+                  <div className="flex justify-center items-center h-full">
+                    <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+          {/* End Category Browse Section */}
+
+          {/* Results Section (Right Column - spans 3 columns on desktop, below the category browser) */}
+          <div className="lg:col-span-4 mt-8">
+            {" "}
+            {/* Adjusted to span full width below categories */}
+            {/* Results Header and Controls */}
             <div className="flex justify-between items-center mb-6">
               <div>
                 {loadingItems ? (
@@ -630,8 +565,7 @@ export default function BrowsePage() {
                 </div>
               </div>
             </div>
-
-            {/* Results Grid / List */}
+            {/* Product/Service Display */}
             {loadingItems ? (
               <div className="flex justify-center items-center h-48">
                 <p className="text-gray-500 flex items-center">
@@ -679,7 +613,7 @@ export default function BrowsePage() {
                           }`}
                         >
                           <img
-                            src={item.image || "/placeholder.svg"}
+                            src={item.image}
                             alt={item.title}
                             className="object-cover group-hover:scale-105 transition-transform duration-300 w-full h-full"
                             onError={(e) => {
@@ -778,7 +712,6 @@ export default function BrowsePage() {
                 ))}
               </div>
             )}
-
             {/* Pagination Controls */}
             {totalPages > 1 && (
               <div className="flex justify-center mt-12">
