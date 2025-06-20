@@ -1,14 +1,13 @@
 // components/ProductList/ProductList.jsx
 import React, { useEffect, useState, useRef, useCallback } from "react";
 
-import ProductFilters from "./ProductFilters"; // New component import
-import ProductGrid from "./ProductGrid"; // New component import
-import { Skeleton } from "@/components/ui/skeleton"; // Still needed for initial full skeleton
-import { getProductServices } from "../../../api/productService";
+import ProductFilters from "./ProductFilters";
+import ProductGrid from "./ProductGrid";
+import { Skeleton } from "@/components/ui/skeleton";
 import { getCategoriesByParentId } from "../../../api/categories";
+import { getProductServices } from "../../../api/productService";
 
-
-// Helper function for debouncing (can remain here or be moved to a separate utils file)
+// Helper function for debouncing
 const debounce = (func, delay) => {
   let timeoutId;
   return (...args) => {
@@ -32,6 +31,9 @@ const ProductList = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedPriceRange, setSelectedPriceRange] = useState("all");
+  // NEW: State for Color and Size filters
+  const [selectedColor, setSelectedColor] = useState("all");
+  const [selectedSize, setSelectedSize] = useState("all");
 
   // State for category dropdown
   const [level2and3Categories, setLevel2and3Categories] = useState([]);
@@ -79,6 +81,13 @@ const ProductList = () => {
         if (minPrice) params.minPrice = minPrice;
         if (maxPrice !== "above") params.maxPrice = maxPrice;
       }
+      // NEW: Add color and size to params if not 'all'
+      if (selectedColor !== "all") {
+        params.color = selectedColor;
+      }
+      if (selectedSize !== "all") {
+        params.size = selectedSize;
+      }
 
       try {
         const response = await getProductServices(params);
@@ -118,6 +127,8 @@ const ProductList = () => {
     searchTerm,
     selectedCategory,
     selectedPriceRange,
+    selectedColor, // NEW: Add to dependencies
+    selectedSize, // NEW: Add to dependencies
   ]);
 
   // --- Effect to Fetch Categories ---
@@ -198,6 +209,17 @@ const ProductList = () => {
     resetSearch();
   };
 
+  // NEW: Handlers for Color and Size
+  const handleColorChange = (value) => {
+    setSelectedColor(value);
+    resetSearch();
+  };
+
+  const handleSizeChange = (value) => {
+    setSelectedSize(value);
+    resetSearch();
+  };
+
   if (loading && currentPage === 1) {
     // Initial loading skeleton for the whole page
     return (
@@ -252,6 +274,10 @@ const ProductList = () => {
           level2and3Categories={level2and3Categories}
           selectedPriceRange={selectedPriceRange}
           handlePriceRangeChange={handlePriceRangeChange}
+          selectedColor={selectedColor} // NEW: Pass color state
+          handleColorChange={handleColorChange} // NEW: Pass color handler
+          selectedSize={selectedSize} // NEW: Pass size state
+          handleSizeChange={handleSizeChange} // NEW: Pass size handler
         />
 
         {/* Product Grid Section */}
@@ -260,7 +286,7 @@ const ProductList = () => {
           loading={loading}
           hasMore={hasMore}
           lastProductElementRef={lastProductElementRef}
-          currentPage={currentPage} // Pass currentPage for conditional loading message
+          currentPage={currentPage}
         />
       </div>
     </section>

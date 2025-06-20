@@ -72,14 +72,14 @@ const ProductCard = ({ product }) => {
     <motion.div
       whileHover={{ scale: 1.03 }}
       transition={{ type: "spring", stiffness: 300 }}
-      className="relative bg-white border rounded-xl overflow-hidden shadow-md group"
+      className="relative bg-white border rounded-md overflow-hidden shadow-md group"
     >
       {/* Image - adjust size on mobile */}
       <img
         src={product.image}
         alt={product.title}
         className={`w-full ${
-          isMobileOrTablet ? "h-48" : "h-80"
+          isMobileOrTablet ? "h-32" : "h-80"
         } object-cover cursor-pointer`}
         onClick={handleImageClick}
       />
