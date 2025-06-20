@@ -15,13 +15,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner"; // Using sonner
 import { uploadFiles } from "../../../../api/upload";
-import { Paperclip, X, Loader2, ChevronLeft, ChevronRight } from "lucide-react"; // Import new icons
+import {
+  Paperclip,
+  X,
+  Loader2,
+  ChevronLeft,
+  ChevronRight,
+  Eye, // Import Eye icon
+  EyeOff, // Import EyeOff icon
+} from "lucide-react"; // Import new icons
 import { Badge } from "@/components/ui/badge"; // Assuming you have a Badge component from shadcn/ui
 import { useMediaQuery } from "../../../hooks/use-media-query";
 
 export function CreateVendorDialog({ children }) {
   const [open, setOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(1); // 1: Details, 2: Documents
+  const [showPassword, setShowPassword] = useState(false); // New state for password visibility
 
   const [formData, setFormData] = useState({
     name: "",
@@ -127,7 +136,8 @@ export function CreateVendorDialog({ children }) {
           uploadedDocuments = uploadResult.map((uploadedFile) => {
             // Find the original file object using its name or a unique identifier if uploadFiles provides it
             const originalFile = filesToUpload.find(
-              (f) => uploadedFile.key.includes(f.name) || uploadedFile.key === f.name
+              (f) =>
+                uploadedFile.key.includes(f.name) || uploadedFile.key === f.name
             );
             return {
               key: uploadedFile.key,
@@ -208,7 +218,9 @@ export function CreateVendorDialog({ children }) {
         <div className="flex justify-center items-center mb-6 gap-3">
           <div
             className={`flex items-center gap-2 ${
-              currentStep === 1 ? "text-purple-700 font-semibold" : "text-gray-400"
+              currentStep === 1
+                ? "text-purple-700 font-semibold"
+                : "text-gray-400"
             }`}
           >
             <div
@@ -225,7 +237,9 @@ export function CreateVendorDialog({ children }) {
           <div className="flex-grow border-t border-gray-300 w-8 mx-2"></div>
           <div
             className={`flex items-center gap-2 ${
-              currentStep === 2 ? "text-purple-700 font-semibold" : "text-gray-400"
+              currentStep === 2
+                ? "text-purple-700 font-semibold"
+                : "text-gray-400"
             }`}
           >
             <div
@@ -299,17 +313,36 @@ export function CreateVendorDialog({ children }) {
                   <Label htmlFor="password">
                     Password <span className="text-red-500">*</span>
                   </Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) =>
-                      setFormData({ ...formData, password: e.target.value })
-                    }
-                    placeholder="Set a strong password"
-                    required
-                    disabled={isSubmitting}
-                  />
+                  <div className="relative">
+                    {" "}
+                    {/* Added relative positioning */}
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"} // Toggle type based on state
+                      value={formData.password}
+                      onChange={(e) =>
+                        setFormData({ ...formData, password: e.target.value })
+                      }
+                      placeholder="Set a strong password"
+                      required
+                      disabled={isSubmitting}
+                      className="pr-10" // Add padding to the right for the icon
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-1 hover:bg-transparent" // Position the button
+                      onClick={() => setShowPassword(!showPassword)} // Toggle password visibility
+                      disabled={isSubmitting}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </Button>
+                  </div>
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="pincode">
@@ -339,7 +372,10 @@ export function CreateVendorDialog({ children }) {
                     type="number"
                     value={formData.commissionRate}
                     onChange={(e) =>
-                      setFormData({ ...formData, commissionRate: e.target.value })
+                      setFormData({
+                        ...formData,
+                        commissionRate: e.target.value,
+                      })
                     }
                     placeholder="e.g., 10"
                     required
@@ -347,12 +383,17 @@ export function CreateVendorDialog({ children }) {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="referredByCode">Referral Code (Optional)</Label>
+                  <Label htmlFor="referredByCode">
+                    Referral Code (Optional)
+                  </Label>
                   <Input
                     id="referredByCode"
                     value={formData.referredByCode}
                     onChange={(e) =>
-                      setFormData({ ...formData, referredByCode: e.target.value })
+                      setFormData({
+                        ...formData,
+                        referredByCode: e.target.value,
+                      })
                     }
                     placeholder="Enter referral code if any"
                     disabled={isSubmitting}
@@ -371,7 +412,8 @@ export function CreateVendorDialog({ children }) {
                 {/* UDYAM */}
                 <div className="grid gap-2">
                   <Label htmlFor="udyogAadharFile" className="text-base">
-                    UDYAM / Udyog Aadhaar <span className="text-red-500">*</span>
+                    UDYAM / Udyog Aadhaar{" "}
+                    <span className="text-red-500">*</span>
                   </Label>
                   <div className="flex items-center gap-2">
                     <Input
@@ -599,8 +641,8 @@ export function CreateVendorDialog({ children }) {
                 >
                   {isSubmitting ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
-                      Creating Vendor...
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating
+                      Vendor...
                     </>
                   ) : (
                     "Create Vendor"

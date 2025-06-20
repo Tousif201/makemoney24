@@ -14,11 +14,18 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Paperclip, X, Loader2 } from "lucide-react"; // Icons for files and loading
+import {
+  Paperclip,
+  X,
+  Loader2,
+  Eye, // Import Eye icon
+  EyeOff, // Import EyeOff icon
+} from "lucide-react"; // Icons for files, loading, and password visibility
 import { uploadFiles } from "../../../../api/upload"; // Import your file upload API
 
 export function CreateFranchiseDialog({ children }) {
   const [open, setOpen] = useState(false);
+  const [showPassword, setShowPassword] = useState(false); // New state for password visibility
   const [formData, setFormData] = useState({
     franchiseName: "",
     location: "",
@@ -27,7 +34,6 @@ export function CreateFranchiseDialog({ children }) {
     ownerPhone: "",
     ownerPassword: "",
     ownerPincode: "",
-    // --- NEW: Add address field to formData ---
     ownerAddress: "",
     referredByCode: "",
   });
@@ -56,13 +62,23 @@ export function CreateFranchiseDialog({ children }) {
     });
 
     try {
-      // --- 1. Validate mandatory files ---
+      // --- 1. Validate mandatory fields and files ---
       if (!aadhaarFile || !panFile) {
         throw new Error("Aadhaar and PAN documents are mandatory.");
       }
-      // --- NEW: Add validation for ownerAddress ---
       if (!formData.ownerAddress.trim()) {
         throw new Error("Owner Address is mandatory.");
+      }
+      if (
+        !formData.franchiseName ||
+        !formData.location ||
+        !formData.ownerName ||
+        !formData.ownerEmail ||
+        !formData.ownerPhone ||
+        !formData.ownerPassword ||
+        !formData.ownerPincode
+      ) {
+        throw new Error("Please fill in all mandatory details.");
       }
 
       // --- 2. Collect all files for upload ---
@@ -92,9 +108,9 @@ export function CreateFranchiseDialog({ children }) {
                 filesToUpload.find(
                   (f) =>
                     f.name === uploadedFile.key ||
-                    (uploadedFile.key && f.name.includes(uploadedFile.key))
+                    (uploadedFile.key && uploadedFile.key.includes(f.name))
                 )
-              ) || "Other Document",
+              ) || "Other Document", // Fallback if exact name match isn't found
           }));
         } else {
           toast.error(
@@ -112,12 +128,12 @@ export function CreateFranchiseDialog({ children }) {
         salesRepId,
         kycDocuments: uploadedDocuments,
         address: formData.ownerAddress,
-        franchisePincode:formData.ownerPincode // Attach the uploaded documents
+        franchisePincode: formData.ownerPincode, // Attach the uploaded documents
       };
 
       // --- 4. Create the franchise ---
       const result = await CreateFranchise(payload);
-      window.location.reload()
+      window.location.reload(); // Consider using a state update or context refresh instead of full reload
       toast.success("Franchise created successfully!", {
         id: "createFranchiseToast",
       });
@@ -131,7 +147,6 @@ export function CreateFranchiseDialog({ children }) {
         ownerPhone: "",
         ownerPassword: "",
         ownerPincode: "",
-        // --- NEW: Reset ownerAddress ---
         ownerAddress: "",
         referredByCode: "",
       });
@@ -237,17 +252,39 @@ export function CreateFranchiseDialog({ children }) {
                 <Label htmlFor="ownerPassword">
                   Owner Password <span className="text-red-500">*</span>
                 </Label>
-                <Input
-                  id="ownerPassword"
-                  type="password"
-                  value={formData.ownerPassword}
-                  onChange={(e) =>
-                    setFormData({ ...formData, ownerPassword: e.target.value })
-                  }
-                  placeholder="password"
-                  required
-                  disabled={isSubmitting}
-                />
+                <div className="relative">
+                  {" "}
+                  {/* Added relative positioning */}
+                  <Input
+                    id="ownerPassword"
+                    type={showPassword ? "text" : "password"} // Toggle type based on state
+                    value={formData.ownerPassword}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        ownerPassword: e.target.value,
+                      })
+                    }
+                    placeholder="password"
+                    required
+                    disabled={isSubmitting}
+                    className="pr-10" // Add padding to the right for the icon
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-1 hover:bg-transparent" // Position the button
+                    onClick={() => setShowPassword(!showPassword)} // Toggle password visibility
+                    disabled={isSubmitting}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </Button>
+                </div>
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="ownerPincode">
@@ -267,7 +304,6 @@ export function CreateFranchiseDialog({ children }) {
               </div>
             </div>
 
-            {/* --- NEW: Owner Address Field --- */}
             <div className="grid gap-2">
               <Label htmlFor="ownerAddress">
                 Owner Address <span className="text-red-500">*</span>
@@ -279,11 +315,10 @@ export function CreateFranchiseDialog({ children }) {
                   setFormData({ ...formData, ownerAddress: e.target.value })
                 }
                 placeholder="Enter full address"
-                required // Make mandatory
+                required
                 disabled={isSubmitting}
               />
             </div>
-            {/* --- END NEW: Owner Address Field --- */}
 
             <div className="grid gap-2">
               <Label htmlFor="franchise-location">
@@ -313,8 +348,7 @@ export function CreateFranchiseDialog({ children }) {
               />
             </div>
           </div>
-
-          {/* --- Document Upload Fields --- */}
+          ---
           <h3 className="text-lg font-semibold mt-4 mb-2">
             Required Documents
           </h3>
@@ -330,7 +364,7 @@ export function CreateFranchiseDialog({ children }) {
                   type="file"
                   onChange={handleFileChange(setAadhaarFile)}
                   accept="image/*,.pdf"
-                  required // Make mandatory
+                  required
                   disabled={isSubmitting}
                   className="pr-2"
                 />
@@ -347,6 +381,7 @@ export function CreateFranchiseDialog({ children }) {
               </div>
               {aadhaarFile && (
                 <span className="text-sm text-muted-foreground">
+                  <Paperclip className="inline-block h-3 w-3 mr-1" />
                   {aadhaarFile.name}
                 </span>
               )}
@@ -363,7 +398,7 @@ export function CreateFranchiseDialog({ children }) {
                   type="file"
                   onChange={handleFileChange(setPanFile)}
                   accept="image/*,.pdf"
-                  required // Make mandatory
+                  required
                   disabled={isSubmitting}
                   className="pr-2"
                 />
@@ -380,12 +415,12 @@ export function CreateFranchiseDialog({ children }) {
               </div>
               {panFile && (
                 <span className="text-sm text-muted-foreground">
+                  <Paperclip className="inline-block h-3 w-3 mr-1" />
                   {panFile.name}
                 </span>
               )}
             </div>
           </div>
-
           <DialogFooter className="w-full px-0 mt-6">
             <div className="flex w-full justify-between">
               <Button

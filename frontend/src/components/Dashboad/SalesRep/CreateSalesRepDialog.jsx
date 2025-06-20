@@ -17,6 +17,8 @@ import {
   CheckCircle,
   AlertCircle,
   Loader2,
+  Eye, // Import Eye icon
+  EyeOff, // Import EyeOff icon
 } from "lucide-react"
 
 // Import your API functions
@@ -42,6 +44,7 @@ export function CreateSalesRepDialog({ open, onOpenChange, onSubmit, loading, se
   const [currentStep, setCurrentStep] = useState(1)
   const [documentUploadLoading, setDocumentUploadLoading] = useState(false)
   const [documentUploadError, setDocumentUploadError] = useState(null)
+  const [showPassword, setShowPassword] = useState(false) // New state for password visibility
 
 
   const handleFileUpload = async (documentType, file) => {
@@ -177,7 +180,33 @@ export function CreateSalesRepDialog({ open, onOpenChange, onSubmit, loading, se
                   <Input placeholder="Full Name" type= "text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
                   <Input placeholder="Email" type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} required />
                   <Input placeholder="Phone" type ="number" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} required />
-                  <Input placeholder="Password" type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} required />
+                  
+                  {/* Password Field with Eye Button */}
+                  <div className="relative">
+                    <Input
+                      placeholder="Password"
+                      type={showPassword ? "text" : "password"} // Toggle type
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      required
+                      className="pr-10" // Add padding for the icon
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-1 hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
+                      disabled={loading || documentUploadLoading}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </Button>
+                  </div>
+
                   <Input placeholder="Pincode" value={formData.pincode} onChange={(e) => setFormData({ ...formData, pincode: e.target.value })} required />
                 </CardContent>
               </Card>
