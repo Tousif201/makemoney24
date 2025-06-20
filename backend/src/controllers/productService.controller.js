@@ -204,6 +204,9 @@ export const getProductServices = async (req, res) => {
       order,
       page,
       limit,
+      // --- NEW: Accepting color and size query parameters ---
+      color,
+      size,
     } = req.query;
 
     const filter = {
@@ -212,9 +215,8 @@ export const getProductServices = async (req, res) => {
 
     let sort = { createdAt: -1 };
 
-    // --- MODIFIED: Category Filtering Logic ---
+    // --- Category Filtering Logic (No changes here) ---
     if (categoryId) {
-      // 1. Get the initial list of IDs from the query string
       const initialCategoryIds = categoryId
         .split(",")
         .map((id) => id.trim())
@@ -226,15 +228,13 @@ export const getProductServices = async (req, res) => {
           .json({ message: "Invalid Category ID format(s)." });
       }
 
-      // 2. Use the helper function to get the initial IDs PLUS all their descendants
       const allApplicableCategoryIds = await getAllDescendantCategoryIds(initialCategoryIds);
-
-      // 3. Use this complete list in the filter
       filter.categoryId = {
         $in: allApplicableCategoryIds.map((id) => new mongoose.Types.ObjectId(id)),
       };
     }
 
+    // --- Other filters (No changes here) ---
     if (vendorId) {
       if (!isValidObjectId(vendorId)) {
         return res.status(400).json({ message: "Invalid User ID format for vendorId." });
@@ -266,7 +266,42 @@ export const getProductServices = async (req, res) => {
       if (minPrice) filter.price.$gte = parseFloat(minPrice);
       if (maxPrice) filter.price.$lte = parseFloat(maxPrice);
     }
+    
+    // ========================================================================
+    // --- ✅ NEW: Filtering by product variants (color and size) ---
+    // ========================================================================
+    const variantConditions = {};
 
+    // If 'color' query parameter exists, add it to our variant conditions.
+    // This supports multiple comma-separated values (e.g., "Red,Blue").
+    if (color) {
+      const colors = color.split(',').map(c => c.trim()).filter(Boolean);
+      if (colors.length > 0) {
+        variantConditions.color = { $in: colors };
+      }
+    }
+
+    // If 'size' query parameter exists, add it to our variant conditions.
+    // This also supports multiple comma-separated values (e.g., "M,L,XL").
+    if (size) {
+      const sizes = size.split(',').map(s => s.trim()).filter(Boolean);
+      if (sizes.length > 0) {
+        variantConditions.size = { $in: sizes };
+      }
+    }
+    
+    // If there are any variant conditions, add the $elemMatch filter.
+    // This ensures we find products where a *single* variant element
+    // matches all the specified criteria (e.g., color AND size).
+    if (Object.keys(variantConditions).length > 0) {
+      filter.variants = { $elemMatch: variantConditions };
+    }
+    // ========================================================================
+    // --- End of New Variant Filtering Logic ---
+    // ========================================================================
+
+
+    // --- Sorting Logic (No changes here) ---
     if (sortBy) {
       const sortOrder = order === "asc" ? 1 : -1;
       const allowedSortFields = ["price", "createdAt", "title", "rating"];
@@ -279,10 +314,12 @@ export const getProductServices = async (req, res) => {
         console.warn(`Invalid sortBy field received: ${sortBy}. Defaulting to createdAt.`);
       }
     }
-
+    
+    // --- Pagination and Execution (No changes here) ---
     const pageNum = parseInt(page, 10) || 1;
     const limitNum = parseInt(limit, 10) || 10;
     const skip = (pageNum - 1) * limitNum;
+
     const totalCount = await ProductService.countDocuments(filter);
     const totalPages = Math.ceil(totalCount / limitNum);
 
