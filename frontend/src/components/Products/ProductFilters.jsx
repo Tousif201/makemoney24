@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/drawer";
 import {
   ArrowDownWideNarrow,
-  ListFilter,
   Search,
   SlidersHorizontal, // Icon for the main "Filters" button
 } from "lucide-react";
@@ -27,7 +26,8 @@ const ProductFilters = ({
   sortBy,
   sortOrder,
   handleSortChange,
-
+  // Note: selectedCategory and handleCategoryChange are no longer used here if category drawer is removed.
+  // If you re-add a category filter elsewhere, ensure these props are passed.
   selectedPriceRange,
   handlePriceRangeChange,
   selectedColor,
@@ -35,21 +35,23 @@ const ProductFilters = ({
   selectedSize,
   handleSizeChange,
 }) => {
-  // State to control the single main drawer visibility
+  // State to control the visibility of the "Sort By" drawer
+  const [isSortDrawerOpen, setIsSortDrawerOpen] = useState(false);
+  // State to control the visibility of the combined "Filters" drawer
   const [isFiltersDrawerOpen, setIsFiltersDrawerOpen] = useState(false);
 
-  // Example data for color and size (replace with actual data from your backend if available)
+  // Example data for color (now including both name and hex/css value for swatches)
   const colors = [
-    "Red",
-    "Blue",
-    "Green",
-    "Black",
-    "White",
-    "Yellow",
-    "Gray",
-    "Brown",
-    "Purple",
-    "Orange",
+    { name: "Red", value: "red" },
+    { name: "Blue", value: "blue" },
+    { name: "Green", value: "green" },
+    { name: "Black", value: "black" },
+    { name: "White", value: "white" }, // White text on white background needs border
+    { name: "Yellow", value: "yellow" },
+    { name: "Gray", value: "gray" },
+    { name: "Brown", value: "brown" },
+    { name: "Purple", value: "purple" },
+    { name: "Orange", value: "orange" },
   ];
   const sizes = ["XS", "S", "M", "L", "XL", "XXL", "One Size"];
 
@@ -75,11 +77,8 @@ const ProductFilters = ({
       </div>
 
       <div className="flex space-x-2">
-        {/* Sort By Drawer (remains separate as it's a sort, not a filter) */}
-        <Drawer
-          open={sortBy !== "createdAt" || sortOrder !== "desc"}
-          onOpenChange={handleSortChange}
-        >
+        {/* Sort By Drawer - NOW CONTROLLED BY isSortDrawerOpen STATE */}
+        <Drawer open={isSortDrawerOpen} onOpenChange={setIsSortDrawerOpen}>
           <DrawerTrigger asChild>
             <Button variant="outline" className="flex items-center gap-2">
               <ArrowDownWideNarrow className="h-4 w-4" />
@@ -104,6 +103,7 @@ const ProductFilters = ({
                     }
                     onClick={() => {
                       handleSortChange("createdAt-desc");
+                      setIsSortDrawerOpen(false); // Close drawer on selection
                     }}
                   >
                     Default (Newest)
@@ -116,6 +116,7 @@ const ProductFilters = ({
                     }
                     onClick={() => {
                       handleSortChange("price-asc");
+                      setIsSortDrawerOpen(false); // Close drawer on selection
                     }}
                   >
                     Price: Low to High
@@ -128,6 +129,7 @@ const ProductFilters = ({
                     }
                     onClick={() => {
                       handleSortChange("price-desc");
+                      setIsSortDrawerOpen(false); // Close drawer on selection
                     }}
                   >
                     Price: High to Low
@@ -140,6 +142,7 @@ const ProductFilters = ({
                     }
                     onClick={() => {
                       handleSortChange("title-asc");
+                      setIsSortDrawerOpen(false); // Close drawer on selection
                     }}
                   >
                     Alphabetical (A-Z)
@@ -152,6 +155,7 @@ const ProductFilters = ({
                     }
                     onClick={() => {
                       handleSortChange("title-desc");
+                      setIsSortDrawerOpen(false); // Close drawer on selection
                     }}
                   >
                     Alphabetical (Z-A)
@@ -263,18 +267,30 @@ const ProductFilters = ({
                           selectedColor === "all" ? "default" : "outline"
                         }
                         onClick={() => handleColorChange("all")}
+                        className="flex items-center justify-center gap-2" // Center content in button
                       >
                         All Colors
                       </Button>
                       {colors.map((color) => (
                         <Button
-                          key={color}
+                          key={color.value} // Use color.value for key
                           variant={
-                            selectedColor === color ? "default" : "outline"
+                            selectedColor === color.value
+                              ? "default"
+                              : "outline"
                           }
-                          onClick={() => handleColorChange(color)}
+                          onClick={() => handleColorChange(color.value)}
+                          className="flex items-center justify-center gap-2" // Center content in button
                         >
-                          {color}
+                          <span
+                            className={`inline-block w-4 h-4 rounded-full ${
+                              color.value === "white"
+                                ? "border border-gray-300"
+                                : "" // Add border for white swatch
+                            }`}
+                            style={{ backgroundColor: color.value }}
+                          ></span>
+                          {color.name}
                         </Button>
                       ))}
                     </div>

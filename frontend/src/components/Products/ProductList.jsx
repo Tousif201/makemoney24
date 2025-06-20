@@ -29,15 +29,12 @@ const ProductList = () => {
   const [sortBy, setSortBy] = useState("createdAt");
   const [sortOrder, setSortOrder] = useState("desc");
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedPriceRange, setSelectedPriceRange] = useState("all");
   // NEW: State for Color and Size filters
   const [selectedColor, setSelectedColor] = useState("all");
   const [selectedSize, setSelectedSize] = useState("all");
 
   // State for category dropdown
-  const [level2and3Categories, setLevel2and3Categories] = useState([]);
-
   // Ref to detect if a filter/sort has changed, which requires resetting products
   const isNewSearch = useRef(false);
 
@@ -73,9 +70,7 @@ const ProductList = () => {
       if (searchTerm) {
         params.title = searchTerm;
       }
-      if (selectedCategory !== "all") {
-        params.categoryId = selectedCategory;
-      }
+
       if (selectedPriceRange !== "all") {
         const [minPrice, maxPrice] = selectedPriceRange.split("-");
         if (minPrice) params.minPrice = minPrice;
@@ -125,47 +120,10 @@ const ProductList = () => {
     sortBy,
     sortOrder,
     searchTerm,
-    selectedCategory,
     selectedPriceRange,
     selectedColor, // NEW: Add to dependencies
     selectedSize, // NEW: Add to dependencies
   ]);
-
-  // --- Effect to Fetch Categories ---
-  useEffect(() => {
-    const fetchAllHierarchicalCategories = async () => {
-      try {
-        const fetchedL2L3Categories = [];
-        const productTopLevel = await getCategoriesByParentId(
-          "null",
-          "product"
-        );
-        const serviceTopLevel = await getCategoriesByParentId(
-          "null",
-          "service"
-        );
-        const allTopLevel = [...productTopLevel, ...serviceTopLevel];
-        for (const topCat of allTopLevel) {
-          const level2Cats = await getCategoriesByParentId(
-            topCat._id,
-            topCat.type
-          );
-          fetchedL2L3Categories.push(...level2Cats);
-          for (const level2Cat of level2Cats) {
-            const level3Cats = await getCategoriesByParentId(
-              level2Cat._id,
-              level2Cat.type
-            );
-            fetchedL2L3Categories.push(...level3Cats);
-          }
-        }
-        setLevel2and3Categories(fetchedL2L3Categories);
-      } catch (err) {
-        console.error("Error fetching hierarchical categories:", err);
-      }
-    };
-    fetchAllHierarchicalCategories();
-  }, []);
 
   // --- Handlers now reset the page to 1 on any filter change ---
   const resetSearch = () => {
@@ -197,11 +155,6 @@ const ProductList = () => {
     const value = e.target.value;
     setSearchInput(value);
     debouncedSetSearchTerm(value);
-  };
-
-  const handleCategoryChange = (value) => {
-    setSelectedCategory(value);
-    resetSearch();
   };
 
   const handlePriceRangeChange = (value) => {
@@ -269,9 +222,6 @@ const ProductList = () => {
           sortBy={sortBy}
           sortOrder={sortOrder}
           handleSortChange={handleSortChange}
-          selectedCategory={selectedCategory}
-          handleCategoryChange={handleCategoryChange}
-          level2and3Categories={level2and3Categories}
           selectedPriceRange={selectedPriceRange}
           handlePriceRangeChange={handlePriceRangeChange}
           selectedColor={selectedColor} // NEW: Pass color state
