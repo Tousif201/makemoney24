@@ -52,7 +52,7 @@ const ServiesList = () => {
     return (
       <section className="bg-white py-0 sm:py-16 md:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="md:text-4xl text-3xl font-extrabold text-gray-900 text-center mb-12">
+          <h2 className="md:text-4xl text-2xl font-extrabold text-gray-900 text-center mb-12">
             Featured Services
           </h2>
           <div className="grid gap-6 sm:gap-8 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4">
@@ -91,7 +91,7 @@ const ServiesList = () => {
   if (products.length === 0) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-12 sm:py-16 text-center bg-gray-50 rounded-lg shadow-lg my-8">
-        <h2 className="md:text-4xl text-3xl font-extrabold text-gray-900 mb-4">
+        <h2 className="md:text-4xl text-2xl font-extrabold text-gray-900 mb-4">
           Featured Services
         </h2>
         <p className="text-lg text-gray-600">
@@ -104,7 +104,7 @@ const ServiesList = () => {
   return (
     <section className="bg-white  sm:py-16 md:py-20">
       <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-        <h2 className="md:text-4xl text-3xl font-extrabold text-gray-900 text-center mb-12">
+        <h2 className="md:text-4xl text-2xl font-extrabold text-gray-900 text-center mb-12">
           Featured Services
         </h2>
         <div className="grid gap-2 sm:gap-8 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4">

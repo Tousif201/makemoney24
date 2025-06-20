@@ -265,7 +265,7 @@ export default function Navbar() {
         {/* Mobile Menu Toggle */}
         <div className="sm:hidden flex justify-center items-center space-x-4">
           <CartSheet />
-          {isLoggedIn && (
+          {/* {isLoggedIn && (
             <Link to="/dashboard">
               <Button
                 variant="ghost"
@@ -275,7 +275,7 @@ export default function Navbar() {
                 <User size={20} />
               </Button>
             </Link>
-          )}
+          )} */}
           <button
             className="sm:hidden text-gray-700 focus:outline-none p-2 rounded-md hover:bg-gray-100"
             onClick={() => setIsOpen(!isOpen)}
