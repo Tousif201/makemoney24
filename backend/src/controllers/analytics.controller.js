@@ -731,6 +731,131 @@ export const getAdminHomeAnalytics = async (req, res) => {
  */
 // const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
+/**
+ * =================================================================================
+ * NEW HELPER FUNCTION: To calculate multi-level referral earnings.
+ * This function encapsulates the complex aggregation logic.
+ * =================================================================================
+ */
+const calculateReferralEarnings = async (userId) => {
+  // Define date ranges for the queries
+  const now = new Date();
+  const todayStart = new Date(new Date(now).setHours(0, 0, 0, 0));
+  const weekStart = new Date(new Date().setDate(now.getDate() - 7));
+  const monthStart = new Date(new Date().setDate(now.getDate() - 30));
+
+  const earningsPipeline = [
+    // Stage 1: Start with the specific user we're analyzing
+    {
+      $match: { _id: userId },
+    },
+    // Stage 2: Find all descendants (referrals) up to 4 levels deep.
+    // Level 0 = direct referrals (Level 1 for earning), Level 1 = referrals of referrals (Level 2), etc.
+    {
+      $graphLookup: {
+        from: "users",
+        startWith: "$_id",
+        connectFromField: "_id",
+        connectToField: "parent",
+        as: "referralHierarchy",
+        maxDepth: 3, // maxDepth: 0 finds children (L1), 1 finds grandchildren (L2), 2 for L3, 3 for L4
+        depthField: "level", // This adds a 'level' field (0, 1, 2, 3) to each document
+      },
+    },
+    // Stage 3: Deconstruct the hierarchy array to process each referral individually
+    {
+      $unwind: "$referralHierarchy",
+    },
+    // Stage 4: Make the referral the root of the document for easier processing
+    {
+      $replaceRoot: { newRoot: "$referralHierarchy" },
+    },
+    // Stage 5: Join with the memberships collection to find their purchases
+    {
+      $lookup: {
+        from: "memberships",
+        localField: "_id", // The referral's user ID
+        foreignField: "userId",
+        as: "membershipInfo",
+      },
+    },
+    // Stage 6: Deconstruct the membershipInfo array (in case a user buys multiple)
+    {
+      $unwind: "$membershipInfo",
+    },
+    // Stage 7: Calculate the earning for each membership purchase based on the level
+    {
+      $project: {
+        _id: 0,
+        purchasedAt: "$membershipInfo.purchasedAt",
+        earning: {
+          $switch: {
+            branches: [
+              { // Level 1 referral (depth 0) -> 30%
+                case: { $eq: ["$level", 0] },
+                then: { $multiply: ["$membershipInfo.amountPaid", 0.30] },
+              },
+              { // Level 2 referral (depth 1) -> 10%
+                case: { $eq: ["$level", 1] },
+                then: { $multiply: ["$membershipInfo.amountPaid", 0.10] },
+              },
+              { // Level 3 referral (depth 2) -> 2.5%
+                case: { $eq: ["$level", 2] },
+                then: { $multiply: ["$membershipInfo.amountPaid", 0.025] },
+              },
+              { // Level 4 referral (depth 3) -> 2.5%
+                case: { $eq: ["$level", 3] },
+                then: { $multiply: ["$membershipInfo.amountPaid", 0.025] },
+              },
+            ],
+            default: 0, // Should not happen if maxDepth is set correctly
+          },
+        },
+      },
+    },
+    // Stage 8: Group the calculated earnings into time-based buckets
+    {
+      $facet: {
+        today: [
+          { $match: { purchasedAt: { $gte: todayStart } } },
+          { $group: { _id: "todayEarning", total: { $sum: "$earning" } } },
+        ],
+        weekly: [
+          { $match: { purchasedAt: { $gte: weekStart } } },
+          { $group: { _id: "weeklyEarning", total: { $sum: "$earning" } } },
+        ],
+        monthly: [
+          { $match: { purchasedAt: { $gte: monthStart } } },
+          { $group: { _id: "monthlyEarning", total: { $sum: "$earning" } } },
+        ],
+        total: [
+          { $group: { _id: "totalEarning", total: { $sum: "$earning" } } },
+        ],
+      },
+    },
+  ];
+
+  const result = await User.aggregate(earningsPipeline);
+
+  // Process the faceted result, providing default 0 values
+  if (!result || result.length === 0) {
+    return { today: 0, weekly: 0, monthly: 0, total: 0 };
+  }
+
+  const earningsData = result[0];
+  return {
+    today: earningsData.today[0]?.total || 0,
+    weekly: earningsData.weekly[0]?.total || 0,
+    monthly: earningsData.monthly[0]?.total || 0,
+    total: earningsData.total[0]?.total || 0,
+  };
+};
+
+/**
+ * =================================================================================
+ * UPDATED MAIN CONTROLLER
+ * =================================================================================
+ */
 export const getUserHomeAnalytics = async (req, res) => {
   const { userId } = req.params;
 
@@ -744,7 +869,7 @@ export const getUserHomeAnalytics = async (req, res) => {
   try {
     const objectUserId = new mongoose.Types.ObjectId(userId);
 
-    // Define date ranges for the queries
+    // Define date ranges for other queries
     const now = new Date();
     const todayStart = new Date(new Date(now).setHours(0, 0, 0, 0));
     const weekStart = new Date(new Date().setDate(now.getDate() - 7));
@@ -754,7 +879,7 @@ export const getUserHomeAnalytics = async (req, res) => {
     const [
       user,
       referralStats,
-      levelIncomeStats,
+      levelIncome, // *** CHANGED: This now holds the result of our new function
       totalWithdrawalResult,
       totalOrdersCount,
       recentReferrals,
@@ -765,14 +890,9 @@ export const getUserHomeAnalytics = async (req, res) => {
         .select("withdrawableWallet purchaseWallet")
         .lean(),
 
-      // 1. Aggregate new referral members by time periods
+      // 1. Aggregate new referral members by time periods (No changes here)
       User.aggregate([
-        {
-          $match: {
-            parent: objectUserId,
-            isMember: true,
-          },
-        },
+        { $match: { parent: objectUserId, isMember: true } },
         {
           $facet: {
             today: [
@@ -792,36 +912,10 @@ export const getUserHomeAnalytics = async (req, res) => {
         },
       ]),
 
-      // 2. Aggregate level income by time periods
-      RewardLog.aggregate([
-        {
-          $match: {
-            userId: objectUserId,
-            type: "ReferralLevelReward",
-          },
-        },
-        {
-          $facet: {
-            today: [
-              { $match: { createdAt: { $gte: todayStart } } },
-              { $group: { _id: null, total: { $sum: "$amount" } } },
-            ],
-            thisWeek: [
-              { $match: { createdAt: { $gte: weekStart } } },
-              { $group: { _id: null, total: { $sum: "$amount" } } },
-            ],
-            thisMonth: [
-              { $match: { createdAt: { $gte: monthStart } } },
-              { $group: { _id: null, total: { $sum: "$amount" } } },
-            ],
-            total: [
-              { $group: { _id: null, total: { $sum: "$amount" } } },
-            ],
-          },
-        },
-      ]),
+      // 2. *** CHANGED: Calculate level income using the new, more accurate function
+      calculateReferralEarnings(objectUserId),
 
-      // 3. Calculate total withdrawal
+      // 3. Calculate total withdrawal (No changes here)
       Transaction.aggregate([
         {
           $match: {
@@ -833,7 +927,7 @@ export const getUserHomeAnalytics = async (req, res) => {
         { $group: { _id: null, total: { $sum: "$amount" } } },
       ]),
 
-      // Other general stats
+      // Other general stats (No changes here)
       Order.countDocuments({ userId: objectUserId }),
       User.find({ parent: objectUserId, isMember: true })
         .sort({ joinedAt: -1 })
@@ -853,21 +947,12 @@ export const getUserHomeAnalytics = async (req, res) => {
 
     // --- Safely extract the new aggregated data ---
     const referralData = referralStats[0];
-    const incomeData = levelIncomeStats[0];
     
     const referralCounts = {
       today: referralData.today[0]?.count || 0,
       thisWeek: referralData.thisWeek[0]?.count || 0,
       thisMonth: referralData.thisMonth[0]?.count || 0,
       total: referralData.total[0]?.count || 0,
-    };
-
-    // This object holds the calculated level income.
-    const levelIncome = {
-      today: incomeData.today[0]?.total || 0,
-      thisWeek: incomeData.thisWeek[0]?.total || 0,
-      thisMonth: incomeData.thisMonth[0]?.total || 0,
-      total: incomeData.total[0]?.total || 0,
     };
 
     const totalWithdrawal = totalWithdrawalResult[0]?.total || 0;
@@ -880,10 +965,10 @@ export const getUserHomeAnalytics = async (req, res) => {
       withdrawableWallet: user.withdrawableWallet,
       purchaseWallet: user.purchaseWallet,
 
-      // Renamed earnings fields as requested
+      // Renamed earnings fields, now populated by the new logic
       todayEarning: levelIncome.today,
-      weeklyEarning: levelIncome.thisWeek,
-      monthlyEarning: levelIncome.thisMonth,
+      weeklyEarning: levelIncome.weekly,
+      monthlyEarning: levelIncome.monthly,
       totalEarning: levelIncome.total,
 
       // New referral join counts
