@@ -302,7 +302,17 @@ export const deleteCategory = async (req, res) => {
  */
 export const getAllCategoriesWithImages = async (req, res) => {
   try {
-    const categories = await Category.find({});
+    const { categoryType } = req.query; // Get the categoryType from query parameters
+
+    let categoryFilter = {}; // Initialize an empty filter object
+
+    // If categoryType is provided, add it to the filter
+    if (categoryType) {
+      categoryFilter.type = categoryType;
+    }
+
+    const categories = await Category.find(categoryFilter); // Apply the filter here
+    
     const categoriesWithImages = await Promise.all(
       categories.map(async (category) => {
         let imageUrl = null;
@@ -345,6 +355,7 @@ export const getAllCategoriesWithImages = async (req, res) => {
     });
   }
 };
+
 
 /**
  * @desc Recursive helper function to get all subcategories of a given parent
