@@ -52,8 +52,8 @@ const ServiesList = () => {
     return (
       <section className="bg-white py-0 sm:py-16 md:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-4xl sm:text-5xl font-extrabold text-gray-900 text-center mb-12">
-            Featured Products
+          <h2 className="md:text-4xl text-3xl font-extrabold text-gray-900 text-center mb-12">
+            Featured Services
           </h2>
           <div className="grid gap-6 sm:gap-8 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4">
             {/* Skeleton Loader for 8 product cards */}
@@ -91,12 +91,11 @@ const ServiesList = () => {
   if (products.length === 0) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-12 sm:py-16 text-center bg-gray-50 rounded-lg shadow-lg my-8">
-        <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-4">
-          Latest Products
+        <h2 className="md:text-4xl text-3xl font-extrabold text-gray-900 mb-4">
+          Featured Services
         </h2>
         <p className="text-lg text-gray-600">
-          No services available at the moment. Please check back
-          soon!
+          No services available at the moment. Please check back soon!
         </p>
       </div>
     );
@@ -105,8 +104,8 @@ const ServiesList = () => {
   return (
     <section className="bg-white  sm:py-16 md:py-20">
       <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-        <h2 className="text-4xl sm:text-5xl font-extrabold text-gray-900 text-center mb-12">
-          Featured Products
+        <h2 className="md:text-4xl text-3xl font-extrabold text-gray-900 text-center mb-12">
+          Featured Services
         </h2>
         <div className="grid gap-2 sm:gap-8 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4">
           {products.map((product) => (
@@ -124,34 +123,6 @@ const ServiesList = () => {
               }}
             />
           ))}
-        </div>
-
-        {/* Button to see all products */}
-        <div className="mt-12 text-center">
-          <Link
-            to="/browse?type=service"
-            className="inline-flex items-center justify-center px-8 py-3 border border-transparent  font-medium rounded-full text-white bg-indigo-600 hover:bg-indigo-700 md:py-4 md:px-10 text-lg shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105"
-          >
-            See All Products
-            <svg
-              className="ml-3 -mr-1 h-5 w-5"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              aria-hidden="true"
-            >
-              <path
-                fillRule="evenodd"
-                d="M10.293 15.707a1 1 0 010-1.414L14.586 10l-4.293-4.293a1 1 0 111.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0z"
-                clipRule="evenodd"
-              />
-              <path
-                fillRule="evenodd"
-                d="M4.293 15.707a1 1 0 010-1.414L8.586 10 4.293 5.707a1 1 0 011.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </Link>
         </div>
       </div>
     </section>

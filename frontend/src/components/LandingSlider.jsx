@@ -149,3 +149,5 @@ const LandingSlider = () => {
 };
 
 export default LandingSlider;
+
+

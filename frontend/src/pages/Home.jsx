@@ -1,21 +1,19 @@
-import Banner from "../components/Banner";
-import BrandSlider from "../components/BrandSlider";
-import CategoryCard from "../components/CategoryCard";
+
+import CategoryScrollSlider from "../components/CategoryScrollSlider";
 import LandingSlider from "../components/LandingSlider";
 import ProductList from "../components/ProductList";
-import UserScrollSlider from "../components/UserScrollSlider";
-import UserScrollslider from "../components/UserScrollSlider";
+import ServiesList from "../components/ServiesList";
 import HomePageAnimation from "./HomePageAnimation";
 
 export default function Home() {
   return (
     <div className="p-4 space-y-8">
       <LandingSlider />
-      <UserScrollSlider />
-      
+      <CategoryScrollSlider type={"product"} />
       <ProductList />
-
       <HomePageAnimation />
+      <CategoryScrollSlider type={"service"} />
+      <ServiesList />
 
       {/* <BrandSlider /> */}
     </div>

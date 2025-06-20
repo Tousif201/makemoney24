@@ -161,14 +161,23 @@ export const deleteCategory = async (id) => {
 };
 
 /**
- * @desc Fetches all categories with a representative image.
- * @route GET /api/categories-with-images
+ * @desc Fetches all categories with a representative image, optionally filtered by type.
+ * @route GET /api/categories-with-images?categoryType={type}
+ * @param {string} [type] - Optional. The type of category to filter by (e.g., "product", "service").
  * @returns {Promise<CategoryWithImageResponse[]>} A promise that resolves to an array of category objects with an image URL.
  * @throws {Error} Throws an error if the API call fails.
  */
-export const getAllCategoriesWithImages = async () => {
+export const getAllCategoriesWithImages = async (type) => {
   try {
-    const response = await apiClient.get("/categories-with-images");
+    const params = {}; // Initialize an empty params object
+
+    // If a type is provided, add it to the params
+    if (type) {
+      params.categoryType = type;
+    }
+console.log(type, "type in getAllCategoriesWithImages");
+    // Make the GET request, passing the params object
+    const response = await apiClient.get("/categories-with-images", { params });
     return response.data;
   } catch (error) {
     console.error(
@@ -178,7 +187,6 @@ export const getAllCategoriesWithImages = async () => {
     throw error;
   }
 };
-
 /**
  * @desc Fetches all categories and their nested subcategories.
  * @route GET /api/categories/nested

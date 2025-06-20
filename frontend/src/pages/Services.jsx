@@ -1,14 +1,14 @@
 
 import LandingSlider from "../components/LandingSlider";
 import ServiesList from "../components/ServiesList";
-import UserScrollSlider from "../components/UserScrollSlider";
 import HomePageAnimation from "./HomePageAnimation";
+import ProductCategoryScrollSlider from "../components/CategoryScrollSlider";
 
 const Services = () => {
   return (
     <>
       <LandingSlider />
-      <UserScrollSlider />
+      <ProductCategoryScrollSlider />
       <ServiesList />
       <HomePageAnimation />
     </>

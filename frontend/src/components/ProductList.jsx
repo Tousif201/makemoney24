@@ -101,7 +101,8 @@ const ProductList = () => {
             }
             // Filter out duplicates before appending
             const newProducts = response.data.filter(
-              (newProd) => !prevProducts.some((prevProd) => prevProd._id === newProd._id)
+              (newProd) =>
+                !prevProducts.some((prevProd) => prevProd._id === newProd._id)
             );
             return [...prevProducts, ...newProducts];
           });
@@ -124,21 +125,40 @@ const ProductList = () => {
 
     fetchProducts();
     // This effect runs whenever the page or any filter/sort option changes.
-  }, [currentPage, sortBy, sortOrder, searchTerm, selectedCategory, selectedPriceRange]);
+  }, [
+    currentPage,
+    sortBy,
+    sortOrder,
+    searchTerm,
+    selectedCategory,
+    selectedPriceRange,
+  ]);
 
   // --- Effect to Fetch Categories (No changes needed) ---
   useEffect(() => {
     const fetchAllHierarchicalCategories = async () => {
       try {
         const fetchedL2L3Categories = [];
-        const productTopLevel = await getCategoriesByParentId("null", "product");
-        const serviceTopLevel = await getCategoriesByParentId("null", "service");
+        const productTopLevel = await getCategoriesByParentId(
+          "null",
+          "product"
+        );
+        const serviceTopLevel = await getCategoriesByParentId(
+          "null",
+          "service"
+        );
         const allTopLevel = [...productTopLevel, ...serviceTopLevel];
         for (const topCat of allTopLevel) {
-          const level2Cats = await getCategoriesByParentId(topCat._id, topCat.type);
+          const level2Cats = await getCategoriesByParentId(
+            topCat._id,
+            topCat.type
+          );
           fetchedL2L3Categories.push(...level2Cats);
           for (const level2Cat of level2Cats) {
-            const level3Cats = await getCategoriesByParentId(level2Cat._id, level2Cat.type);
+            const level3Cats = await getCategoriesByParentId(
+              level2Cat._id,
+              level2Cat.type
+            );
             fetchedL2L3Categories.push(...level3Cats);
           }
         }
@@ -206,7 +226,7 @@ const ProductList = () => {
     return (
       <section className="bg-white py-0 sm:py-16 md:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-4xl sm:text-5xl font-extrabold text-gray-900 text-center mb-12">
+          <h2 className="md:text-4xl text-2xl font-extrabold text-gray-900 text-center mb-12">
             Featured Products & Services
           </h2>
           <div className="grid gap-6 sm:gap-8 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4">
@@ -239,7 +259,7 @@ const ProductList = () => {
   return (
     <section className="bg-white py-0 sm:py-16 md:py-20">
       <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-        <h2 className="text-4xl sm:text-5xl font-extrabold text-gray-900 text-center mb-12">
+        <h2 className="md:text-4xl text-3xl font-extrabold text-gray-900 text-center mb-12">
           Featured Products & Services
         </h2>
 
@@ -254,8 +274,13 @@ const ProductList = () => {
               className="w-full sm:w-64"
             />
             <div className="flex space-x-2">
-              <Select onValueChange={handleSortChange} defaultValue={`${sortBy}-${sortOrder}`}>
-                <SelectTrigger className="w-full sm:w-[180px]"><SelectValue placeholder="Sort" /></SelectTrigger>
+              <Select
+                onValueChange={handleSortChange}
+                defaultValue={`${sortBy}-${sortOrder}`}
+              >
+                <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectValue placeholder="Sort" />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="createdAt-desc">Sort</SelectItem>
                   <SelectItem value="price-asc">Price: Low to High</SelectItem>
@@ -264,8 +289,13 @@ const ProductList = () => {
                   <SelectItem value="title-desc">Alphabetical (Z-A)</SelectItem>
                 </SelectContent>
               </Select>
-              <Select onValueChange={handleCategoryChange} value={selectedCategory}>
-                <SelectTrigger className="w-full sm:w-[180px]"><SelectValue placeholder="Filter by Category" /></SelectTrigger>
+              <Select
+                onValueChange={handleCategoryChange}
+                value={selectedCategory}
+              >
+                <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectValue placeholder="Filter by Category" />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Categories</SelectItem>
                   {level2and3Categories.map((cat) => (
@@ -275,8 +305,13 @@ const ProductList = () => {
                   ))}
                 </SelectContent>
               </Select>
-              <Select onValueChange={handlePriceRangeChange} value={selectedPriceRange}>
-                <SelectTrigger className="w-full sm:w-[180px]"><SelectValue placeholder="Filter by Price" /></SelectTrigger>
+              <Select
+                onValueChange={handlePriceRangeChange}
+                value={selectedPriceRange}
+              >
+                <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectValue placeholder="Filter by Price" />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Filter</SelectItem>
                   <SelectItem value="0-500">₹0 - ₹500</SelectItem>

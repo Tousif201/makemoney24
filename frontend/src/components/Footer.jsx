@@ -9,47 +9,74 @@ import {
   Youtube,
   Mail,
   HandCoins,
+  LogIn,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const MobileBottomNav = () => {
+  const isAuthentticated = localStorage.getItem("authToken") ? true : false;
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 md:hidden z-50">
       <div className="flex justify-around items-center py-2">
-        <Link to="/" className="p-2 text-gray-600">
-          <div className=" p-2 rounded-lg">
+        <Link to="/" className="p-2 text-gray-600 flex flex-col items-center">
+          <div className="p-2 rounded-lg">
             <Home size={22} />
           </div>
           Home
         </Link>
 
-        <Link to="/browse" className="p-2  text-gray-600">
-        <div className=" p-2 rounded-lg">
-          <Grid3X3 size={22} />
+        <Link
+          to="/browse"
+          className="p-2 text-gray-600 flex flex-col items-center"
+        >
+          <div className="p-2 rounded-lg">
+            <Grid3X3 size={22} />
           </div>
-          category
+          Category
         </Link>
 
-        <Link to="/emi-plan" className="p-2 text-gray-600">
-        <div className=" p-2 rounded-lg">
-        <HandCoins size={24} />
+        {/* EMI option with golden highlight */}
+        <Link
+          to="/emi-plan"
+          className="p-2 text-yellow-600 flex flex-col items-center animate-pulse"
+        >
+          <div className="p-2 rounded-lg">
+            <HandCoins size={24} />
           </div>
-          EMI
+          <span className="font-semibold">EMI</span>{" "}
+          {/* Added a span for more control over text styling */}
         </Link>
 
-        <Link to="/dashboard/tickets" className="p-2 text-gray-600">
-        <div className=" p-2 rounded-lg">
-        <HelpCircle size={22} />
+        <Link
+          to="/dashboard/tickets"
+          className="p-2 text-gray-600 flex flex-col items-center"
+        >
+          <div className="p-2 rounded-lg">
+            <HelpCircle size={22} />
           </div>
-         Help
+          Help
         </Link>
-
-        <Link to="/dashboard" className="p-2 text-gray600">
-        <div className=" p-2 rounded-lg ">
-        <User size={22} />
-          </div>
-          Account
-        </Link>
+        {isAuthentticated ? (
+          <Link
+            to="/dashboard"
+            className="p-2 text-gray-600 flex flex-col items-center"
+          >
+            <div className="p-2 rounded-lg">
+              <User size={22} />
+            </div>
+            Account
+          </Link>
+        ) : (
+          <Link
+            to="/dashboard"
+            className="p-2 text-gray-600 flex flex-col items-center"
+          >
+            <div className="p-2 rounded-lg">
+              <LogIn size={22} />
+            </div>
+            Login
+          </Link>
+        )}
       </div>
     </div>
   );
@@ -156,7 +183,7 @@ const Footer = () => {
                     Privacy Policy
                   </Link>
                 </li>
-                 <li>
+                <li>
                   <Link to="/return" className="hover:text-white">
                     Return
                   </Link>

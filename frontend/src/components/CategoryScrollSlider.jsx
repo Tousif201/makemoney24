@@ -3,7 +3,7 @@ import { getAllCategoriesWithImages } from "../../api/categories";
 import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 
-const UserScrollSlider = () => {
+const CategoryScrollSlider = ({type}) => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -13,7 +13,7 @@ const UserScrollSlider = () => {
     const fetchCategories = async () => {
       try {
         setLoading(true);
-        const fetchedCategories = await getAllCategoriesWithImages();
+        const fetchedCategories = await getAllCategoriesWithImages(type);
         const formattedCategories = fetchedCategories.map((cat) => ({
           _id: cat._id,
           img:
@@ -141,4 +141,4 @@ const UserScrollSlider = () => {
   );
 };
 
-export default UserScrollSlider;
+export default CategoryScrollSlider;
