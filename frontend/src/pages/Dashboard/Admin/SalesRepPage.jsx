@@ -9,11 +9,10 @@ import { CreateSalesRepDialog } from "../../../components/Dashboad/SalesRep/Crea
 import {
   CreateSalesRep,
   getAllSalesRep,
-//   UpdateSalesRep, // Assuming you have an UpdateSalesRep API
+  //   UpdateSalesRep, // Assuming you have an UpdateSalesRep API
   deleteSalesRep, // Assuming you have a DeleteSalesRep API
 } from "../../../../api/salesrep"; // Import your API functions
 import { toast } from "sonner";
-// import { useToaster } from "react-hot-toast";  // Assuming you have a toast notification system
 
 export default function SalesRepsPage() {
   const [salesReps, setSalesReps] = useState([]);
@@ -21,8 +20,6 @@ export default function SalesRepsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null); // Not used if using Toast only
-
-//   const { toast } = useToast();
 
   // Function to fetch sales reps from backend
   const fetchSalesReps = async () => {
@@ -34,20 +31,14 @@ export default function SalesRepsPage() {
         setSalesReps(response.data || []); // Backend returns data in 'data' field
       } else {
         setError(response.message || "Failed to fetch sales representatives.");
-        toast({
-          title: "Error",
-          description: response.message || "Failed to fetch sales representatives.",
-          variant: "destructive",
-        });
+        toast.error(
+          response.message || "Failed to fetch sales representatives."
+        );
       }
     } catch (err) {
       console.error("Error fetching sales reps:", err);
       setError(err.message || "Failed to fetch sales representatives.");
-      toast({
-        title: "Error",
-        description: err.message || "Failed to fetch sales representatives.",
-        variant: "destructive",
-      });
+      toast.error(err.message || "Failed to fetch sales representatives.");
     } finally {
       setLoading(false);
     }
@@ -65,32 +56,20 @@ export default function SalesRepsPage() {
       const response = await CreateSalesRep(newSalesRepData);
       if (response.success) {
         setSuccessMessage("Sales representative created successfully!"); // This will be handled by toast
-        window.location.reload()
-        toast({
-          title: "Success",
-          description: "Sales representative created successfully!",
-          duration: 3000,
-        });
+        window.location.reload();
+        toast.success("Sales representative created successfully!");
         setIsCreateDialogOpen(false); // Close dialog on successful creation
         fetchSalesReps(); // Re-fetch data to update the table/cards
       } else {
         setError(response.message || "Failed to create sales representative.");
-        toast({
-          title: "Error",
-          description: response.message || "Failed to create sales representative.",
-          variant: "destructive",
-          duration: 5000,
-        });
+        toast.error(
+          response.message || "Failed to create sales representative."
+        );
       }
     } catch (err) {
       console.error("Error creating sales rep:", err);
       setError(err.message || "Failed to create sales representative.");
-      toast({
-        title: "Error",
-        description: err.message || "Failed to create sales representative.",
-        variant: "destructive",
-        duration: 5000,
-      });
+      toast.error(err.message || "Failed to create sales representative.");
     } finally {
       setLoading(false);
     }
@@ -104,73 +83,61 @@ export default function SalesRepsPage() {
       const response = await deleteSalesRep(id);
       if (response.success) {
         setSuccessMessage("Sales representative deleted successfully."); // This will be handled by toast
-        window.location.reload()
-        toast({
-          title: "Success",
-          description: "Sales representative deleted successfully.",
-          duration: 3000,
-        });
+        window.location.reload();
+        toast.success("Sales representative deleted successfully.");
         fetchSalesReps(); // Re-fetch data
       } else {
         setError(response.message || "Failed to delete sales representative.");
-        toast({
-          title: "Error",
-          description: response.message || "Failed to delete sales representative.",
-          variant: "destructive",
-          duration: 5000,
-        });
+        toast.error(
+          response.message || "Failed to delete sales representative."
+        );
       }
     } catch (err) {
       console.error("Error deleting sales rep:", err);
       setError(err.message || "Failed to delete sales representative.");
-      toast({
-        title: "Error",
-        description: err.message || "Failed to delete sales representative.",
-        variant: "destructive",
-        duration: 5000,
-      });
+      toast.error(err.message || "Failed to delete sales representative.");
     } finally {
       setLoading(false);
     }
   };
 
-//   const handleUpdateSalesRep = async (updatedRepData) => {
-//     setLoading(true);
-//     setError(null);
-//     setSuccessMessage(null);
-//     try {
-//       // Assuming your UpdateSalesRep API takes the ID from the object and sends the whole object
-//       const response = await UpdateSalesRep(updatedRepData._id, updatedRepData);
-//       if (response.success) {
-//         setSuccessMessage("Sales representative updated successfully."); // This will be handled by toast
-//         toast({
-//           title: "Success",
-//           description: "Sales representative updated successfully.",
-//           duration: 3000,
-//         });
-//         fetchSalesReps(); // Re-fetch data
-//       } else {
-//         setError(response.message || "Failed to update sales representative.");
-//         toast({
-//           title: "Error",
-//           description: response.message || "Failed to update sales representative.",
-//           variant: "destructive",
-//           duration: 5000,
-//         });
-//       }
-//     } catch (err) {
-//       console.error("Error updating sales rep:", err);
-//       setError(err.message || "Failed to update sales representative.");
-//       toast({
-//         title: "Error",
-//         description: err.message || "Failed to update sales representative.",
-//         variant: "destructive",
-//         duration: 5000,
-//       });
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
+  //   const handleUpdateSalesRep = async (updatedRepData) => {
+  //     setLoading(true);
+  //     setError(null);
+  //     setSuccessMessage(null);
+  //     try {
+  //       // Assuming your UpdateSalesRep API takes the ID from the object and sends the whole object
+  //       const response = await UpdateSalesRep(updatedRepData._id, updatedRepData);
+  //       if (response.success) {
+  //         setSuccessMessage("Sales representative updated successfully."); // This will be handled by toast
+  //         toast({
+  //           title: "Success",
+  //           description: "Sales representative updated successfully.",
+  //           duration: 3000,
+  //         });
+  //         fetchSalesReps(); // Re-fetch data
+  //       } else {
+  //         setError(response.message || "Failed to update sales representative.");
+  //         toast({
+  //           title: "Error",
+  //           description: response.message || "Failed to update sales representative.",
+  //           variant: "destructive",
+  //           duration: 5000,
+  //         });
+  //       }
+  //     } catch (err) {
+  //       console.error("Error updating sales rep:", err);
+  //       setError(err.message || "Failed to update sales representative.");
+  //       toast({
+  //         title: "Error",
+  //         description: err.message || "Failed to update sales representative.",
+  //         variant: "destructive",
+  //         duration: 5000,
+  //       });
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
@@ -208,19 +175,18 @@ export default function SalesRepsPage() {
           <SalesRepCards salesReps={salesReps} />
         </div>
       )}
-       {!loading && salesReps.length === 0 && (
+      {!loading && salesReps.length === 0 && (
         <div className="text-center text-gray-500 p-4">
           No sales representatives to display. Create one to get started!
         </div>
       )}
-
 
       {/* Table */}
       <div className="overflow-x-auto">
         <SalesRepTable
           salesReps={salesReps}
           onDelete={handleDeleteSalesRep}
-        //   onUpdate={handleUpdateSalesRep}
+          //   onUpdate={handleUpdateSalesRep}
         />
       </div>
 
