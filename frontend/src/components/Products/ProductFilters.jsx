@@ -13,14 +13,13 @@ import {
   DrawerClose,
 } from "@/components/ui/drawer";
 import {
-  Search,
   ArrowDownWideNarrow,
   ListFilter,
-  IndianRupee,
-  Palette, // NEW: Import Palette icon for Color
-  Ruler, // NEW: Import Ruler icon for Size (or another suitable icon)
+  Search,
+  SlidersHorizontal, // Icon for the main "Filters" button
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"; // Import Tabs components
 
 const ProductFilters = ({
   searchInput,
@@ -28,27 +27,39 @@ const ProductFilters = ({
   sortBy,
   sortOrder,
   handleSortChange,
-  selectedCategory,
-  handleCategoryChange,
-  level2and3Categories,
+
   selectedPriceRange,
   handlePriceRangeChange,
-  selectedColor, // NEW: Prop for selected color
-  handleColorChange, // NEW: Prop for color handler
-  selectedSize, // NEW: Prop for selected size
-  handleSizeChange, // NEW: Prop for size handler
+  selectedColor,
+  handleColorChange,
+  selectedSize,
+  handleSizeChange,
 }) => {
-  // States to control individual drawer visibility
-  const [isSortDrawerOpen, setIsSortDrawerOpen] = useState(false);
-  const [isCategoryDrawerOpen, setIsCategoryDrawerOpen] = useState(false);
-  const [isPriceDrawerOpen, setIsPriceDrawerOpen] = useState(false);
-  // NEW: States for Color and Size drawer visibility
-  const [isColorDrawerOpen, setIsColorDrawerOpen] = useState(false);
-  const [isSizeDrawerOpen, setIsSizeDrawerOpen] = useState(false);
+  // State to control the single main drawer visibility
+  const [isFiltersDrawerOpen, setIsFiltersDrawerOpen] = useState(false);
 
   // Example data for color and size (replace with actual data from your backend if available)
-  const colors = ["Red", "Blue", "Green", "Black", "White", "Yellow"];
-  const sizes = ["XS", "S", "M", "L", "XL", "XXL"];
+  const colors = [
+    "Red",
+    "Blue",
+    "Green",
+    "Black",
+    "White",
+    "Yellow",
+    "Gray",
+    "Brown",
+    "Purple",
+    "Orange",
+  ];
+  const sizes = ["XS", "S", "M", "L", "XL", "XXL", "One Size"];
+
+  // Function to clear Price, Color, and Size filters
+  const handleClearPriceColorSizeFilters = () => {
+    handlePriceRangeChange("all");
+    handleColorChange("all");
+    handleSizeChange("all");
+    // No need to close the drawer immediately, user might want to set other filters
+  };
 
   return (
     <div className="mb-8 flex flex-col sm:flex-row justify-center items-center gap-4">
@@ -62,9 +73,13 @@ const ProductFilters = ({
           className="w-full pl-9"
         />
       </div>
+
       <div className="flex space-x-2">
-        {/* Sort By Drawer */}
-        <Drawer open={isSortDrawerOpen} onOpenChange={setIsSortDrawerOpen}>
+        {/* Sort By Drawer (remains separate as it's a sort, not a filter) */}
+        <Drawer
+          open={sortBy !== "createdAt" || sortOrder !== "desc"}
+          onOpenChange={handleSortChange}
+        >
           <DrawerTrigger asChild>
             <Button variant="outline" className="flex items-center gap-2">
               <ArrowDownWideNarrow className="h-4 w-4" />
@@ -89,7 +104,6 @@ const ProductFilters = ({
                     }
                     onClick={() => {
                       handleSortChange("createdAt-desc");
-                      setIsSortDrawerOpen(false);
                     }}
                   >
                     Default (Newest)
@@ -102,7 +116,6 @@ const ProductFilters = ({
                     }
                     onClick={() => {
                       handleSortChange("price-asc");
-                      setIsSortDrawerOpen(false);
                     }}
                   >
                     Price: Low to High
@@ -115,7 +128,6 @@ const ProductFilters = ({
                     }
                     onClick={() => {
                       handleSortChange("price-desc");
-                      setIsSortDrawerOpen(false);
                     }}
                   >
                     Price: High to Low
@@ -128,7 +140,6 @@ const ProductFilters = ({
                     }
                     onClick={() => {
                       handleSortChange("title-asc");
-                      setIsSortDrawerOpen(false);
                     }}
                   >
                     Alphabetical (A-Z)
@@ -141,7 +152,6 @@ const ProductFilters = ({
                     }
                     onClick={() => {
                       handleSortChange("title-desc");
-                      setIsSortDrawerOpen(false);
                     }}
                   >
                     Alphabetical (Z-A)
@@ -157,251 +167,151 @@ const ProductFilters = ({
           </DrawerContent>
         </Drawer>
 
-        {/* Category Filter Drawer */}
+        {/* Combined Price, Color, Size Filters Drawer */}
         <Drawer
-          open={isCategoryDrawerOpen}
-          onOpenChange={setIsCategoryDrawerOpen}
+          open={isFiltersDrawerOpen}
+          onOpenChange={setIsFiltersDrawerOpen}
         >
           <DrawerTrigger asChild>
             <Button variant="outline" className="flex items-center gap-2">
-              <ListFilter className="h-4 w-4" />
-              Category
+              <SlidersHorizontal className="h-4 w-4" />
+              Filters
             </Button>
           </DrawerTrigger>
           <DrawerContent>
             <ScrollArea className="h-[80vh]">
               <div className="mx-auto w-full max-w-md p-4">
                 <DrawerHeader className="text-left">
-                  <DrawerTitle>Filter by Category</DrawerTitle>
+                  <DrawerTitle>Additional Filters</DrawerTitle>
                   <DrawerDescription>
-                    Select a category to narrow your search.
+                    Filter by price, color, or size.
                   </DrawerDescription>
                 </DrawerHeader>
-                <div className="grid gap-4 py-4">
-                  <Button
-                    variant={selectedCategory === "all" ? "default" : "outline"}
-                    onClick={() => {
-                      handleCategoryChange("all");
-                      setIsCategoryDrawerOpen(false);
-                    }}
-                  >
-                    All Categories
-                  </Button>
-                  {level2and3Categories.map((cat) => (
-                    <Button
-                      key={cat._id}
-                      variant={
-                        selectedCategory === cat._id ? "default" : "outline"
-                      }
-                      onClick={() => {
-                        handleCategoryChange(cat._id);
-                        setIsCategoryDrawerOpen(false);
-                      }}
-                    >
-                      {cat.name} ({cat.type})
-                    </Button>
-                  ))}
-                </div>
-                <DrawerFooter>
-                  <DrawerClose asChild>
-                    <Button variant="outline">Close</Button>
-                  </DrawerClose>
-                </DrawerFooter>
-              </div>
-            </ScrollArea>
-          </DrawerContent>
-        </Drawer>
 
-        {/* Price Range Filter Drawer */}
-        <Drawer open={isPriceDrawerOpen} onOpenChange={setIsPriceDrawerOpen}>
-          <DrawerTrigger asChild>
-            <Button variant="outline" className="flex items-center gap-2">
-              <IndianRupee className="h-4 w-4" />
-              Price
-            </Button>
-          </DrawerTrigger>
-          <DrawerContent>
-            <ScrollArea className="h-[80vh]">
-              <div className="mx-auto w-full max-w-md p-4">
-                <DrawerHeader className="text-left">
-                  <DrawerTitle>Filter by Price Range</DrawerTitle>
-                  <DrawerDescription>
-                    Choose a price range for the products.
-                  </DrawerDescription>
-                </DrawerHeader>
-                <div className="grid gap-4 py-4">
-                  <Button
-                    variant={
-                      selectedPriceRange === "all" ? "default" : "outline"
-                    }
-                    onClick={() => {
-                      handlePriceRangeChange("all");
-                      setIsPriceDrawerOpen(false);
-                    }}
-                  >
-                    All Prices
-                  </Button>
-                  <Button
-                    variant={
-                      selectedPriceRange === "0-500" ? "default" : "outline"
-                    }
-                    onClick={() => {
-                      handlePriceRangeChange("0-500");
-                      setIsPriceDrawerOpen(false);
-                    }}
-                  >
-                    ₹0 - ₹500
-                  </Button>
-                  <Button
-                    variant={
-                      selectedPriceRange === "501-1000" ? "default" : "outline"
-                    }
-                    onClick={() => {
-                      handlePriceRangeChange("501-1000");
-                      setIsPriceDrawerOpen(false);
-                    }}
-                  >
-                    ₹501 - ₹1000
-                  </Button>
-                  <Button
-                    variant={
-                      selectedPriceRange === "1001-2000" ? "default" : "outline"
-                    }
-                    onClick={() => {
-                      handlePriceRangeChange("1001-2000");
-                      setIsPriceDrawerOpen(false);
-                    }}
-                  >
-                    ₹1001 - ₹2000
-                  </Button>
-                  <Button
-                    variant={
-                      selectedPriceRange === "2001-5000" ? "default" : "outline"
-                    }
-                    onClick={() => {
-                      handlePriceRangeChange("2001-5000");
-                      setIsPriceDrawerOpen(false);
-                    }}
-                  >
-                    ₹2001 - ₹5000
-                  </Button>
-                  <Button
-                    variant={
-                      selectedPriceRange === "5001-above"
-                        ? "default"
-                        : "outline"
-                    }
-                    onClick={() => {
-                      handlePriceRangeChange("5001-above");
-                      setIsPriceDrawerOpen(false);
-                    }}
-                  >
-                    ₹5001 & Above
-                  </Button>
-                </div>
-                <DrawerFooter>
-                  <DrawerClose asChild>
-                    <Button variant="outline">Close</Button>
-                  </DrawerClose>
-                </DrawerFooter>
-              </div>
-            </ScrollArea>
-          </DrawerContent>
-        </Drawer>
+                <Tabs defaultValue="price" className="w-full">
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="price">Price</TabsTrigger>
+                    <TabsTrigger value="color">Color</TabsTrigger>
+                    <TabsTrigger value="size">Size</TabsTrigger>
+                  </TabsList>
 
-        {/* NEW: Color Filter Drawer */}
-        <Drawer open={isColorDrawerOpen} onOpenChange={setIsColorDrawerOpen}>
-          <DrawerTrigger asChild>
-            <Button variant="outline" className="flex items-center gap-2">
-              <Palette className="h-4 w-4" />
-              Color
-            </Button>
-          </DrawerTrigger>
-          <DrawerContent>
-            <ScrollArea className="h-[80vh]">
-              <div className="mx-auto w-full max-w-md p-4">
-                <DrawerHeader className="text-left">
-                  <DrawerTitle>Filter by Color</DrawerTitle>
-                  <DrawerDescription>
-                    Select a color to filter products.
-                  </DrawerDescription>
-                </DrawerHeader>
-                <div className="grid gap-4 py-4">
-                  <Button
-                    variant={selectedColor === "all" ? "default" : "outline"}
-                    onClick={() => {
-                      handleColorChange("all");
-                      setIsColorDrawerOpen(false);
-                    }}
-                  >
-                    All Colors
-                  </Button>
-                  {colors.map((color) => (
-                    <Button
-                      key={color}
-                      variant={selectedColor === color ? "default" : "outline"}
-                      onClick={() => {
-                        handleColorChange(color);
-                        setIsColorDrawerOpen(false);
-                      }}
-                    >
-                      {color}
-                    </Button>
-                  ))}
-                </div>
-                <DrawerFooter>
-                  <DrawerClose asChild>
-                    <Button variant="outline">Close</Button>
-                  </DrawerClose>
-                </DrawerFooter>
-              </div>
-            </ScrollArea>
-          </DrawerContent>
-        </Drawer>
+                  <TabsContent value="price" className="py-4">
+                    <div className="grid gap-4">
+                      <Button
+                        variant={
+                          selectedPriceRange === "all" ? "default" : "outline"
+                        }
+                        onClick={() => handlePriceRangeChange("all")}
+                      >
+                        All Prices
+                      </Button>
+                      <Button
+                        variant={
+                          selectedPriceRange === "0-500" ? "default" : "outline"
+                        }
+                        onClick={() => handlePriceRangeChange("0-500")}
+                      >
+                        ₹0 - ₹500
+                      </Button>
+                      <Button
+                        variant={
+                          selectedPriceRange === "501-1000"
+                            ? "default"
+                            : "outline"
+                        }
+                        onClick={() => handlePriceRangeChange("501-1000")}
+                      >
+                        ₹501 - ₹1000
+                      </Button>
+                      <Button
+                        variant={
+                          selectedPriceRange === "1001-2000"
+                            ? "default"
+                            : "outline"
+                        }
+                        onClick={() => handlePriceRangeChange("1001-2000")}
+                      >
+                        ₹1001 - ₹2000
+                      </Button>
+                      <Button
+                        variant={
+                          selectedPriceRange === "2001-5000"
+                            ? "default"
+                            : "outline"
+                        }
+                        onClick={() => handlePriceRangeChange("2001-5000")}
+                      >
+                        ₹2001 - ₹5000
+                      </Button>
+                      <Button
+                        variant={
+                          selectedPriceRange === "5001-above"
+                            ? "default"
+                            : "outline"
+                        }
+                        onClick={() => handlePriceRangeChange("5001-above")}
+                      >
+                        ₹5001 & Above
+                      </Button>
+                    </div>
+                  </TabsContent>
 
-        {/* NEW: Size Filter Drawer */}
-        <Drawer open={isSizeDrawerOpen} onOpenChange={setIsSizeDrawerOpen}>
-          <DrawerTrigger asChild>
-            <Button variant="outline" className="flex items-center gap-2">
-              <Ruler className="h-4 w-4" />
-              Size
-            </Button>
-          </DrawerTrigger>
-          <DrawerContent>
-            <ScrollArea className="h-[80vh]">
-              <div className="mx-auto w-full max-w-md p-4">
-                <DrawerHeader className="text-left">
-                  <DrawerTitle>Filter by Size</DrawerTitle>
-                  <DrawerDescription>
-                    Select a size to filter products.
-                  </DrawerDescription>
-                </DrawerHeader>
-                <div className="grid gap-4 py-4">
+                  <TabsContent value="color" className="py-4">
+                    <div className="grid gap-4">
+                      <Button
+                        variant={
+                          selectedColor === "all" ? "default" : "outline"
+                        }
+                        onClick={() => handleColorChange("all")}
+                      >
+                        All Colors
+                      </Button>
+                      {colors.map((color) => (
+                        <Button
+                          key={color}
+                          variant={
+                            selectedColor === color ? "default" : "outline"
+                          }
+                          onClick={() => handleColorChange(color)}
+                        >
+                          {color}
+                        </Button>
+                      ))}
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="size" className="py-4">
+                    <div className="grid gap-4">
+                      <Button
+                        variant={selectedSize === "all" ? "default" : "outline"}
+                        onClick={() => handleSizeChange("all")}
+                      >
+                        All Sizes
+                      </Button>
+                      {sizes.map((size) => (
+                        <Button
+                          key={size}
+                          variant={
+                            selectedSize === size ? "default" : "outline"
+                          }
+                          onClick={() => handleSizeChange(size)}
+                        >
+                          {size}
+                        </Button>
+                      ))}
+                    </div>
+                  </TabsContent>
+                </Tabs>
+
+                <DrawerFooter className="flex-row justify-between">
                   <Button
-                    variant={selectedSize === "all" ? "default" : "outline"}
-                    onClick={() => {
-                      handleSizeChange("all");
-                      setIsSizeDrawerOpen(false);
-                    }}
+                    variant="outline"
+                    onClick={handleClearPriceColorSizeFilters}
                   >
-                    All Sizes
+                    Clear Filters
                   </Button>
-                  {sizes.map((size) => (
-                    <Button
-                      key={size}
-                      variant={selectedSize === size ? "default" : "outline"}
-                      onClick={() => {
-                        handleSizeChange(size);
-                        setIsSizeDrawerOpen(false);
-                      }}
-                    >
-                      {size}
-                    </Button>
-                  ))}
-                </div>
-                <DrawerFooter>
                   <DrawerClose asChild>
-                    <Button variant="outline">Close</Button>
+                    <Button>Apply Filters</Button>
                   </DrawerClose>
                 </DrawerFooter>
               </div>
