@@ -440,7 +440,7 @@ export default function BrowsePage() {
                                 category.image?.url ||
                                 "https://via.placeholder.com/80"
                               } // Fallback image
-                              className="h-12 w-12 rounded-full object-cover  mb-2 mt-2"
+                              className="h-12 w-12 rounded-2xl object-cover  mb-2 mt-2"
                               alt={category.name}
                             />
                           </div>
