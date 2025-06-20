@@ -22,7 +22,11 @@ const ProductCard = ({ product }) => {
 
   // Calculate discounted price
   const calculateDiscountedPrice = () => {
-    if (product.discountRate && product.discountRate > 0 && product.discountRate <= 100) {
+    if (
+      product.discountRate &&
+      product.discountRate > 0 &&
+      product.discountRate <= 100
+    ) {
       const discountAmount = (product.price * product.discountRate) / 100;
       return product.price - discountAmount;
     }
@@ -30,7 +34,10 @@ const ProductCard = ({ product }) => {
   };
 
   const discountedPrice = calculateDiscountedPrice();
-  const showDiscount = product.discountRate && product.discountRate > 0 && product.discountRate <= 100;
+  const showDiscount =
+    product.discountRate &&
+    product.discountRate > 0 &&
+    product.discountRate <= 100;
 
   // Add product to cart and show success toast
   const handleAddToCart = () => {
@@ -108,24 +115,25 @@ const ProductCard = ({ product }) => {
 
       {/* Product Info Section */}
       <div className="p-4">
-        <h3 className="text-xl font-semibold text-gray-800 line-clamp-1">
+        <h3 className=" font-semibold text-gray-800 line-clamp-1">
           {product.title}
         </h3>
-        <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+        <p className="text-xs text-gray-500   line-clamp-2">
           {product.description}
         </p>
 
         <div className="mt-3 flex items-baseline space-x-2">
           {showDiscount ? (
             <>
-              {/* Original price, struck out */}
-              <span className="text-sm text-gray-400 line-through">
-                ₹{product.price.toLocaleString("en-IN")}
-              </span>
               {/* Discounted price */}
-              <span className="text-lg text-blue-600 font-bold">
+              <span className="text-lg text-slate-800 font-bold">
                 ₹{discountedPrice.toLocaleString("en-IN")}
               </span>
+              {/* Original price, struck out */}
+              <span className="text-[12px] text-gray-400 line-through">
+                ₹{product.price.toLocaleString("en-IN")}
+              </span>
+
               {/* Discount percentage badge (optional, but good for UX) */}
               <span className="text-xs font-medium text-green-700 bg-green-100 px-2 py-0.5 rounded-full">
                 {product.discountRate}% OFF
@@ -133,7 +141,7 @@ const ProductCard = ({ product }) => {
             </>
           ) : (
             // Only show price if no discount
-            <span className="text-lg text-blue-600 font-bold">
+            <span className="text-lg text-slate-800 font-bold">
               ₹{product.price.toLocaleString("en-IN")}
             </span>
           )}

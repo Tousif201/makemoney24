@@ -2,7 +2,6 @@ import Home from "../pages/Home";
 import About from "../pages/About";
 import ItemDetail from "../pages/ProductDetailPage";
 import ProductCard from "../components/ProductCard";
-import ProductList from "../components/ProductList";
 import HomePageAnimation from "../pages/HomePageAnimation";
 import BrandSlider from "../components/BrandSlider";
 import CartDrawer from "../components/CartDrawer";
@@ -62,6 +61,7 @@ import CategoryManagementPage from "../pages/Dashboard/Admin/CategoryManagementP
 import AcceptTermsAndConditionsPage from "../pages/AcceptTerm_condition";
 import ExchangeReturn from "../pages/ExchangeReturn";
 import TodayOrders from "../pages/Dashboard/Admin/TodayOrders";
+import ProductList from "../components/Products/ProductList";
 
 const routes = [
   {

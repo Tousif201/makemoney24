@@ -1,7 +1,7 @@
 
 import CategoryScrollSlider from "../components/CategoryScrollSlider";
 import LandingSlider from "../components/LandingSlider";
-import ProductList from "../components/ProductList";
+import ProductList from "../components/Products/ProductList";
 import ServiesList from "../components/ServiesList";
 import HomePageAnimation from "./HomePageAnimation";
 

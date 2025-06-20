@@ -23,6 +23,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area"; // Keep ScrollArea for category list
+import { Separator } from "@/components/ui/separator";
 
 import { getCategoriesWithSubcategories } from "../../../api/categories"; // This API is perfect for your UI
 import { getProductServices } from "../../../api/productService";
@@ -325,26 +326,26 @@ export default function BrowsePage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto  py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-4">
+        <div className="mb-4 px-4">
+          <h1 className="text-[24px] md:text-4xl font-bold mb-2">
             Browse Products & Services
           </h1>
-          <p className="text-gray-600">
+          <p className="text-gray-600 text-[16px] md:text-xl">
             Discover amazing products and services from trusted vendors
           </p>
         </div>
 
         {/* Search Bar */}
-        <div className="mb-8">
+        <div className=" px-4">
           <div className="relative max-w-2xl">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
             <Input
               placeholder="Search products, services, or vendors..."
               value={searchQuery}
               onChange={handleSearchQueryChange}
-              className="pl-10 h-12 text-lg"
+              className="pl-10 h-10 text-xs "
             />
           </div>
         </div>
@@ -404,7 +405,7 @@ export default function BrowsePage() {
             {/* This div was causing layout issues before */}
             <div className="flex bg-gray-100 font-sans rounded-lg shadow-md">
               {/* Main Categories Sidebar (Your original left panel) */}
-              <div className="w-[30%] lg:w-[18%] bg-white shadow-md border-r p-2 border-gray-200 h-[27rem] overflow-y-scroll overflow-x-hidden scrollbar-thin scrollbar-thumb-red-300 scrollbar-track-transparent rounded-l-xl flex flex-col items-center">
+              <div className="w-[30%] lg:w-[18%] bg-white shadow-md border-r  border-gray-200 h-[90vh] overflow-y-scroll overflow-x-hidden scrollbar-thin scrollbar-thumb-red-300 scrollbar-track-transparent rounded-l-xl flex flex-col items-center">
                 <nav className="mt-2 w-full space-y-2">
                   {loadingCategories ? (
                     <div className="flex justify-center items-center h-full">
@@ -421,26 +422,33 @@ export default function BrowsePage() {
                   ) : (
                     categoriesData.map((category) => (
                       <div
-                        onClick={() => handleSidebarCategoryClick(category)}
                         key={category._id}
-                        className={`flex flex-col items-center justify-center mt-5 cursor-pointer border-b border-gray-100 transition rounded-lg p-2
+                        className="my-2 border-b-[1px] border-slate-400 px-1"
+                      >
+                        <div
+                          onClick={() => handleSidebarCategoryClick(category)}
+                          className={`flex flex-col items-center justify-center  cursor-pointer my-2 transition  
                           ${
                             currentCategory?._id === category._id
-                              ? "bg-gray-100 border-l-4 border-purple-500 text-black"
+                              ? "bg-gray-100 border-t-4 border-b-0 border-purple-500 text-black rounded-lg"
                               : "bg-white text-gray-700"
                           }`}
-                      >
-                        <img
-                          src={
-                            category.image?.url ||
-                            "https://via.placeholder.com/80"
-                          } // Fallback image
-                          className="h-20 w-20 object-cover rounded-lg mb-2"
-                          alt={category.name}
-                        />
-                        <p className="text-sm font-medium text-center">
-                          {category.name}
-                        </p>
+                        >
+                          <div className="rounded-full">
+                            <img
+                              src={
+                                category.image?.url ||
+                                "https://via.placeholder.com/80"
+                              } // Fallback image
+                              className="h-12 w-12 rounded-full object-cover  mb-2 mt-2"
+                              alt={category.name}
+                            />
+                          </div>
+                          <p className="text-xs font-medium text-center">
+                            {category.name}
+                          </p>
+                        </div>
+                        {/* <Separator classname="bg-black h-4" /> */}
                       </div>
                     ))
                   )}
@@ -451,8 +459,8 @@ export default function BrowsePage() {
               <div className="flex-1 p-4 overflow-y-auto min-h-[20vh] rounded-r-xl">
                 {currentCategory && currentCategory.subcategories && (
                   <section className="mb-8">
-                    <h3 className="text-xl font-semibold mb-4">
-                      Subcategories of {currentCategory.name}
+                    <h3 className="text-sm font-semibold mb-4">
+                      {currentCategory.name}
                     </h3>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                       {currentCategory.subcategories.length === 0 ? (
@@ -466,7 +474,7 @@ export default function BrowsePage() {
                             onClick={() =>
                               setSelectedCategories([subCategory._id])
                             } // Select only this subcategory
-                            className={`bg-white w-full rounded-lg shadow-sm p-2 flex flex-col items-center justify-center text-center border cursor-pointer transition
+                            className={` w-full   p-2 flex flex-col items-center justify-center text-center  cursor-pointer transition
                               ${
                                 selectedCategories.includes(subCategory._id)
                                   ? "border-purple-500 ring-2 ring-purple-200"
@@ -480,10 +488,10 @@ export default function BrowsePage() {
                                   "https://via.placeholder.com/60"
                                 } // Fallback image
                                 alt={subCategory.name}
-                                className="w-16 h-16 object-cover rounded-md"
+                                className="w-14 h-14 object-cover rounded-full"
                               />
                             </div>
-                            <p className="mt-2 text-sm font-medium text-gray-800">
+                            <p className="mt-2 text-xs font-medium text-gray-800">
                               {subCategory.name}
                             </p>
                           </div>
@@ -510,7 +518,7 @@ export default function BrowsePage() {
           {/* End Category Browse Section */}
 
           {/* Results Section (Right Column - spans 3 columns on desktop, below the category browser) */}
-          <div className="lg:col-span-4 mt-8">
+          <div className="lg:col-span-4 mt-8 px-4">
             {" "}
             {/* Adjusted to span full width below categories */}
             {/* Results Header and Controls */}
