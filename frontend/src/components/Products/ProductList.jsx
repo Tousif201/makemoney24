@@ -209,7 +209,7 @@ const ProductList = () => {
   }
 
   return (
-    <section className="bg-white py-0 sm:py-16 md:py-20">
+    <section className="bg-white py-0 sm:py-16 md:py-3">
       <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
         <h2 className="md:text-4xl text-2xl font-extrabold text-gray-900 text-center mb-12">
           Featured Products

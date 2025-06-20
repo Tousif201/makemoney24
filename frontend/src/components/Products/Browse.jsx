@@ -488,7 +488,7 @@ export default function BrowsePage() {
                                   "https://via.placeholder.com/60"
                                 } // Fallback image
                                 alt={subCategory.name}
-                                className="w-14 h-14 object-cover rounded-full"
+                                className="w-14 h-14 object-cover rounded-2xl"
                               />
                             </div>
                             <p className="mt-2 text-xs font-medium text-gray-800">

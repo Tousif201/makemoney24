@@ -521,13 +521,13 @@ export default function ProductDetailPage() {
     >
       <div className="container mx-auto px-4 py-12 lg:py-16">
         <motion.div
-          className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 mb-12"
+          className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 mb-6"
           variants={sectionVariants}
           initial="hidden"
           animate="visible"
         >
           {/* Product Images */}
-          <motion.div className="space-y-6" variants={itemVariants}>
+          <motion.div className="" variants={itemVariants}>
             <motion.div
               className="relative aspect-square overflow-hidden rounded-xl bg-white dark:bg-gray-800 shadow-lg"
               initial={{ opacity: 0, scale: 0.95 }}
@@ -545,7 +545,7 @@ export default function ProductDetailPage() {
                 product.discountRate > 0 &&
                 product.discountRate <= 100 && (
                   <div className="absolute top-4 left-4">
-                    <Badge className="bg-red-600 hover:bg-red-700 text-white text-sm font-semibold px-3 py-1 rounded-full shadow-md">
+                    <Badge className="bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-1  rounded-full shadow-md">
                       {Math.round(product.discountRate)}% OFF
                     </Badge>
                   </div>
@@ -602,45 +602,45 @@ export default function ProductDetailPage() {
           </motion.div>
 
           {/* Product Details */}
-          <motion.div className="space-y-8" variants={itemVariants}>
+          <motion.div className="md:space-y-8 space-y-4" variants={itemVariants}>
             <motion.div variants={itemVariants}>
               <div className="flex items-center gap-3 mb-2">
                 <Badge
                   variant="outline"
-                  className="text-sm px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-200 border-blue-200 dark:border-blue-700"
+                  className="text-xs px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-200 border-blue-200 dark:border-blue-700"
                 >
                   {product.categoryId?.name || "Uncategorized"}
                 </Badge>
                 <Badge
                   variant="secondary"
-                  className="text-sm px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
+                  className="text-xs px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
                 >
                   {product.type.charAt(0).toUpperCase() + product.type.slice(1)}
                 </Badge>
               </div>
-              <h1 className="text-4xl lg:text-5xl font-extrabold mb-4 leading-tight text-gray-900 dark:text-white">
+              <h1 className="text-xl lg:text-2xl font-extrabold  leading-tight text-gray-900 dark:text-white">
                 {product.title}
               </h1>
-              <div className="flex items-center gap-4 mb-4">
+              <div className="flex items-center gap-4 mb-2">
                 <div className="flex items-center">
                   {[...Array(5)].map((_, i) => (
                     <Star
                       key={i}
-                      className={`h-6 w-6 ${
+                      className={`h-3 w-3 md:h-6 md:w-6 ${
                         i < Math.floor(averageRating)
                           ? "fill-yellow-400 text-yellow-400"
                           : "text-gray-300"
                       }`}
                     />
                   ))}
-                  <span className="ml-2 text-base font-semibold text-gray-700 dark:text-gray-300">
+                  <span className="ml-2 text-xs md:text-base font-semibold text-gray-700 dark:text-gray-300">
                     {averageRating} ({totalReviewsCount} reviews)
                   </span>
                 </div>
               </div>
-              <div className="flex items-baseline gap-4 mb-6">
+              <div className="flex items-baseline gap-4 ">
                 {/* Display the discounted price prominently */}
-                <span className="text-4xl font-bold text-gray-900 dark:text-white">
+                <span className="md:text-2xl text-lg font-bold text-gray-900 dark:text-white">
                   ₹
                   {(
                     product.price *
@@ -654,12 +654,12 @@ export default function ProductDetailPage() {
                   product.discountRate <= 100 && (
                     <>
                       {/* Original price, struck out */}
-                      <span className="text-xl text-gray-500 line-through">
+                      <span className="md:text-xl text-base text-gray-500 line-through">
                         ₹{product.price.toLocaleString()}
                       </span>
 
                       {/* Discount percentage badge */}
-                      <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 font-semibold px-3 py-1 rounded-full">
+                      <Badge className="bg-green-100 text-green-800 text-xs md:text-base dark:bg-green-900 dark:text-green-200 font-semibold px-3 py-1 rounded-full">
                         Save {product.discountRate}%{" "}
                         {/* Showing percentage saved */}
                         {/* Or if you want to show exact amount saved: */}
@@ -676,7 +676,7 @@ export default function ProductDetailPage() {
                 <motion.div className="space-y-6" variants={itemVariants}>
                   {/* Color Selection */}
                   <div>
-                    <h3 className="font-semibold text-lg mb-3 text-gray-700 dark:text-gray-300">
+                    <h3 className="font-semibold text-base mb-3 text-gray-700 dark:text-gray-300">
                       Color
                     </h3>
                     <div className="flex flex-wrap gap-3">
@@ -689,7 +689,7 @@ export default function ProductDetailPage() {
                             setSelectedSize(null);
                             setQuantity(1); // Reset quantity
                           }}
-                          className={`px-5 py-2 border rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                          className={`px-3 py-1 text-xs border rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                             selectedColor === color
                               ? "border-blue-600 bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-200"
                               : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -706,7 +706,7 @@ export default function ProductDetailPage() {
                   {/* Size Selection (conditionally rendered based on selectedColor) */}
                   {selectedColor && availableSizes.length > 0 && (
                     <div>
-                      <h3 className="font-semibold text-lg mb-3 text-gray-700 dark:text-gray-300">
+                      <h3 className="font-semibold text-base mb-3 text-gray-700 dark:text-gray-300">
                         Size
                       </h3>
                       <div className="flex flex-wrap gap-3">
@@ -717,7 +717,7 @@ export default function ProductDetailPage() {
                               setSelectedSize(size);
                               setQuantity(1); // Reset quantity
                             }}
-                            className={`px-5 py-2 border rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                            className={`px-3 py-1 text-xs border rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                               selectedSize === size
                                 ? "border-blue-600 bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-200"
                                 : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -734,7 +734,7 @@ export default function ProductDetailPage() {
 
                   {/* Quantity Selection */}
                   <div>
-                    <h3 className="font-semibold text-lg mb-3 text-gray-700 dark:text-gray-300">
+                    <h3 className="font-semibold text-base mb-3 text-gray-700 dark:text-gray-300">
                       Quantity
                     </h3>
                     <Select
