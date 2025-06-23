@@ -34,10 +34,11 @@ const ProductCard = ({ product }) => {
   };
 
   const discountedPrice = calculateDiscountedPrice();
-  const showDiscount =
+  const showDiscount = Boolean(
     product.discountRate &&
-    product.discountRate > 0 &&
-    product.discountRate <= 100;
+      parseInt(product.discountRate) > 0 &&
+      parseInt(product.discountRate) <= 100 // Use parseInt here as well for consistency
+  );
 
   // Add product to cart and show success toast
   const handleAddToCart = () => {
@@ -67,19 +68,25 @@ const ProductCard = ({ product }) => {
     // This function might not be strictly necessary if Link is used directly,
     // but kept for consistency with your original code.
   };
-
   return (
     <motion.div
       whileHover={{ scale: 1.03 }}
       transition={{ type: "spring", stiffness: 300 }}
       className="relative bg-white border rounded-md overflow-hidden shadow-md group"
     >
+      {/* Discount Percentage Badge - Positioned at top right */}
+      {showDiscount && (
+        <div className="absolute top-2 right-2 bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded-full z-10 shadow-md">
+          {product.discountRate}% OFF
+        </div>
+      )}
+
       {/* Image - adjust size on mobile */}
       <img
         src={product.image}
         alt={product.title}
         className={`w-full ${
-          isMobileOrTablet ? "h-32" : "h-80"
+          isMobileOrTablet ? "h-52" : "h-80"
         } object-cover cursor-pointer`}
         onClick={handleImageClick}
       />
@@ -132,11 +139,6 @@ const ProductCard = ({ product }) => {
               {/* Original price, struck out */}
               <span className="text-[12px] text-gray-400 line-through">
                 ₹{product.price.toLocaleString("en-IN")}
-              </span>
-
-              {/* Discount percentage badge (optional, but good for UX) */}
-              <span className="text-xs font-medium text-green-700 bg-green-100 px-2 py-0.5 rounded-full">
-                {product.discountRate}% OFF
               </span>
             </>
           ) : (

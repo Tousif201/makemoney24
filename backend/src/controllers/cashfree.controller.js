@@ -1,5 +1,5 @@
 // src/controllers/cashfreeController.js
-import { Cashfree } from "cashfree-pg";
+import { Cashfree, CFEnvironment } from "cashfree-pg";
 import {
   cashfreePayoutClient,
   getPayoutAuthToken,
@@ -24,9 +24,8 @@ const getCashfreeInstance = () => {
   // It's crucial to use 'production' for live transactions and 'sandbox' for testing.
   const environment =
     process.env.NODE_ENV === "production"
-      ? Cashfree.PRODUCTION
-      : Cashfree.SANDBOX;
-
+      ? CFEnvironment.PRODUCTION
+      : CFEnvironment.SANDBOX;
   // Ensure required environment variables are set.
   if (!process.env.CASHFREE_CLIENT_ID || !process.env.CASHFREE_CLIENT_SECRET) {
     console.error(
@@ -75,8 +74,13 @@ const getCashfreeInstance = () => {
  */
 export const createOrderCF = async (req, res) => {
   // Get a new Cashfree PG SDK instance for this request.
-  const cashfree = getCashfreeInstance();
+  const cashfree = new Cashfree(
+    CFEnvironment.SANDBOX,
+    process.env.CASHFREE_CLIENT_ID,
+    process.env.CASHFREE_CLIENT_SECRET
+  );
 
+  console.log(cashfree)
   try {
     const {
       order_amount,
@@ -138,6 +142,7 @@ export const createOrderCF = async (req, res) => {
       // payment_methods: "cc,dc,upi,nb,paypal,emi,paylater" // To show multiple options including EMI
       // You might dynamically set payment_methods based on product type, order amount, or user selection.
       // For your "emi model", you might want to ensure "emi" is included here if it's a primary payment option.
+      //i am manish sharma and  i am fucking developer
     };
 
     console.log(
@@ -217,7 +222,11 @@ export const verifyPayment = async (req, res) => {
   }
 
   // Get a new Cashfree PG SDK instance.
-  const cashfree = getCashfreeInstance();
+  const cashfree = new Cashfree(
+    CFEnvironment.SANDBOX,
+    process.env.CASHFREE_CLIENT_ID,
+    process.env.CASHFREE_CLIENT_SECRET
+  );
 
   try {
     console.log(`Attempting to verify payment for Order ID: ${order_id}`);
@@ -699,7 +708,7 @@ export const sendPayout = async (req, res) => {
         beneficiary_postal_code,
       },
     };
-console.log(beneficiaryPayload)
+    console.log(beneficiaryPayload)
     try {
       await axios.post(`${CASHFREE_BASE_URL}/beneficiary`, beneficiaryPayload, {
         headers,
@@ -733,13 +742,13 @@ console.log(beneficiaryPayload)
       beneficiary_details: { beneficiary_id },
       transfer_mode: transfer_mode,
     };
-console.log(transferPayload)
+    console.log(transferPayload)
     const transferRes = await axios.post(
       `${CASHFREE_BASE_URL}/transfers`,
       transferPayload,
       { headers }
     );
-console.log(transferRes)
+    console.log(transferRes)
     // STEP 6: Create a transaction document after successful transfer initiation
     try {
       const newTransaction = new Transaction({

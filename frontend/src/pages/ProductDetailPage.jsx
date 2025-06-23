@@ -389,9 +389,15 @@ export default function ProductDetailPage() {
 
   // Derived states for variant selection
   const availableColors = product?.variants
-    ? [...new Set(product.variants.map((v) => v.color))]
+    ? Array.from(
+        new Map(
+          product.variants.map((v) => [
+            v.color,
+            { color: v.color, image: v.images?.[0] || "/placeholder.svg" }, // Get the first image or a placeholder
+          ])
+        ).values()
+      )
     : [];
-
   const availableSizes = product?.variants
     ? [
         ...new Set(
@@ -412,7 +418,6 @@ export default function ProductDetailPage() {
       ? selectedVariant.images // If selectedVariant has images, use them directly (they are already URLs)
       : (product?.portfolio || []).map((item) => item.url); // Otherwise, map product.portfolio to extract URLs
 
-  console.log(product);
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -602,7 +607,10 @@ export default function ProductDetailPage() {
           </motion.div>
 
           {/* Product Details */}
-          <motion.div className="md:space-y-8 space-y-4" variants={itemVariants}>
+          <motion.div
+            className="md:space-y-8 space-y-4"
+            variants={itemVariants}
+          >
             <motion.div variants={itemVariants}>
               <div className="flex items-center gap-3 mb-2">
                 <Badge
@@ -680,26 +688,43 @@ export default function ProductDetailPage() {
                       Color
                     </h3>
                     <div className="flex flex-wrap gap-3">
-                      {availableColors.map((color, index) => (
-                        <motion.button
-                          key={color || `color-${index}`}
-                          onClick={() => {
-                            setSelectedColor(color);
-                            // Reset selected size when color changes
-                            setSelectedSize(null);
-                            setQuantity(1); // Reset quantity
-                          }}
-                          className={`px-3 py-1 text-xs border rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                            selectedColor === color
-                              ? "border-blue-600 bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-200"
-                              : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                          }`}
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                        >
-                          {color}
-                        </motion.button>
-                      ))}
+                      {availableColors.map(
+                        (
+                          colorOption,
+                          index // Renamed to colorOption to avoid confusion
+                        ) => (
+                          <motion.button
+                            key={colorOption.color || `color-${index}`}
+                            onClick={() => {
+                              setSelectedColor(colorOption.color);
+                              setSelectedSize(null);
+                              setQuantity(1);
+                            }}
+                            className={`relative w-16 h-16 rounded-lg overflow-hidden border-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 group ${
+                              selectedColor === colorOption.color
+                                ? "border-blue-600 shadow-md"
+                                : "border-gray-200 dark:border-gray-700 hover:border-blue-300"
+                            }`}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                          >
+                            <img
+                              src={colorOption.image} // Use the image from the colorOption object
+                              alt={colorOption.color}
+                              className="w-full h-full object-cover"
+                            />
+                            {/* Optional: Overlay for selected state or color name */}
+                            {selectedColor === colorOption.color && (
+                              <div className="absolute inset-0 flex items-center justify-center bg-blue-600/30 text-white text-xs font-bold">
+                                ✓
+                              </div>
+                            )}
+                            <span className="absolute bottom-1 left-1 right-1 text-white text-[10px] font-semibold bg-black/50 rounded-sm px-1 py-0.5 text-center truncate">
+                              {colorOption.color}
+                            </span>
+                          </motion.button>
+                        )
+                      )}
                     </div>
                   </div>
 
