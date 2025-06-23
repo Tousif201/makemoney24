@@ -130,7 +130,8 @@ export default function CreateProduct() {
       (cat) =>
         cat._id === formData.categoryId &&
         cat.type === formData.type &&
-        (getCategoryLevel(cat, allCategories) === 2 ||
+        (getCategoryLevel(cat, allCategories) === 1||
+        getCategoryLevel(cat, allCategories) === 2 ||
           getCategoryLevel(cat, allCategories) === 3)
     );
 
