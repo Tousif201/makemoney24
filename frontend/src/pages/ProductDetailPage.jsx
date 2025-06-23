@@ -304,7 +304,7 @@ export default function ProductDetailPage() {
     setCurrentMedia({ url: "", type: "" });
   };
 
-  const currentProductUrl = `${window.location.origin}/products/${productId}`; // Adjust as per your routing
+  const currentProductUrl = `${"https://makemoney24hrs.com"}/products/${productId}`; // Adjust as per your routing
   const shareTitle = `Check out this ${
     product?.type || "item"
   } on [Your App Name]!`;

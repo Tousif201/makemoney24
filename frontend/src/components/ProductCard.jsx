@@ -30,14 +30,14 @@ const ProductCard = ({ product }) => {
       const discountAmount = (product.price * product.discountRate) / 100;
       return product.price - discountAmount;
     }
-    return product.price; // No discount or invalid discount rate
+    return product.price;
   };
 
   const discountedPrice = calculateDiscountedPrice();
   const showDiscount = Boolean(
     product.discountRate &&
       parseInt(product.discountRate) > 0 &&
-      parseInt(product.discountRate) <= 100 // Use parseInt here as well for consistency
+      parseInt(product.discountRate) <= 100
   );
 
   // Add product to cart and show success toast
@@ -56,32 +56,24 @@ const ProductCard = ({ product }) => {
     });
   };
 
-  // Handle image click (navigate to product details for mobile/tablet)
+  // Navigate to product detail on image click (for mobile/tablet)
   const handleImageClick = () => {
     if (isMobileOrTablet) {
-      navigate(`/item/${product.id}`); // Navigate to product detail
+      navigate(`/item/${product.id}`);
     }
   };
 
   const handleViewDetails = () => {
     console.log(`Viewing details for product: ${product.title}`);
-    // This function might not be strictly necessary if Link is used directly,
-    // but kept for consistency with your original code.
   };
+
   return (
     <motion.div
       whileHover={{ scale: 1.03 }}
       transition={{ type: "spring", stiffness: 300 }}
       className="relative bg-white border rounded-md overflow-hidden shadow-md group"
     >
-      {/* Discount Percentage Badge - Positioned at top right */}
-      {showDiscount && (
-        <div className="absolute top-2 right-2 bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded-full z-10 shadow-md">
-          {product.discountRate}% OFF
-        </div>
-      )}
-
-      {/* Image - adjust size on mobile */}
+      {/* Product Image */}
       <img
         src={product.image}
         alt={product.title}
@@ -89,9 +81,14 @@ const ProductCard = ({ product }) => {
           isMobileOrTablet ? "h-52" : "h-80"
         } object-cover cursor-pointer`}
         onClick={handleImageClick}
+        onError={(e) => {
+          e.target.onerror = null;
+          e.target.src =
+            "https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png";
+        }}
       />
 
-      {/* Overlay icons - only show on desktop */}
+      {/* Overlay Action Buttons (desktop only) */}
       <div
         className={`absolute inset-0 transition duration-300 flex items-center justify-center gap-4
           ${
@@ -120,29 +117,30 @@ const ProductCard = ({ product }) => {
         </Link>
       </div>
 
-      {/* Product Info Section */}
+      {/* Product Info */}
       <div className="p-4">
-        <h3 className=" font-semibold text-gray-800 line-clamp-1">
+        <h3 className="font-semibold text-gray-800 line-clamp-1">
           {product.title}
         </h3>
-        <p className="text-xs text-gray-500   line-clamp-2">
+        <p className="text-xs text-gray-500 line-clamp-2">
           {product.description}
         </p>
 
-        <div className="mt-3 flex items-baseline space-x-2">
+        {/* Price & Discount */}
+        <div className="mt-3 flex items-center flex-wrap gap-2">
           {showDiscount ? (
             <>
-              {/* Discounted price */}
               <span className="text-lg text-slate-800 font-bold">
                 ₹{discountedPrice.toLocaleString("en-IN")}
               </span>
-              {/* Original price, struck out */}
-              <span className="text-[12px] text-gray-400 line-through">
+              <span className="text-sm text-gray-400 line-through">
                 ₹{product.price.toLocaleString("en-IN")}
+              </span>
+              <span className="bg-red-500 text-white text-[11px] font-semibold px-2 py-0.5 rounded-full">
+                {product.discountRate}% OFF
               </span>
             </>
           ) : (
-            // Only show price if no discount
             <span className="text-lg text-slate-800 font-bold">
               ₹{product.price.toLocaleString("en-IN")}
             </span>

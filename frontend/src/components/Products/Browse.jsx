@@ -193,6 +193,7 @@ export default function BrowsePage() {
         type: item.type,
         inStock: item.isInStock,
         isBookable: item.isBookable,
+        discountRate: item.discountRate,
         duration: item.isBookable && item.duration ? item.duration : undefined,
       }));
       setItems(formattedItems);
@@ -596,131 +597,130 @@ export default function BrowsePage() {
                 <div
                   className={
                     viewMode === "grid"
-                      ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
+                      ? "grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6"
                       : "space-y-4"
                   }
                 >
-                  {displayedItems.map((item) => (
-                    <Link key={item.id} to={`/item/${item.id}`}>
-                      <Card
-                        className={`group hover:shadow-lg transition-all duration-300 cursor-pointer ${
-                          viewMode === "list" ? "flex" : ""
-                        }`}
-                      >
-                        <CardContent
-                          className={`p-0 ${
-                            viewMode === "list" ? "flex w-full" : ""
+                  {displayedItems.map((item) => {
+                    const discountRate = parseFloat(item.discountRate) || 0;
+                    const hasDiscount = discountRate > 0;
+                    const discountedPrice = hasDiscount
+                      ? Math.round(item.price * (1 - discountRate / 100))
+                      : item.price;
+
+                    return (
+                      <Link key={item.id} to={`/item/${item.id}`}>
+                        <Card
+                          className={`group hover:shadow-lg transition-all duration-300 cursor-pointer ${
+                            viewMode === "list" ? "flex" : ""
                           }`}
                         >
-                          <div
-                            className={`relative overflow-hidden ${
-                              viewMode === "list" ? "w-48 h-32" : "h-68"
-                            } ${
-                              viewMode === "grid"
-                                ? "rounded-t-lg"
-                                : "rounded-l-lg"
+                          <CardContent
+                            className={`p-0 ${
+                              viewMode === "list" ? "flex w-full" : ""
                             }`}
                           >
-                            <img
-                              src={item.image}
-                              alt={item.title}
-                              className="object-cover group-hover:scale-105 transition-transform duration-300 w-full h-full"
-                              onError={(e) => {
-                                e.target.onerror = null;
-                                e.target.src =
-                                  "https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png";
-                              }}
-                            />
-                            <div className="absolute top-4 right-4">
-                              <Badge
-                                variant={
-                                  item.type === "product"
-                                    ? "default"
-                                    : "secondary"
-                                }
-                              >
-                                {item.type === "product"
-                                  ? "Product"
-                                  : "Service"}
-                              </Badge>
-                            </div>
-                            {item.originalPrice &&
-                              item.originalPrice > item.price && (
-                                <div className="absolute top-4 left-4">
-                                  <Badge className="bg-red-500">
-                                    {Math.round(
-                                      ((item.originalPrice - item.price) /
-                                        item.originalPrice) *
-                                        100
-                                    )}
-                                    % OFF
-                                  </Badge>
-                                </div>
-                              )}
-                          </div>
-                          <div
-                            className={`p-4 ${
-                              viewMode === "list" ? "flex-1" : ""
-                            }`}
-                          >
-                            <h3 className="font-semibold mb-2 line-clamp-2">
-                              {item.title}
-                            </h3>
-                            <p className="text-sm text-gray-600 mb-2">
-                              Vendor: {item.vendor}
-                            </p>
-                            <p className="text-sm text-gray-600 mb-2">
-                              Category: {item.category}
-                            </p>
-                            <div className="flex items-center justify-between mb-3">
-                              <div className="flex items-center">
-                                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                                <span className="text-sm text-gray-600 ml-1">
-                                  {item.rating.toFixed(1)}
-                                </span>
+                            <div
+                              className={`relative overflow-hidden ${
+                                viewMode === "list" ? "w-48 h-32" : ""
+                              } ${
+                                viewMode === "grid"
+                                  ? "rounded-t-lg"
+                                  : "rounded-l-lg"
+                              }`}
+                            >
+                              <img
+                                src={item.image}
+                                alt={item.title}
+                                className="object-cover h-52 md:h-80 group-hover:scale-105 transition-transform duration-300 w-full "
+                                onError={(e) => {
+                                  e.target.onerror = null;
+                                  e.target.src =
+                                    "https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png";
+                                }}
+                              />
+                              <div className="absolute top-4 right-4">
+                                <Badge
+                                  variant={
+                                    item.type === "product"
+                                      ? "default"
+                                      : "secondary"
+                                  }
+                                >
+                                  {item.type === "product"
+                                    ? "Product"
+                                    : "Service"}
+                                </Badge>
                               </div>
-                              {item.type === "service" &&
-                                item.isBookable &&
-                                item.duration && (
-                                  <span className="text-sm text-blue-600">
-                                    Duration: {item.duration}
-                                  </span>
-                                )}
-                              {item.type === "product" && item.inStock && (
-                                <Badge
-                                  variant="outline"
-                                  className="text-green-600 border-green-600"
-                                >
-                                  In Stock
-                                </Badge>
-                              )}
-                              {item.type === "product" && !item.inStock && (
-                                <Badge
-                                  variant="outline"
-                                  className="text-red-600 border-red-600"
-                                >
-                                  Out of Stock
-                                </Badge>
-                              )}
                             </div>
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <span className="text-lg font-bold">
-                                  ₹{item.price.toLocaleString()}
-                                </span>
-                                {item.originalPrice &&
-                                  item.originalPrice > item.price && (
-                                    <span className="text-sm text-gray-500 line-through">
-                                      ₹{item.originalPrice.toLocaleString()}
+                            <div
+                              className={`p-4 ${
+                                viewMode === "list" ? "flex-1" : ""
+                              }`}
+                            >
+                              <h3 className="font-semibold mb-2 line-clamp-2">
+                                {item.title}
+                              </h3>
+
+                              <p className="text-sm text-gray-600 mb-2">
+                                Category: {item.category}
+                              </p>
+                              <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center">
+                                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                                  <span className="text-sm text-gray-600 ml-1">
+                                    {item.rating.toFixed(1)}
+                                  </span>
+                                </div>
+                                {item.type === "service" &&
+                                  item.isBookable &&
+                                  item.duration && (
+                                    <span className="text-sm text-blue-600">
+                                      Duration: {item.duration}
                                     </span>
                                   )}
+                                {item.type === "product" && item.inStock && (
+                                  <Badge
+                                    variant="outline"
+                                    className="text-green-600 border-green-600"
+                                  >
+                                    In Stock
+                                  </Badge>
+                                )}
+                                {item.type === "product" && !item.inStock && (
+                                  <Badge
+                                    variant="outline"
+                                    className="text-red-600 border-red-600"
+                                  >
+                                    Out of Stock
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="flex items-center justify-between flex-col md:flex-row">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-lg font-bold text-gray-800">
+                                    ₹{discountedPrice.toLocaleString()}
+                                  </span>
+                                  {hasDiscount && (
+                                    <>
+                                      <span className="text-sm text-gray-500 line-through">
+                                        ₹{item.price.toLocaleString()}
+                                      </span>
+                                    </>
+                                  )}
+                                </div>
+                                {discountRate > 0 && (
+                                  <Badge className="bg-red-600 text-white text-xs px-2 py-0.5 ml-2">
+                                    {discountRate}% OFF
+                                  </Badge>
+                                )}
                               </div>
                             </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </Link>
-                  ))}
+                          </CardContent>
+                        </Card>
+                      </Link>
+                    );
+                  })}
                 </div>
               )}
             </div>
