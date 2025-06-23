@@ -3,7 +3,7 @@ import { getAllCategoriesWithImages } from "../../api/categories";
 import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 
-const CategoryScrollSlider = ({type}) => {
+const CategoryScrollSlider = ({ type }) => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -95,7 +95,7 @@ const CategoryScrollSlider = ({type}) => {
       ref={scrollContainerRef}
       onScroll={handleScroll}
     >
-      <div className="flex gap-2 sm:gap-4 w-max">
+      <div className="flex gap-2 md:gap-1 w-max">
         {categories.map((item) => {
           const isEmiCategory = item.name.toLowerCase().includes("emi");
           return (
@@ -104,7 +104,7 @@ const CategoryScrollSlider = ({type}) => {
               key={item._id}
               className={`flex flex-col items-center justify-start shrink-0 w-20 sm:w-32 relative ${
                 isEmiCategory
-                  ? "border-2 border-amber-500 shadow-lg scale-105 transition-all duration-300 ease-in-out z-10 rounded-xl p-2 bg-amber-50"
+                  ? "animate-pulse border-amber-500 shadow-lg scale-105 transition-all duration-300 ease-in-out z-10 rounded-xl p-2 bg-amber-50"
                   : ""
               }`}
               style={isEmiCategory ? { transform: "scale(1.05)" } : {}}
@@ -112,7 +112,7 @@ const CategoryScrollSlider = ({type}) => {
               <img
                 src={item.img}
                 alt={item.name}
-                className={`w-16 h-16 sm:w-28 sm:h-28 object-cover rounded-full ${
+                className={`md:w-22 md:h-22 w-14 h-14 object-cover rounded-full ${
                   isEmiCategory ? "border-2 border-amber-400" : ""
                 }`}
                 onError={(e) => {

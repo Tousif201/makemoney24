@@ -6,7 +6,11 @@ import shop from "../assets/login/shopping.jpg";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { uploadFiles } from "../../api/upload";
-import { X } from "lucide-react";
+import {
+  X,
+  Eye, // Import Eye icon
+  EyeOff, // Import EyeOff icon
+} from "lucide-react";
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -25,6 +29,7 @@ export default function Signup() {
   const [isLoading, setIsLoading] = useState(false);
   const [aadhaarFrontFile, setAadhaarFrontFile] = useState(null);
   const [aadhaarBackFile, setAadhaarBackFile] = useState(null);
+  const [showPassword, setShowPassword] = useState(false); // New state for password visibility
 
   useEffect(() => {
     const referralFromUrl = searchParams.get("referralCode");
@@ -117,7 +122,7 @@ export default function Signup() {
                 filesToUpload.find(
                   (f) =>
                     f.name === uploadedFile.key ||
-                    f.name.includes(uploadedFile.key)
+                    (uploadedFile.key && uploadedFile.key.includes(f.name)) // Improved lookup
                 )
               ) || "Other Document",
           }));
@@ -211,18 +216,34 @@ export default function Signup() {
               <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
             )}
 
-            <input
-              name="password"
-              type="password"
-              placeholder="Password"
-              className={`w-full p-3 rounded bg-gray-100 text-black ${
-                errors.password ? "border-red-500 border" : ""
-              }`}
-              onChange={handleChange}
-              value={form.password}
-              disabled={isLoading}
-              required
-            />
+            {/* Password field with eye icon */}
+            <div className="relative">
+              <input
+                name="password"
+                type={showPassword ? "text" : "password"} // Toggle type
+                placeholder="Password"
+                className={`w-full p-3 rounded bg-gray-100 text-black pr-10 ${
+                  // Added pr-10 for padding
+                  errors.password ? "border-red-500 border" : ""
+                }`}
+                onChange={handleChange}
+                value={form.password}
+                disabled={isLoading}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                disabled={isLoading}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+              >
+                {showPassword ? (
+                  <EyeOff className="h-5 w-5" />
+                ) : (
+                  <Eye className="h-5 w-5" />
+                )}
+              </button>
+            </div>
             {errors.password && (
               <p className="text-red-500 text-xs mt-1">{errors.password}</p>
             )}
@@ -235,7 +256,6 @@ export default function Signup() {
               onChange={handleChange}
               value={form.referralCode}
               disabled={isLoading}
-              required
             />
 
             {/* Aadhaar Front */}
@@ -337,9 +357,7 @@ export default function Signup() {
               </label>
             </div>
             {errors.acceptTerms && (
-              <p className="text-red-500 text-xs mt-1">
-                {errors.acceptTerms}
-              </p>
+              <p className="text-red-500 text-xs mt-1">{errors.acceptTerms}</p>
             )}
 
             <button

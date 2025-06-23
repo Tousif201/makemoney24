@@ -440,7 +440,7 @@ export default function BrowsePage() {
                                 category.image?.url ||
                                 "https://via.placeholder.com/80"
                               } // Fallback image
-                              className="h-12 w-12 rounded-full object-cover  mb-2 mt-2"
+                              className="h-12 w-12 rounded-2xl object-cover  mb-2 mt-2"
                               alt={category.name}
                             />
                           </div>
@@ -488,7 +488,7 @@ export default function BrowsePage() {
                                   "https://via.placeholder.com/60"
                                 } // Fallback image
                                 alt={subCategory.name}
-                                className="w-14 h-14 object-cover rounded-full"
+                                className="w-14 h-14 object-cover rounded-2xl"
                               />
                             </div>
                             <p className="mt-2 text-xs font-medium text-gray-800">

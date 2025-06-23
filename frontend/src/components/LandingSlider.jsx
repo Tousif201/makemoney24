@@ -15,7 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton"; // <<<--- Import Skeleton
 import { getAllBanners } from "../../api/banner";
 import AutoplayPlugin from "embla-carousel-autoplay";
 
-const LandingSlider = () => {
+const LandingSlider = ({ displayRange = "all" }) => { // Added displayRange prop with a default of "all"
   const [banners, setBanners] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -40,8 +40,30 @@ const LandingSlider = () => {
           throw new Error("No valid banners available.");
         }
 
-        const halfLength = Math.ceil(validBanners.length / 2);
-        setBanners(validBanners.slice(0, halfLength));
+        let bannersToDisplay = [];
+        const totalBanners = validBanners.length;
+
+        if (displayRange === "all") {
+          bannersToDisplay = validBanners;
+        } else if (displayRange === "firstHalf") {
+          const halfLength = Math.ceil(totalBanners / 2);
+          bannersToDisplay = validBanners.slice(0, halfLength);
+        } else if (displayRange === "secondHalf") {
+          const halfLength = Math.floor(totalBanners / 2);
+          bannersToDisplay = validBanners.slice(halfLength);
+        } else if (Array.isArray(displayRange) && displayRange.length === 2) {
+          const [startIndex, endIndex] = displayRange;
+          // Ensure indices are within bounds
+          const start = Math.max(0, startIndex - 1); // Adjust for 0-based indexing, assume user provides 1-based
+          const end = Math.min(totalBanners, endIndex);
+          bannersToDisplay = validBanners.slice(start, end);
+        } else {
+          // Default to all if an invalid displayRange is provided
+          console.warn("Invalid displayRange prop provided. Displaying all banners.");
+          bannersToDisplay = validBanners;
+        }
+
+        setBanners(bannersToDisplay);
       } catch (err) {
         console.error("Error fetching banners:", err);
         setError(
@@ -53,7 +75,7 @@ const LandingSlider = () => {
     };
 
     fetchBanners();
-  }, []);
+  }, [displayRange]); // Add displayRange to the dependency array
 
   const handleBannerClick = (url) => {
     if (url) {
@@ -99,7 +121,7 @@ const LandingSlider = () => {
     return (
       <div className="max-w-7xl mx-auto px-4 py-12 text-center bg-gray-50 rounded-lg shadow-lg my-8">
         <p className="text-lg text-gray-600">
-          No banners available to display.
+          No banners available to display for the selected range.
         </p>
       </div>
     );
@@ -149,5 +171,3 @@ const LandingSlider = () => {
 };
 
 export default LandingSlider;
-
-
