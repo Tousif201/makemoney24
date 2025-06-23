@@ -63,7 +63,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 }
-from "@/components/ui/alert-dialog";
+  from "@/components/ui/alert-dialog";
 
 // Import file upload/delete functions
 import { deleteFiles, uploadFiles } from "../../../../api/upload";
@@ -102,7 +102,7 @@ export default function CategoryManagementPage() {
       console.error("Failed to fetch categories:", err);
       setError(
         err.response?.data?.message ||
-          "Failed to load categories. Please try again."
+        "Failed to load categories. Please try again."
       );
     } finally {
       setLoading(false);
@@ -300,7 +300,7 @@ export default function CategoryManagementPage() {
       console.error("Error submitting category form:", err);
       setError(
         err.response?.data?.message ||
-          "Failed to save category. Please check your inputs."
+        "Failed to save category. Please check your inputs."
       );
     } finally {
       setLoading(false);
@@ -606,13 +606,13 @@ export default function CategoryManagementPage() {
       </div>
 
       {/* Add/Edit Category Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="w-[95vw] max-w-md mx-auto max-h-[90vh] overflow-y-auto">
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen} >
+        <DialogContent className="w-[100vw] max-w-md mx-auto max-h-[100vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-purple-800 text-lg">
+            <DialogTitle className="text-purple-800 text-lg text-start">
               {selectedCategory ? "Edit Category" : "Add New Category"}
             </DialogTitle>
-            <DialogDescription className="text-sm">
+            <DialogDescription className="text-sm text-start">
               {selectedCategory
                 ? "Update the category details below."
                 : "Create a new category. You can nest up to 3 levels deep."}
@@ -623,17 +623,20 @@ export default function CategoryManagementPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name" className="text-sm">Name</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, name: e.target.value }))
-                }
-                placeholder="Category name"
-                required
-                className="text-sm"
-              />
+              <div className="w-full max-w-xs sm:max-w-full">
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, name: e.target.value }))
+                  }
+                  placeholder="Category name"
+                  required
+                  className="text-sm"
+                />
+              </div>
             </div>
+
 
             <div className="space-y-2">
               <Label htmlFor="description" className="text-sm">Description</Label>
@@ -648,7 +651,7 @@ export default function CategoryManagementPage() {
                 }
                 placeholder="Category description (optional)"
                 rows={3}
-                className="text-sm resize-none"
+                className="text-sm resize-none w-full max-w-xs sm:max-w-full"
               />
             </div>
 
@@ -713,10 +716,10 @@ export default function CategoryManagementPage() {
                 accept="image/*"
                 onChange={handleFileChange}
                 disabled={uploadingImage}
-                className="text-sm"
+                className="text-sm w-full max-w-xs sm:max-w-full"
               />
               {(selectedFile || uploadedImageUrl) && (
-                <div className="flex items-center gap-2 mt-2">
+                <div className="flex items-center gap-2 mt-2 ">
                   {selectedFile ? (
                     <img
                       src={URL.createObjectURL(selectedFile)}
@@ -732,11 +735,12 @@ export default function CategoryManagementPage() {
                       />
                     )
                   )}
-                  <div className="flex-1 text-sm text-gray-600 truncate min-w-0">
+                  <div className="flex-1 text-sm text-gray-600 truncate max-w-[200px] sm:max-w-full">
                     {selectedFile
                       ? selectedFile.name
                       : uploadedImageUrl.split("/").pop()}
                   </div>
+
                   <Button
                     type="button" // Important: set type="button" to prevent this from submitting the form
                     variant="ghost"
@@ -762,14 +766,14 @@ export default function CategoryManagementPage() {
                 type="button"
                 variant="outline"
                 onClick={() => setIsDialogOpen(false)}
-                className="w-full sm:w-auto"
+                className="text-sm w-full max-w-xs sm:max-w-full"
               >
                 Cancel
               </Button>
               <Button
                 type="submit" // This button will now correctly submit the form
                 disabled={loading || uploadingImage}
-                className="bg-purple-600 hover:bg-purple-700 text-white w-full sm:w-auto"
+                className="bg-purple-600 hover:bg-purple-700 text-white text-sm w-full max-w-xs sm:max-w-full"
               >
                 {(loading || uploadingImage) && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
