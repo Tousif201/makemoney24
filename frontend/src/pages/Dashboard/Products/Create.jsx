@@ -130,8 +130,8 @@ export default function CreateProduct() {
       (cat) =>
         cat._id === formData.categoryId &&
         cat.type === formData.type &&
-        (getCategoryLevel(cat, allCategories) === 1||
-        getCategoryLevel(cat, allCategories) === 2 ||
+        (getCategoryLevel(cat, allCategories) === 1 ||
+          getCategoryLevel(cat, allCategories) === 2 ||
           getCategoryLevel(cat, allCategories) === 3)
     );
 
@@ -721,7 +721,7 @@ export default function CreateProduct() {
         ...cat,
         level: getCategoryLevel(cat, allCategories),
       }))
-      .filter((cat) => cat.level === 2 || cat.level === 3)
+      .filter((cat) => cat.level === 1 || cat.level === 2 || cat.level === 3)
       .sort((a, b) => {
         // Sort by parent, then by name within same parent
         const getFullPath = (c) => {
@@ -861,7 +861,7 @@ export default function CreateProduct() {
                         )}
                       {getSelectableCategories().map((cat) => (
                         <SelectItem key={cat._id} value={cat._id}>
-                          {"\u00A0\u00A0".repeat(cat.level - 2)}{" "}
+                          {"\u00A0\u00A0".repeat(cat.level - 1)}{" "}
                           {/* Indent for Level 3 */}
                           {cat.name} (Level {cat.level})
                         </SelectItem>
