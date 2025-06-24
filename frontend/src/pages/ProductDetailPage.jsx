@@ -270,20 +270,19 @@ export default function ProductDetailPage() {
       type: product.type,
       variant: selectedVariant
         ? {
-            color: selectedVariant.color,
-            size: selectedVariant.size,
-            sku: selectedVariant.sku,
-            variantId: selectedVariant._id, // Include variant ID for easier tracking
-          }
+          color: selectedVariant.color,
+          size: selectedVariant.size,
+          sku: selectedVariant.sku,
+          variantId: selectedVariant._id, // Include variant ID for easier tracking
+        }
         : undefined,
     };
 
     addItem(itemToAdd); // Assuming addItem is provided by useCart()
 
     toast.success("Item Added Successfully", {
-      description: `${itemToAdd.title} ${itemToAdd.variant?.color || ""} ${
-        itemToAdd.variant?.size || ""
-      } added to cart!`,
+      description: `${itemToAdd.title} ${itemToAdd.variant?.color || ""} ${itemToAdd.variant?.size || ""
+        } added to cart!`,
       duration: 3000,
       icon: "🛒",
       style: {
@@ -305,9 +304,8 @@ export default function ProductDetailPage() {
   };
 
   const currentProductUrl = `${"https://makemoney24hrs.com"}/products/${productId}`; // Adjust as per your routing
-  const shareTitle = `Check out this ${
-    product?.type || "item"
-  } on [Your App Name]!`;
+  const shareTitle = `Check out this ${product?.type || "item"
+    } on [Your App Name]!`;
   const shareText = product?.title
     ? `Discover "${product.title}" - `
     : "Discover this amazing item!";
@@ -390,22 +388,22 @@ export default function ProductDetailPage() {
   // Derived states for variant selection
   const availableColors = product?.variants
     ? Array.from(
-        new Map(
-          product.variants.map((v) => [
-            v.color,
-            { color: v.color, image: v.images?.[0] || "/placeholder.svg" }, // Get the first image or a placeholder
-          ])
-        ).values()
-      )
+      new Map(
+        product.variants.map((v) => [
+          v.color,
+          { color: v.color, image: v.images?.[0] || "/placeholder.svg" }, // Get the first image or a placeholder
+        ])
+      ).values()
+    )
     : [];
   const availableSizes = product?.variants
     ? [
-        ...new Set(
-          product.variants
-            .filter((v) => v.color === selectedColor)
-            .map((v) => v.size)
-        ),
-      ]
+      ...new Set(
+        product.variants
+          .filter((v) => v.color === selectedColor)
+          .map((v) => v.size)
+      ),
+    ]
     : [];
 
   // Determine which set of images to display based on selectedVariant
@@ -413,8 +411,8 @@ export default function ProductDetailPage() {
   // even if a size hasn't been picked yet.
   const currentProductImages =
     product?.type === "product" &&
-    selectedVariant &&
-    selectedVariant.images?.length > 0
+      selectedVariant &&
+      selectedVariant.images?.length > 0
       ? selectedVariant.images // If selectedVariant has images, use them directly (they are already URLs)
       : (product?.portfolio || []).map((item) => item.url); // Otherwise, map product.portfolio to extract URLs
 
@@ -509,9 +507,9 @@ export default function ProductDetailPage() {
   const averageRating =
     product.reviews && product.reviews.length > 0
       ? (
-          product.reviews.reduce((acc, review) => acc + review.rating, 0) /
-          product.reviews.length
-        ).toFixed(1)
+        product.reviews.reduce((acc, review) => acc + review.rating, 0) /
+        product.reviews.length
+      ).toFixed(1)
       : (product.rating || 0).toFixed(1);
 
   const totalReviewsCount = product.reviews ? product.reviews.length : 0;
@@ -523,8 +521,8 @@ export default function ProductDetailPage() {
       initial="initial"
       animate="animate"
       exit="exit"
-    >
-      <div className="container mx-auto px-4 py-12 lg:py-16">
+     >
+      <div className="container mx-auto px-4 py-5 lg:py-5">
         <motion.div
           className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 mb-6"
           variants={sectionVariants}
@@ -534,38 +532,36 @@ export default function ProductDetailPage() {
           {/* Product Images */}
           <motion.div className="" variants={itemVariants}>
             <motion.div
-              className="relative aspect-square overflow-hidden rounded-xl bg-white dark:bg-gray-800 shadow-lg"
+              className="relative  w-full max-w-[300px] sm:max-w-[400px] md:max-w-[500px] overflow-hidden rounded-xl bg-white dark:bg-gray-800 shadow-lg"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
+              transition={{ duration: 0.5, ease: 'easeOut' }}
             >
               <img
-                src={
-                  currentProductImages[selectedImageIndex] || "/placeholder.svg"
-                }
+                src={currentProductImages[selectedImageIndex] || '/placeholder.svg'}
                 alt={product.title}
-                className="object-contain w-full h-full p-4"
+                className="w-full h-full object-contain bg-white"
               />
-              {product.discountRate &&
-                product.discountRate > 0 &&
-                product.discountRate <= 100 && (
-                  <div className="absolute top-4 left-4">
-                    <Badge className="bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-1  rounded-full shadow-md">
-                      {Math.round(product.discountRate)}% OFF
-                    </Badge>
-                  </div>
-                )}
+              {product.discountRate && product.discountRate > 0 && product.discountRate <= 100 && (
+                <div className="absolute top-4 left-4">
+                  <Badge className="bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-1 rounded-full shadow-md">
+                    {Math.round(product.discountRate)}% OFF
+                  </Badge>
+                </div>
+              )}
             </motion.div>
-            <motion.div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-4 gap-4">
+
+
+
+            <motion.div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-4 gap-4 mt-5">
               {currentProductImages.map((item, index) => (
                 <motion.button
                   key={index}
                   onClick={() => setSelectedImageIndex(index)}
-                  className={`relative aspect-square overflow-hidden rounded-lg border-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    selectedImageIndex === index
-                      ? "border-blue-500 shadow-md"
-                      : "border-gray-200 dark:border-gray-700 hover:border-blue-300"
-                  }`}
+                  className={`relative aspect-square overflow-hidden rounded-lg border-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 ${selectedImageIndex === index
+                    ? "border-blue-500 shadow-md"
+                    : "border-gray-200 dark:border-gray-700 hover:border-blue-300"
+                    }`}
                   variants={thumbnailVariants}
                   initial="initial"
                   animate="animate"
@@ -634,11 +630,10 @@ export default function ProductDetailPage() {
                   {[...Array(5)].map((_, i) => (
                     <Star
                       key={i}
-                      className={`h-3 w-3 md:h-6 md:w-6 ${
-                        i < Math.floor(averageRating)
-                          ? "fill-yellow-400 text-yellow-400"
-                          : "text-gray-300"
-                      }`}
+                      className={`h-3 w-3 md:h-6 md:w-6 ${i < Math.floor(averageRating)
+                        ? "fill-yellow-400 text-yellow-400"
+                        : "text-gray-300"
+                        }`}
                     />
                   ))}
                   <span className="ml-2 text-xs md:text-base font-semibold text-gray-700 dark:text-gray-300">
@@ -700,11 +695,10 @@ export default function ProductDetailPage() {
                               setSelectedSize(null);
                               setQuantity(1);
                             }}
-                            className={`relative w-16 h-16 rounded-lg overflow-hidden border-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 group ${
-                              selectedColor === colorOption.color
-                                ? "border-blue-600 shadow-md"
-                                : "border-gray-200 dark:border-gray-700 hover:border-blue-300"
-                            }`}
+                            className={`relative w-16 h-16 rounded-lg overflow-hidden border-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 group ${selectedColor === colorOption.color
+                              ? "border-blue-600 shadow-md"
+                              : "border-gray-200 dark:border-gray-700 hover:border-blue-300"
+                              }`}
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                           >
@@ -742,11 +736,10 @@ export default function ProductDetailPage() {
                               setSelectedSize(size);
                               setQuantity(1); // Reset quantity
                             }}
-                            className={`px-3 py-1 text-xs border rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                              selectedSize === size
-                                ? "border-blue-600 bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-200"
-                                : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                            }`}
+                            className={`px-3 py-1 text-xs border rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 ${selectedSize === size
+                              ? "border-blue-600 bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-200"
+                              : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                              }`}
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                           >
@@ -881,20 +874,23 @@ export default function ProductDetailPage() {
 
               <Card className="mb-12 rounded-xl shadow-lg dark:bg-gray-800 dark:border-gray-700">
                 <CardContent className="p-6">
-                  <Tabs defaultValue="description" className="w-full">
+                  <Tabs defaultValue="reviews" className="w-full">
                     <TabsList className="grid w-full grid-cols-2  bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
-                      <TabsTrigger
-                        value="description"
-                        className="data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-600 data-[state=active]:font-semibold rounded-md transition-all duration-200 dark:data-[state=active]:bg-gray-900 dark:data-[state=active]:text-white"
-                      >
-                        Description
-                      </TabsTrigger>
+
                       <TabsTrigger
                         value="reviews"
                         className="data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-600 data-[state=active]:font-semibold rounded-md transition-all duration-200 dark:data-[state=active]:bg-gray-900 dark:data-[state=active]:text-white"
                       >
                         Reviews ({totalReviewsCount})
                       </TabsTrigger>
+
+                      <TabsTrigger
+                        value="description"
+                        className="data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-600 data-[state=active]:font-semibold rounded-md transition-all duration-200 dark:data-[state=active]:bg-gray-900 dark:data-[state=active]:text-white"
+                      >
+                        Description
+                      </TabsTrigger>
+
                     </TabsList>
                     <TabsContent value="description" className="mt-6">
                       <motion.div
@@ -926,11 +922,10 @@ export default function ProductDetailPage() {
                               {[...Array(5)].map((_, i) => (
                                 <Star
                                   key={i}
-                                  className={`h-5 w-5 ${
-                                    i < Math.floor(averageRating)
-                                      ? "fill-yellow-400 text-yellow-400"
-                                      : "text-gray-300"
-                                  }`}
+                                  className={`h-5 w-5 ${i < Math.floor(averageRating)
+                                    ? "fill-yellow-400 text-yellow-400"
+                                    : "text-gray-300"
+                                    }`}
                                 />
                               ))}
                             </div>
@@ -1004,11 +999,10 @@ export default function ProductDetailPage() {
                                     {[...Array(5)].map((_, i) => (
                                       <Star
                                         key={i}
-                                        className={`h-5 w-5 ${
-                                          i < review.rating
-                                            ? "fill-yellow-400 text-yellow-400"
-                                            : "text-gray-300"
-                                        }`}
+                                        className={`h-5 w-5 ${i < review.rating
+                                          ? "fill-yellow-400 text-yellow-400"
+                                          : "text-gray-300"
+                                          }`}
                                       />
                                     ))}
                                   </div>
