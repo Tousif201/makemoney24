@@ -5,7 +5,8 @@ import { ProductService } from "../models/ProductService.model.js";
 import mongoose from "mongoose";
 import { Review } from "../models/Review.model.js";
 import { Vendor } from "../models/Vendor.model.js";
-import { Category } from "../models/Category.model.js"
+import { Category } from "../models/Category.model.js";
+import { getNearbyPincodes } from "../utils/pincodeUtils.js"; // Assuming you have a utility function to get nearby pincodes
 // Helper function to validate ObjectId
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
@@ -204,7 +205,6 @@ export const getProductServices = async (req, res) => {
       order,
       page,
       limit,
-      // --- NEW: Accepting color and size query parameters ---
       color,
       size,
     } = req.query;
@@ -215,7 +215,7 @@ export const getProductServices = async (req, res) => {
 
     let sort = { createdAt: -1 };
 
-    // --- Category Filtering Logic (No changes here) ---
+    // --- Category Filtering Logic ---
     if (categoryId) {
       const initialCategoryIds = categoryId
         .split(",")
@@ -228,94 +228,101 @@ export const getProductServices = async (req, res) => {
           .json({ message: "Invalid Category ID format(s)." });
       }
 
-      const allApplicableCategoryIds = await getAllDescendantCategoryIds(initialCategoryIds);
+      const allApplicableCategoryIds = await getAllDescendantCategoryIds(
+        initialCategoryIds
+      );
       filter.categoryId = {
-        $in: allApplicableCategoryIds.map((id) => new mongoose.Types.ObjectId(id)),
+        $in: allApplicableCategoryIds.map(
+          (id) => new mongoose.Types.ObjectId(id)
+        ),
       };
     }
 
-    // --- Other filters (No changes here) ---
+    // --- Vendor Filtering Logic ---
     if (vendorId) {
       if (!isValidObjectId(vendorId)) {
-        return res.status(400).json({ message: "Invalid User ID format for vendorId." });
+        return res
+          .status(400)
+          .json({ message: "Invalid User ID format for vendorId." });
       }
       const vendor = await Vendor.findOne({ userId: vendorId });
       if (!vendor) {
-        return res.status(404).json({ message: "Vendor not found for the provided user ID." });
+        return res
+          .status(404)
+          .json({ message: "Vendor not found for the provided user ID." });
       }
       filter.vendorId = vendor._id;
     }
 
+    // --- Type Filtering Logic ---
     if (type) {
       if (!["product", "service"].includes(type)) {
-        return res.status(400).json({ message: 'Type must be "product" or "service".' });
+        return res
+          .status(400)
+          .json({ message: 'Type must be "product" or "service".' });
       }
       filter.type = type;
     }
 
+    // ========================================================================
+    // --- ✅ UPDATED: Pincode Filtering with Nearby Search ---
+    // ========================================================================
     if (pincode) {
-      filter.pincode = pincode;
-    }
+      // Fetch the user's pincode and all nearby pincodes from the same district
+      const allPincodes = await getNearbyPincodes(pincode);
 
+      // Modify the filter to find products where the pincode is in our list
+      filter.pincode = { $in: allPincodes };
+    }
+    // ========================================================================
+
+    // --- Title (Search) Filtering Logic ---
     if (title) {
       filter.title = { $regex: title, $options: "i" };
     }
 
+    // --- Price Range Filtering Logic ---
     if (minPrice || maxPrice) {
       filter.price = {};
       if (minPrice) filter.price.$gte = parseFloat(minPrice);
       if (maxPrice) filter.price.$lte = parseFloat(maxPrice);
     }
-    
-    // ========================================================================
-    // --- ✅ NEW: Filtering by product variants (color and size) ---
-    // ========================================================================
-    const variantConditions = {};
 
-    // If 'color' query parameter exists, add it to our variant conditions.
-    // This supports multiple comma-separated values (e.g., "Red,Blue").
+    // --- Variant (Color & Size) Filtering Logic ---
+    const variantConditions = {};
     if (color) {
-      const colors = color.split(',').map(c => c.trim()).filter(Boolean);
+      const colors = color.split(",").map((c) => c.trim()).filter(Boolean);
       if (colors.length > 0) {
         variantConditions.color = { $in: colors };
       }
     }
-
-    // If 'size' query parameter exists, add it to our variant conditions.
-    // This also supports multiple comma-separated values (e.g., "M,L,XL").
     if (size) {
-      const sizes = size.split(',').map(s => s.trim()).filter(Boolean);
+      const sizes = size.split(",").map((s) => s.trim()).filter(Boolean);
       if (sizes.length > 0) {
         variantConditions.size = { $in: sizes };
       }
     }
-    
-    // If there are any variant conditions, add the $elemMatch filter.
-    // This ensures we find products where a *single* variant element
-    // matches all the specified criteria (e.g., color AND size).
     if (Object.keys(variantConditions).length > 0) {
       filter.variants = { $elemMatch: variantConditions };
     }
-    // ========================================================================
-    // --- End of New Variant Filtering Logic ---
-    // ========================================================================
 
-
-    // --- Sorting Logic (No changes here) ---
+    // --- Sorting Logic ---
     if (sortBy) {
       const sortOrder = order === "asc" ? 1 : -1;
       const allowedSortFields = ["price", "createdAt", "title", "rating"];
       if (allowedSortFields.includes(sortBy)) {
         sort = { [sortBy]: sortOrder };
         if (sortBy === "rating") {
-          sort.createdAt = -1;
+          sort.createdAt = -1; // Secondary sort for ratings
         }
       } else {
-        console.warn(`Invalid sortBy field received: ${sortBy}. Defaulting to createdAt.`);
+        console.warn(
+          `Invalid sortBy field received: ${sortBy}. Defaulting to createdAt.`
+        );
       }
     }
-    
-    // --- Pagination and Execution (No changes here) ---
+
+    // --- Pagination and Query Execution ---
     const pageNum = parseInt(page, 10) || 1;
     const limitNum = parseInt(limit, 10) || 10;
     const skip = (pageNum - 1) * limitNum;
@@ -339,7 +346,9 @@ export const getProductServices = async (req, res) => {
   } catch (error) {
     console.error("Error fetching products/services:", error);
     if (error.name === "CastError" && error.kind === "ObjectId") {
-      return res.status(400).json({ message: `Invalid ID format for ${error.path}.` });
+      return res
+        .status(400)
+        .json({ message: `Invalid ID format for ${error.path}.` });
     }
     res.status(500).json({ message: "Server error", error: error.message });
   }
