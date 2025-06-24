@@ -18,7 +18,7 @@ const debounce = (func, delay) => {
   };
 };
 
-const ProductList = () => {
+const ProductList = ({ pincode }) => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -70,7 +70,7 @@ const ProductList = () => {
       if (searchTerm) {
         params.title = searchTerm;
       }
-
+      params.pincode = pincode;
       if (selectedPriceRange !== "all") {
         const [minPrice, maxPrice] = selectedPriceRange.split("-");
         if (minPrice) params.minPrice = minPrice;
