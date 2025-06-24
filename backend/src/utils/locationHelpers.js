@@ -36,7 +36,7 @@ export const getNearbyPincodes = async (pincode) => {
     // Also include the original pincode in the set
     pincodeSet.add(pincode);
 
-    console.log(`Found ${pincodeSet.size} unique pincodes for district '${district}'.`);
+    // console.log(`Found ${pincodeSet.size} unique pincodes for district '${district}'.`);
     return Array.from(pincodeSet);
 
   } catch (error) {

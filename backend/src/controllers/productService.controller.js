@@ -6,7 +6,7 @@ import mongoose from "mongoose";
 import { Review } from "../models/Review.model.js";
 import { Vendor } from "../models/Vendor.model.js";
 import { Category } from "../models/Category.model.js";
-import { getNearbyPincodes } from "../utils/pincodeUtils.js"; // Assuming you have a utility function to get nearby pincodes
+import { getNearbyPincodes } from "../utils/locationHelpers.js"; // Assuming you have a utility function to get nearby pincodes
 // Helper function to validate ObjectId
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
@@ -208,135 +208,101 @@ export const getProductServices = async (req, res) => {
       color,
       size,
     } = req.query;
+  console.log(req.query,"Query Params")
 
-    const filter = {
+    let filter = {
       isAdminApproved: "approved",
     };
 
     let sort = { createdAt: -1 };
 
-    // --- Category Filtering Logic ---
+    // --- Build the initial filter object with ALL provided query parameters ---
+    // This logic remains the same.
     if (categoryId) {
-      const initialCategoryIds = categoryId
-        .split(",")
-        .map((id) => id.trim())
-        .filter((id) => isValidObjectId(id));
-
-      if (initialCategoryIds.length === 0) {
-        return res
-          .status(400)
-          .json({ message: "Invalid Category ID format(s)." });
-      }
-
-      const allApplicableCategoryIds = await getAllDescendantCategoryIds(
-        initialCategoryIds
-      );
-      filter.categoryId = {
-        $in: allApplicableCategoryIds.map(
-          (id) => new mongoose.Types.ObjectId(id)
-        ),
-      };
+      const initialCategoryIds = categoryId.split(",").map((id) => id.trim()).filter((id) => isValidObjectId(id));
+      if (initialCategoryIds.length === 0) return res.status(400).json({ message: "Invalid Category ID format(s)." });
+      const allApplicableCategoryIds = await getAllDescendantCategoryIds(initialCategoryIds);
+      filter.categoryId = { $in: allApplicableCategoryIds.map((id) => new mongoose.Types.ObjectId(id)) };
     }
-
-    // --- Vendor Filtering Logic ---
     if (vendorId) {
-      if (!isValidObjectId(vendorId)) {
-        return res
-          .status(400)
-          .json({ message: "Invalid User ID format for vendorId." });
-      }
+      if (!isValidObjectId(vendorId)) return res.status(400).json({ message: "Invalid User ID format for vendorId." });
       const vendor = await Vendor.findOne({ userId: vendorId });
-      if (!vendor) {
-        return res
-          .status(404)
-          .json({ message: "Vendor not found for the provided user ID." });
-      }
+      if (!vendor) return res.status(404).json({ message: "Vendor not found for the provided user ID." });
       filter.vendorId = vendor._id;
     }
-
-    // --- Type Filtering Logic ---
     if (type) {
-      if (!["product", "service"].includes(type)) {
-        return res
-          .status(400)
-          .json({ message: 'Type must be "product" or "service".' });
-      }
+      if (!["product", "service"].includes(type)) return res.status(400).json({ message: 'Type must be "product" or "service".' });
       filter.type = type;
     }
-
-    // ========================================================================
-    // --- ✅ UPDATED: Pincode Filtering with Nearby Search ---
-    // ========================================================================
     if (pincode) {
-      // Fetch the user's pincode and all nearby pincodes from the same district
       const allPincodes = await getNearbyPincodes(pincode);
-
-      // Modify the filter to find products where the pincode is in our list
       filter.pincode = { $in: allPincodes };
     }
-    // ========================================================================
-
-    // --- Title (Search) Filtering Logic ---
     if (title) {
       filter.title = { $regex: title, $options: "i" };
     }
-
-    // --- Price Range Filtering Logic ---
     if (minPrice || maxPrice) {
       filter.price = {};
       if (minPrice) filter.price.$gte = parseFloat(minPrice);
       if (maxPrice) filter.price.$lte = parseFloat(maxPrice);
     }
-
-    // --- Variant (Color & Size) Filtering Logic ---
     const variantConditions = {};
     if (color) {
-      const colors = color.split(",").map((c) => c.trim()).filter(Boolean);
-      if (colors.length > 0) {
-        variantConditions.color = { $in: colors };
-      }
+      const colors = color.split(",").map((c) => c.trim()).filter(Boolean).map((c) => new RegExp(`^${c}$`, "i")); // "i" flag for case-insensitive match
+      // console.log(colors)
+      if (colors.length > 0) variantConditions.color = { $in: colors };
     }
     if (size) {
       const sizes = size.split(",").map((s) => s.trim()).filter(Boolean);
-      if (sizes.length > 0) {
-        variantConditions.size = { $in: sizes };
-      }
+      if (sizes.length > 0) variantConditions.size = { $in: sizes };
     }
     if (Object.keys(variantConditions).length > 0) {
       filter.variants = { $elemMatch: variantConditions };
     }
-
-    // --- Sorting Logic ---
     if (sortBy) {
       const sortOrder = order === "asc" ? 1 : -1;
       const allowedSortFields = ["price", "createdAt", "title", "rating"];
       if (allowedSortFields.includes(sortBy)) {
         sort = { [sortBy]: sortOrder };
-        if (sortBy === "rating") {
-          sort.createdAt = -1; // Secondary sort for ratings
-        }
-      } else {
-        console.warn(
-          `Invalid sortBy field received: ${sortBy}. Defaulting to createdAt.`
-        );
+        if (sortBy === "rating") sort.createdAt = -1;
       }
     }
 
-    // --- Pagination and Query Execution ---
+    // --- Pagination and Smart Fallback Query Execution ---
     const pageNum = parseInt(page, 10) || 1;
     const limitNum = parseInt(limit, 10) || 10;
     const skip = (pageNum - 1) * limitNum;
 
-    const totalCount = await ProductService.countDocuments(filter);
+    let finalFilter = { ...filter };
+    let totalCount;
+
+    // We only perform this special check if a pincode was provided.
+    if (pincode) {
+      // Step 1: Count documents with the strict location-based filter.
+      const localCount = await ProductService.countDocuments(finalFilter);
+
+      // ✅ NEW FALLBACK LOGIC:
+      // If a pincode was provided BUT we found fewer products than the page limit (or zero products)...
+      if (localCount < limitNum) {
+        // console.log(`Found only ${localCount} products locally. Falling back to a general search to provide more options.`);
+        // ...then remove the pincode constraint to search globally.
+        delete finalFilter.pincode;
+      }
+    }
+
+    // Step 2: Calculate the final total count using the determined filter (either local or global).
+    totalCount = await ProductService.countDocuments(finalFilter);
     const totalPages = Math.ceil(totalCount / limitNum);
 
-    const productServices = await ProductService.find(filter)
+    // Step 3: Execute the final find query using the `finalFilter`.
+    const productServices = await ProductService.find(finalFilter)
       .populate({ path: "vendorId", select: "name" })
       .populate({ path: "categoryId", select: "name" })
       .sort(sort)
       .skip(skip)
       .limit(limitNum);
 
+    // --- Send the final response ---
     res.status(200).json({
       data: productServices,
       totalCount,
@@ -346,9 +312,7 @@ export const getProductServices = async (req, res) => {
   } catch (error) {
     console.error("Error fetching products/services:", error);
     if (error.name === "CastError" && error.kind === "ObjectId") {
-      return res
-        .status(400)
-        .json({ message: `Invalid ID format for ${error.path}.` });
+      return res.status(400).json({ message: `Invalid ID format for ${error.path}.` });
     }
     res.status(500).json({ message: "Server error", error: error.message });
   }
