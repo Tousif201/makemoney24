@@ -14,7 +14,12 @@ const CategoryScrollSlider = ({ type }) => {
       try {
         setLoading(true);
         const fetchedCategories = await getAllCategoriesWithImages(type);
-        const formattedCategories = fetchedCategories.map((cat) => ({
+        // Filter categories where parentId is null
+        const parentCategories = fetchedCategories.filter(
+          (cat) => cat.parentId === null
+        );
+
+        const formattedCategories = parentCategories.map((cat) => ({
           _id: cat._id,
           img:
             cat.image?.url ||
@@ -31,7 +36,7 @@ const CategoryScrollSlider = ({ type }) => {
     };
 
     fetchCategories();
-  }, []);
+  }, [type]); // Added 'type' to dependency array as it's used in fetchCategories
 
   const handleScroll = () => {
     const scrollContainer = scrollContainerRef.current;
@@ -100,7 +105,7 @@ const CategoryScrollSlider = ({ type }) => {
           const isEmiCategory = item.name.toLowerCase().includes("emi");
           return (
             <Link
-              to={`/browse?categories=${item._id}`}
+              to={`/browse?categories=${item._id}#products`}
               key={item._id}
               className={`flex flex-col items-center justify-start shrink-0 w-20 sm:w-32 relative ${
                 isEmiCategory

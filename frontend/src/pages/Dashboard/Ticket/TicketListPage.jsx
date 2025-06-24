@@ -245,7 +245,7 @@ export default function TicketListPage() {
                     {ticket.description}
                   </p>
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-2">
                       {requester && (
                         <div className="flex items-center space-x-2">
                           <Avatar className="h-6 w-6">
@@ -273,7 +273,7 @@ export default function TicketListPage() {
                         </div>
                       )}
                     </div>
-                    <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                    <div className="flex items-center space-x-0 text-sm ">
                       <CalendarDays className="h-4 w-4" />
                       <span>
                         {new Date(ticket.createdAt).toLocaleDateString()}
