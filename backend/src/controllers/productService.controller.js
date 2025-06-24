@@ -253,7 +253,7 @@ export const getProductServices = async (req, res) => {
       if (colors.length > 0) variantConditions.color = { $in: colors };
     }
     if (size) {
-      const sizes = size.split(",").map((s) => s.trim()).filter(Boolean);
+      const sizes = size.split(",").map((s) => s.trim()).filter(Boolean).map((c) => new RegExp(`^${c}$`, "i"));
       if (sizes.length > 0) variantConditions.size = { $in: sizes };
     }
     if (Object.keys(variantConditions).length > 0) {
