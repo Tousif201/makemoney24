@@ -30,6 +30,8 @@ import couponCodeRouter from "./couponCode.routes.js";
 import cahsFreeRouter from "./cashfree.routes.js";
 import adminVendorRouter from "./adminVendor.routes.js";
 import membershipPackagesRouter from "./membershipPackages.routes.js";
+import locationRouter from "./location.routes.js";
+
 const router = express.Router();
 
 // Mount the routers
@@ -64,4 +66,6 @@ router.use("/ticket", ticketRouter);
 router.use("/admin-vendor", adminVendorRouter);
 router.use("/coupon-code", couponCodeRouter);
 router.use("/membership-packages", membershipPackagesRouter);
+router.use("/location", locationRouter);
+
 export default router;
