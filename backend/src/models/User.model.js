@@ -41,12 +41,12 @@ const userSchema = new Schema(
 
     referralCode: { type: String, unique: true },
     referredByCode: { type: String },
-
+   isAffiliate:{ type: String,enum:["approved","pending","rejected","not-applied"],default:"not-applied"},
     // Roles to determine access levels and responsibilities
     roles: [
       {
         type: String,
-        enum: ["user", "vendor", "admin", "franchise-admin", "sales-rep"],
+        enum: ["user", "vendor", "admin", "franchise-admin", "sales-rep","reseller"],
         default: "user",
       },
     ],
