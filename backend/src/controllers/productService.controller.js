@@ -208,7 +208,7 @@ export const getProductServices = async (req, res) => {
       color,
       size,
     } = req.query;
-  console.log(req.query,"Query Params")
+  // console.log(req.query,"Query Params")
 
     let filter = {
       isAdminApproved: "approved",
@@ -405,6 +405,7 @@ export const updateProductService = async (req, res) => {
       isBookable,
       isInStock,
     } = req.body;
+    console.log(req.body,"Request Body")
 
     if (!isValidObjectId(id)) {
       return res
@@ -432,8 +433,9 @@ export const updateProductService = async (req, res) => {
         return res.status(400).json({ message: "Price cannot be negative." });
       updateFields.price = price;
     }
+
     if (portfolio !== undefined) {
-      if (!Array.isArray(portfolio))
+if (!Array.isArray(portfolio))
         return res.status(400).json({ message: "Portfolio must be an array." });
       updateFields.portfolio = portfolio.map((item) => ({
         type: item.type,
