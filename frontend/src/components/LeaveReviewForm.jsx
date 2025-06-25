@@ -62,7 +62,6 @@ export default function LeaveReviewForm({
       if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
         errors.push(
           `File too large: ${file.name}. Max size is ${MAX_FILE_SIZE_MB}MB.`
-
         );
         return; // Skip this file
       }
@@ -99,8 +98,8 @@ export default function LeaveReviewForm({
     console.log("Product ID (itemId):", productId);
     console.log("Item Type:", itemType);
 
-
-    if (!session ) { // Ensure session and user ID are available
+    if (!session) {
+      // Ensure session and user ID are available
       toast.error("You must be logged in to leave a review.");
       console.log("Validation failed: User not logged in.");
       return;
@@ -113,7 +112,6 @@ export default function LeaveReviewForm({
       console.error("Validation failed: session.id is undefined or null.");
       return;
     }
-
 
     if (rating === 0) {
       toast.error("Please provide a rating (1-5 stars).");
@@ -140,7 +138,9 @@ export default function LeaveReviewForm({
         const formData = new FormData();
         mediaFiles.forEach((file) => {
           formData.append("media", file); // 'media' should match the field name your Multer expects
-          console.log(`Appending file to FormData: ${file.name} (${file.type})`);
+          console.log(
+            `Appending file to FormData: ${file.name} (${file.type})`
+          );
         });
 
         // Call the upload API function
@@ -151,25 +151,27 @@ export default function LeaveReviewForm({
         // --- CORRECTED LOGIC BASED ON YOUR CONSOLE LOG ---
         // Your console log shows `uploadResult` is directly the array of file objects.
         if (Array.isArray(uploadResult)) {
-            uploadedMedia = uploadResult.map((file) => ({
-                // The `type` in your console log is already simplified (e.g., "image"),
-                // so we can use it directly. If it were full mimetypes (e.g., "image/jpeg"),
-                // you'd keep `file.type.startsWith("image/") ? "image" : "video"`.
-                type: file.type,
-                url: file.url, // URL provided by your upload service (e.g., Uploadthing)
-            }));
-            console.log("Processed uploaded media URLs:", uploadedMedia);
-            toast.success("Media uploaded successfully!");
+          uploadedMedia = uploadResult.map((file) => ({
+            // The `type` in your console log is already simplified (e.g., "image"),
+            // so we can use it directly. If it were full mimetypes (e.g., "image/jpeg"),
+            // you'd keep `file.type.startsWith("image/") ? "image" : "video"`.
+            type: file.type,
+            url: file.url, // URL provided by your upload service (e.g., Uploadthing)
+          }));
+          console.log("Processed uploaded media URLs:", uploadedMedia);
+          toast.success("Media uploaded successfully!");
         } else {
-            // Handle case where uploadResult is not an array as expected
-            console.warn("Upload response did not contain expected array of files:", uploadResult);
-            toast.error("Media upload response malformed. Please try again.");
-            setIsSubmitting(false); // Stop submission if upload failed to return expected data
-            return;
+          // Handle case where uploadResult is not an array as expected
+          console.warn(
+            "Upload response did not contain expected array of files:",
+            uploadResult
+          );
+          toast.error("Media upload response malformed. Please try again.");
+          setIsSubmitting(false); // Stop submission if upload failed to return expected data
+          return;
         }
-
       } else {
-          console.log("No media files to upload.");
+        console.log("No media files to upload.");
       }
 
       // 2. Submit the review with the uploaded media URLs
@@ -186,7 +188,6 @@ export default function LeaveReviewForm({
       console.log("Calling createReview API...");
       await createReview(reviewPayload);
       console.log("createReview API call successful.");
-
 
       toast.success("Review submitted successfully!");
       console.log("Review submission successful. Resetting form.");
@@ -208,18 +209,19 @@ export default function LeaveReviewForm({
     } catch (err) {
       console.error("Caught error during review submission:", err);
       // More specific error message if available from backend
-      toast.error(err.message || err.response?.data?.message || "Failed to submit review.");
+      toast.error(
+        err.message || err.response?.data?.message || "Failed to submit review."
+      );
     } finally {
       setIsSubmitting(false);
-      console.log("Setting isSubmitting to false. Submission process finished.");
+      console.log(
+        "Setting isSubmitting to false. Submission process finished."
+      );
     }
   };
 
   return (
-    <form
-      onSubmit={handleSubmitReview}
-      className="space-y-6 p-6 border rounded-lg bg-white shadow-sm"
-    >
+    <form onSubmit={handleSubmitReview} className="space-y-6    ">
       <h3 className="text-2xl font-bold mb-4 text-gray-800">Leave a Review</h3>
 
       {/* Star Rating Input */}
@@ -343,7 +345,10 @@ export default function LeaveReviewForm({
       </div>
 
       {/* Submit Button */}
-      <Button type="submit" disabled={isSubmitting || !session || rating === 0 || !comment.trim()}>
+      <Button
+        type="submit"
+        disabled={isSubmitting || !session || rating === 0 || !comment.trim()}
+      >
         {isSubmitting ? "Submitting..." : "Submit Review"}
       </Button>
       {!session && (

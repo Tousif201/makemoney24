@@ -1,0 +1,76 @@
+// src/components/ProductDetailPage/ProductInfo.jsx
+import { motion } from "framer-motion";
+import { Badge } from "@/components/ui/badge";
+import { Star } from "lucide-react";
+
+export default function ProductInfo({
+  product,
+  averageRating,
+  totalReviewsCount,
+}) {
+  return (
+    <motion.div>
+      <div className="flex items-center gap-3 mb-2">
+        <Badge
+          variant="outline"
+          className="text-xs px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-200 border-blue-200 dark:border-blue-700"
+        >
+          {product.categoryId?.name || "Uncategorized"}
+        </Badge>
+        <Badge
+          variant="secondary"
+          className="text-xs px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
+        >
+          {product.type.charAt(0).toUpperCase() + product.type.slice(1)}
+        </Badge>
+      </div>
+      <h1 className="text-xl lg:text-2xl font-extrabold  leading-tight text-gray-900 dark:text-white">
+        {product.title}
+      </h1>
+
+      {/* rating section  */}
+      <div className="flex items-center gap-4 mb-2">
+        <div className="flex items-center">
+          {[...Array(5)].map((_, i) => (
+            <Star
+              key={i}
+              className={`h-3 w-3 md:h-6 md:w-6 ${
+                i < Math.floor(averageRating)
+                  ? "fill-yellow-400 text-yellow-400"
+                  : "text-gray-300"
+              }`}
+            />
+          ))}
+          <span className="ml-2 text-xs md:text-base font-semibold text-gray-700 dark:text-gray-300">
+            {averageRating} ({totalReviewsCount} reviews)
+          </span>
+        </div>
+      </div>
+
+      {/* price display  */}
+      <div className="flex items-baseline gap-4 ">
+        <span className="md:text-2xl text-lg font-bold text-gray-900 dark:text-white">
+          ₹
+          {(
+            product.price *
+            (1 - (product.discountRate || 0) / 100)
+          ).toLocaleString()}
+        </span>
+
+        {product.discountRate &&
+          product.discountRate > 0 &&
+          product.discountRate <= 100 && (
+            <>
+              <span className="md:text-xl text-base text-gray-500 line-through">
+                ₹{product.price.toLocaleString()}
+              </span>
+
+              <Badge className="bg-green-100 text-green-800 text-xs md:text-base dark:bg-green-900 dark:text-green-200 font-semibold px-3 py-1 rounded-full">
+                Save {product.discountRate}%{" "}
+              </Badge>
+            </>
+          )}
+      </div>
+    </motion.div>
+  );
+}

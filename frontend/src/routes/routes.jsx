@@ -1,6 +1,5 @@
 import Home from "../pages/Home";
 import About from "../pages/About";
-import ItemDetail from "../pages/ProductDetailPage";
 import ProductCard from "../components/ProductCard";
 import HomePageAnimation from "../pages/HomePageAnimation";
 import BrandSlider from "../components/BrandSlider";
@@ -41,7 +40,6 @@ import SalesReportsPage from "../pages/Dashboard/Admin/SalesReportsPage";
 import CheckoutSuccessPage from "../components/Checkout/Success";
 import CheckoutPage from "../components/Checkout/CheckoutPage";
 import BrowsePage from "../components/Products/Browse";
-import ProductDetailPage from "../pages/ProductDetailPage";
 import { Toaster } from "sonner";
 import UsersDetailsPageAdmin from "../pages/Dashboard/Admin/UsersDetailsPageAdmin";
 import EmiSchedule from "../pages/Dashboard/Users/EmiSchedule";
@@ -62,6 +60,7 @@ import AcceptTermsAndConditionsPage from "../pages/AcceptTerm_condition";
 import ExchangeReturn from "../pages/ExchangeReturn";
 import TodayOrders from "../pages/Dashboard/Admin/TodayOrders";
 import ProductList from "../components/Products/ProductList";
+import ProductDetailPage from "../components/ProductDetails";
 
 const routes = [
   {
