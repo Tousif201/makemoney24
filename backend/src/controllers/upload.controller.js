@@ -105,7 +105,7 @@ export const uploadFiles = async (req, res) => {
 export const deleteFiles = async (req, res) => {
   try {
     const { fileKeys } = req.body;
-
+console.log(fileKeys,"fileKeys in deleteFiles")
     if (!fileKeys || !Array.isArray(fileKeys) || fileKeys.length === 0) {
       return res
         .status(400)
