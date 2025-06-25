@@ -65,6 +65,7 @@ const ProductList = ({ pincode }) => {
         page: currentPage,
         sortBy: sortBy,
         order: sortOrder,
+        type: "product", // NEW: Only fetch products, not services
       };
 
       if (searchTerm) {
@@ -88,11 +89,16 @@ const ProductList = ({ pincode }) => {
         const response = await getProductServices(params);
 
         if (response && response.data && Array.isArray(response.data)) {
+          // NEW: Filter out services on client side as additional safety
+          const productsOnly = response.data.filter(item => 
+            item.type === "product" || item.type === "Product" || !item.type
+          );
+
           setProducts((prevProducts) => {
             if (isNewSearch.current || currentPage === 1) {
-              return response.data;
+              return productsOnly;
             }
-            const newProducts = response.data.filter(
+            const newProducts = productsOnly.filter(
               (newProd) =>
                 !prevProducts.some((prevProd) => prevProd._id === newProd._id)
             );
@@ -123,6 +129,7 @@ const ProductList = ({ pincode }) => {
     selectedPriceRange,
     selectedColor, // NEW: Add to dependencies
     selectedSize, // NEW: Add to dependencies
+    pincode, // Added pincode to dependencies for completeness
   ]);
 
   // --- Handlers now reset the page to 1 on any filter change ---

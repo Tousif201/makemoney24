@@ -63,7 +63,7 @@ export default function Home() {
         <CategoryScrollSlider type={"service"} />
         <ProductList pincode={pincode} />
         <LandingSlider displayRange="secondHalf" />
-        <ServiesList />
+        {/* <ServiesList /> */}
       </div>
 
       <Dialog open={locationDenied}>
