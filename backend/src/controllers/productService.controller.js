@@ -29,6 +29,7 @@ export const createProductService = async (req, res) => {
       portfolio,
       variants,
       pincode,
+      courierCharges,
       isBookable,
       isInStock,
       isEmiEligible,
@@ -54,7 +55,7 @@ export const createProductService = async (req, res) => {
 
     // Now, use the actual _id of the found vendor document
     const actualVendorId = vendor._id;
-    console.log(vendor, "Vendor")
+    // console.log(vendor, "Vendor")
     // Validate the actual vendorId from the found document
     if (!isValidObjectId(actualVendorId)) {
       return res.status(400).json({ message: "Invalid Vendor ID format obtained from the user ID." });
@@ -117,6 +118,7 @@ export const createProductService = async (req, res) => {
       details,
       description,
       price,
+      courierCharges: courierCharges !== undefined ? courierCharges : 0, // Default to 0 if not provided
       portfolio: productPortfolio,
       variants: productVariants,
       pincode,
@@ -127,6 +129,7 @@ export const createProductService = async (req, res) => {
     });
 
     const savedProductService = await newProductService.save();
+    // console.log(savedProductService, "Saved Product Service");
     res.status(201).json(savedProductService);
   } catch (error) {
     console.error("Error creating product/service:", error);
@@ -301,6 +304,8 @@ export const getProductServices = async (req, res) => {
       .sort(sort)
       .skip(skip)
       .limit(limitNum);
+
+      // console.log(productServices, "Product Services");
 
     // --- Send the final response ---
     res.status(200).json({
@@ -521,3 +526,52 @@ export const deleteProductService = async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
+
+
+// Controller to fetch all products or services from a particular category
+// export const getProductsServicesByCategory = async (req, res) => {
+//   try {
+//     const { categoryId } = req.params;
+
+//     // Optional: You might want to check if the categoryId is a valid ObjectId
+//     if (!categoryId || !categoryId.match(/^[0-9a-fA-F]{24}$/)) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Invalid category ID format.",
+//       });
+//     }
+
+//     // Optional: Verify if the category exists (though not strictly required for the query to work)
+//     const categoryExists = await Category.findById(categoryId);
+//     if (!categoryExists) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Category not found.",
+//       });
+//     }
+
+//     // Fetch all products/services associated with the given categoryId
+//     const productsServices = await ProductService.find({ categoryId: categoryId });
+
+//     if (!productsServices || productsServices.length === 0) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "No products or services found for this category.",
+//       });
+//     }
+
+//     return res.status(200).json({
+//       success: true,
+//       message: "Products/services fetched successfully for the category.",
+//       data: productsServices,
+//     });
+//   } catch (error) {
+//     console.error("Error fetching products/services by category:", error);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Internal server error while fetching products/services.",
+//       error: error.message, // Include error message for debugging (in development)
+//     });
+//   }
+// };

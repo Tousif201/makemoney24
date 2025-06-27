@@ -79,7 +79,9 @@ export const createOrder = async (req, res) => {
 
       const itemPrice = productService.price; // Use the current price from the database
       const itemTotal = itemPrice * item.quantity;
-      calculatedTotalAmount += itemTotal;
+      const itemCourierCharges = productService.courierCharges || 0; // Default to 0 if not set
+      const itemTotalWithCourier = itemTotal + itemCourierCharges;
+      calculatedTotalAmount += itemTotalWithCourier;
 
       orderItems.push({
         productServiceId: item.productServiceId,
