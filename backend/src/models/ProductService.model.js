@@ -34,6 +34,7 @@ const productServiceSchema = new Schema({
 
   // ✅ Allows vendors to toggle product/service availability
   isInStock: { type: Boolean, default: true },
+  courierCharges: { type: Number, default: 0 }, // Optional, for products that can be shipped
   createdAt: { type: Date, default: Date.now },
   // New fields for EMI eligibility and discount rate
   isEmiEligible: { type: Boolean, default: false }, // User's EMI model is being incorporated.

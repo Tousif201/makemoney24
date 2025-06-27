@@ -243,7 +243,7 @@ export const requestPasswordResetOTP = async (req, res) => {
     await user.save();
 
     // Send the OTP via email (send the unhashed OTP)
-    // await sendEmail(email, otpCode); // Assuming sendEmail function exists
+    await sendEmail(email, otpCode); // Assuming sendEmail function exists
 
     res.status(200).json({ message: "OTP sent to your email" });
   } catch (error) {

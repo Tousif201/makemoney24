@@ -16,6 +16,7 @@ const router = express.Router();
 router.post("/", createProductService); // Create a new product or service
 router.get("/", getProductServices); // Get all products/services (now handles vendorId query)
 router.get("/:id", getProductServiceById); // Get a single product/service by ID
+// router.get("//:categoryId", getProductServiceById); // Get a single product/service by ID
 router.put("/:id", updateProductService); // Update an existing product/service
 router.delete("/:id", deleteProductService); // Delete a product or service
 
