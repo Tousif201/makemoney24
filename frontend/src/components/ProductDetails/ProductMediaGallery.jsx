@@ -45,7 +45,7 @@ export default function ProductMediaGallery({
                     onClick={() =>
                       openMediaViewer(
                         typeof item === "string" ? item : item.url,
-                        "media" // use 'media' since type is abstracted now
+                        "image" // use 'media' since type is abstracted now
                       )
                     }
                   />
