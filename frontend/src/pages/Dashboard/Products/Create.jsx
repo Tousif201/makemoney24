@@ -42,6 +42,7 @@ export default function CreateProduct() {
     title: "",
     description: "",
     price: "",
+    courierCharges: "",
     details: "",
     variants: [],
     pincode: "",
@@ -105,8 +106,7 @@ export default function CreateProduct() {
       } catch (error) {
         console.error("Error fetching all categories:", error);
         setCategoryError(
-          `Failed to load categories: ${
-            error.response?.data?.message || error.message
+          `Failed to load categories: ${error.response?.data?.message || error.message
           }`
         );
         setAllCategories([]);
@@ -131,6 +131,7 @@ export default function CreateProduct() {
         cat._id === formData.categoryId &&
         cat.type === formData.type &&
         (getCategoryLevel(cat, allCategories) === 1 ||
+
           getCategoryLevel(cat, allCategories) === 2 ||
           getCategoryLevel(cat, allCategories) === 3)
     );
@@ -215,8 +216,7 @@ export default function CreateProduct() {
     } catch (error) {
       console.error("Failed to delete media:", error);
       setFormError(
-        `Failed to delete media: ${
-          error.response?.data?.message || error.message
+        `Failed to delete media: ${error.response?.data?.message || error.message
         }`
       );
     } finally {
@@ -350,8 +350,7 @@ export default function CreateProduct() {
     } catch (error) {
       console.error("Failed to delete variant media:", error);
       setFormError(
-        `Failed to delete variant media: ${
-          error.response?.data?.message || error.message
+        `Failed to delete variant media: ${error.response?.data?.message || error.message
         }`
       );
     } finally {
@@ -399,8 +398,7 @@ export default function CreateProduct() {
 
         .catch((error) => {
           uploadErrors.push(
-            `Main media upload failed: ${
-              error.response?.data?.message || error.message
+            `Main media upload failed: ${error.response?.data?.message || error.message
             }`
           );
 
@@ -434,8 +432,7 @@ export default function CreateProduct() {
 
             .catch((error) => {
               uploadErrors.push(
-                `Variant ${index} media upload failed: ${
-                  error.response?.data?.message || error.message
+                `Variant ${index} media upload failed: ${error.response?.data?.message || error.message
                 }`
               );
 
@@ -500,6 +497,7 @@ export default function CreateProduct() {
         description: formData.description,
 
         price: parseFloat(formData.price),
+        courierCharges: parseFloat(formData.courierCharges),
 
         portfolio: currentPortfolio.map((item) => ({
           // Use the updated currentPortfolio
@@ -520,18 +518,18 @@ export default function CreateProduct() {
         variants:
           formData.type === "product"
             ? currentVariants.map((variant) => ({
-                // Use the updated currentVariants
+              // Use the updated currentVariants
 
-                color: variant.color,
+              color: variant.color,
 
-                size: variant.size,
+              size: variant.size,
 
-                sku: variant.sku,
+              sku: variant.sku,
 
-                quantity: parseInt(variant.quantity) || 0,
+              quantity: parseInt(variant.quantity) || 0,
 
-                images: variant.images.map(({ url }) => url),
-              }))
+              images: variant.images.map(({ url }) => url),
+            }))
             : [],
       };
 
@@ -591,15 +589,6 @@ export default function CreateProduct() {
 
       const categoryLevel = getCategoryLevel(selectedCategory, allCategories);
 
-      if (categoryLevel !== 2 && categoryLevel !== 3) {
-        setFormError("Please select a category from Level 2 or Level 3.");
-
-        setIsSubmitting(false);
-
-        setIsUploading(false); // Make sure to set to false
-
-        return;
-      }
 
       if (
         formData.type === "product" &&
@@ -636,6 +625,7 @@ export default function CreateProduct() {
         description: "",
 
         price: "",
+        courierCharges: "",
         discountRate: "",
         variants: [], // Reset variants to empty array
 
@@ -655,8 +645,7 @@ export default function CreateProduct() {
       console.error("Error creating product:", apiError);
 
       setFormError(
-        `Failed to create product: ${
-          apiError.response?.data?.message || apiError.message
+        `Failed to create product: ${apiError.response?.data?.message || apiError.message
         }`
       );
     } finally {
@@ -834,8 +823,8 @@ export default function CreateProduct() {
                           fetchingCategories
                             ? "Loading categories..."
                             : !formData.type
-                            ? "Select type first"
-                            : "Select Category (Level 2 or 3)"
+                              ? "Select type first"
+                              : "Select Category (Level 2 or 3)"
                         }
                       />
                     </SelectTrigger>
@@ -966,6 +955,23 @@ export default function CreateProduct() {
               </div>
               <div className="space-y-2">
                 <Label
+                  htmlFor="courierCharges"
+                  className="text-sm font-medium text-slate-700"
+                >
+                  Courier Charge (₹)
+                </Label>
+                <Input
+                  id="courierCharges"
+                  name="courierCharges"
+                  type="number"
+                  value={formData.courierCharges}
+                  onChange={handleChange}
+                  placeholder="0.00"
+                  className="h-11"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label
                   htmlFor="discountRate"
                   className="text-sm font-medium text-slate-700"
                 >
@@ -984,7 +990,7 @@ export default function CreateProduct() {
               </div>
               {/* Variant Section */}
               {formData.type === "product" && (
-                <div className="space-y-4">
+                <div className="space-y-4 col-span-2">
                   <h3 className="text-lg font-semibold text-slate-800">
                     Product Variants
                   </h3>
@@ -1030,7 +1036,7 @@ export default function CreateProduct() {
                             onChange={(e) =>
                               handleVariantChange(index, "size", e.target.value)
                             }
-                            placeholder="e.g. S, M, L"
+                            placeholder="One Size At a Time (S or M)"
                           />
                         </div>
                         <div className="flex flex-col space-y-1.5">
@@ -1094,24 +1100,61 @@ export default function CreateProduct() {
 
                         {(variant.localVariantMediaPreviews?.length > 0 ||
                           variant.images?.length > 0) && (
-                          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
-                            {/* Local Variant Image Previews */}
-                            {variant.localVariantMediaPreviews.map((src, i) => {
-                              const file = variant.localVariantMediaFiles[i];
-                              return (
+                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+                              {/* Local Variant Image Previews */}
+                              {variant.localVariantMediaPreviews.map((src, i) => {
+                                const file = variant.localVariantMediaFiles[i];
+                                return (
+                                  <div
+                                    key={`variant-local-${index}-${i}`}
+                                    className="relative group aspect-square border border-slate-200 rounded-md overflow-hidden bg-slate-50"
+                                  >
+                                    <img
+                                      src={src}
+                                      alt={`variant-preview-${index}-${i}`}
+                                      className="w-full h-full object-cover"
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        removeLocalVariantMedia(index, i)
+                                      }
+                                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                                      disabled={isUploading || isSubmitting}
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </button>
+                                    <div className="absolute bottom-1 left-1">
+                                      <Badge
+                                        variant="secondary"
+                                        className="text-xs"
+                                      >
+                                        Local
+                                      </Badge>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                              {/* Uploaded Variant Images */}
+                              {variant.images.map((img, i) => (
                                 <div
-                                  key={`variant-local-${index}-${i}`}
-                                  className="relative group aspect-square border border-slate-200 rounded-md overflow-hidden bg-slate-50"
+                                  key={`variant-uploaded-${index}-${img.key || i
+                                    }`}
+                                  className="relative group aspect-square border border-green-400 rounded-md overflow-hidden bg-slate-50"
                                 >
                                   <img
-                                    src={src}
-                                    alt={`variant-preview-${index}-${i}`}
+                                    src={img.url}
+                                    alt={`variant-uploaded-${index}-${i}`}
                                     className="w-full h-full object-cover"
                                   />
                                   <button
                                     type="button"
                                     onClick={() =>
-                                      removeLocalVariantMedia(index, i)
+                                      removeUploadedVariantMedia(
+                                        index,
+                                        img.key,
+                                        img.url
+                                      )
                                     }
                                     className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
                                     disabled={isUploading || isSubmitting}
@@ -1119,52 +1162,14 @@ export default function CreateProduct() {
                                     <X className="h-3 w-3" />
                                   </button>
                                   <div className="absolute bottom-1 left-1">
-                                    <Badge
-                                      variant="secondary"
-                                      className="text-xs"
-                                    >
-                                      Local
+                                    <Badge variant="success" className="text-xs">
+                                      Uploaded
                                     </Badge>
                                   </div>
                                 </div>
-                              );
-                            })}
-                            {/* Uploaded Variant Images */}
-                            {variant.images.map((img, i) => (
-                              <div
-                                key={`variant-uploaded-${index}-${
-                                  img.key || i
-                                }`}
-                                className="relative group aspect-square border border-green-400 rounded-md overflow-hidden bg-slate-50"
-                              >
-                                <img
-                                  src={img.url}
-                                  alt={`variant-uploaded-${index}-${i}`}
-                                  className="w-full h-full object-cover"
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    removeUploadedVariantMedia(
-                                      index,
-                                      img.key,
-                                      img.url
-                                    )
-                                  }
-                                  className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
-                                  disabled={isUploading || isSubmitting}
-                                >
-                                  <X className="h-3 w-3" />
-                                </button>
-                                <div className="absolute bottom-1 left-1">
-                                  <Badge variant="success" className="text-xs">
-                                    Uploaded
-                                  </Badge>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
+                              ))}
+                            </div>
+                          )}
                       </div>
                     </div>
                   ))}
@@ -1221,95 +1226,95 @@ export default function CreateProduct() {
 
                 {(formData.localMediaPreviews.length > 0 ||
                   formData.portfolio.length > 0) && (
-                  <div className="space-y-3">
-                    <Label className="text-sm font-medium text-slate-700">
-                      Main Media Preview (
-                      {formData.localMediaPreviews.length +
-                        formData.portfolio.length}{" "}
-                      files)
-                    </Label>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                      {/* Render locally selected main media previews */}
-                      {formData.localMediaPreviews.map((src, index) => {
-                        const file = formData.localMediaFiles[index];
-                        if (!file) return null;
-                        return (
+                    <div className="space-y-3">
+                      <Label className="text-sm font-medium text-slate-700">
+                        Main Media Preview (
+                        {formData.localMediaPreviews.length +
+                          formData.portfolio.length}{" "}
+                        files)
+                      </Label>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                        {/* Render locally selected main media previews */}
+                        {formData.localMediaPreviews.map((src, index) => {
+                          const file = formData.localMediaFiles[index];
+                          if (!file) return null;
+                          return (
+                            <div
+                              key={`local-${index}`}
+                              className="relative group aspect-square border-2 border-slate-200 rounded-lg overflow-hidden bg-slate-50"
+                            >
+                              {file.type.startsWith("video") ? (
+                                <video
+                                  src={src}
+                                  className="w-full h-full object-cover"
+                                  controls={false}
+                                />
+                              ) : (
+                                <img
+                                  src={src}
+                                  alt={`preview-${index}`}
+                                  className="w-full h-full object-cover"
+                                />
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => removeLocalMedia(index)}
+                                className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                                disabled={isUploading || isSubmitting}
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                              <div className="absolute bottom-1 left-1">
+                                <Badge variant="secondary" className="text-xs">
+                                  {file.type.startsWith("video")
+                                    ? "Video (Local)"
+                                    : "Image (Local)"}
+                                </Badge>
+                              </div>
+                            </div>
+                          );
+                        })}
+                        {/* Render already uploaded main media from portfolio state */}
+                        {formData.portfolio.map((item, index) => (
                           <div
-                            key={`local-${index}`}
-                            className="relative group aspect-square border-2 border-slate-200 rounded-lg overflow-hidden bg-slate-50"
+                            key={`uploaded-${item.key || index}`}
+                            className="relative group aspect-square border-2 border-green-400 rounded-lg overflow-hidden bg-slate-50"
                           >
-                            {file.type.startsWith("video") ? (
+                            {item.type === "video" ? (
                               <video
-                                src={src}
+                                src={item.url}
                                 className="w-full h-full object-cover"
                                 controls={false}
                               />
                             ) : (
                               <img
-                                src={src}
-                                alt={`preview-${index}`}
+                                src={item.url}
+                                alt={`uploaded-${item.key}`}
                                 className="w-full h-full object-cover"
                               />
                             )}
                             <button
                               type="button"
-                              onClick={() => removeLocalMedia(index)}
+                              onClick={() =>
+                                removeUploadedMedia(item.key, item.url)
+                              }
                               className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
                               disabled={isUploading || isSubmitting}
                             >
                               <X className="h-3 w-3" />
                             </button>
                             <div className="absolute bottom-1 left-1">
-                              <Badge variant="secondary" className="text-xs">
-                                {file.type.startsWith("video")
-                                  ? "Video (Local)"
-                                  : "Image (Local)"}
+                              <Badge variant="success" className="text-xs">
+                                {item.type === "video"
+                                  ? "Video (Uploaded)"
+                                  : "Image (Uploaded)"}
                               </Badge>
                             </div>
                           </div>
-                        );
-                      })}
-                      {/* Render already uploaded main media from portfolio state */}
-                      {formData.portfolio.map((item, index) => (
-                        <div
-                          key={`uploaded-${item.key || index}`}
-                          className="relative group aspect-square border-2 border-green-400 rounded-lg overflow-hidden bg-slate-50"
-                        >
-                          {item.type === "video" ? (
-                            <video
-                              src={item.url}
-                              className="w-full h-full object-cover"
-                              controls={false}
-                            />
-                          ) : (
-                            <img
-                              src={item.url}
-                              alt={`uploaded-${item.key}`}
-                              className="w-full h-full object-cover"
-                            />
-                          )}
-                          <button
-                            type="button"
-                            onClick={() =>
-                              removeUploadedMedia(item.key, item.url)
-                            }
-                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
-                            disabled={isUploading || isSubmitting}
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                          <div className="absolute bottom-1 left-1">
-                            <Badge variant="success" className="text-xs">
-                              {item.type === "video"
-                                ? "Video (Uploaded)"
-                                : "Image (Uploaded)"}
-                            </Badge>
-                          </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
               </div>
             </CardContent>
           </Card>

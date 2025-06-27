@@ -82,6 +82,7 @@ export const createProductService = async (data) => {
 export const getProductServices = async (params) => {
   try {
     const response = await apiClient.get("/", { params });
+    // console.log("get product and service browse",response.data)
     return response.data;
   } catch (error) {
     console.error(

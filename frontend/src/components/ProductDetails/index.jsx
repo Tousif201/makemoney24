@@ -22,6 +22,7 @@ import ProductVariantSelection from "./ProductVariantSelection";
 import ProductActions from "./ProductActions";
 import ProductTabs from "./ProductTabs";
 import MediaViewerModal from "./MediaViewerModal"; // New component for the modal
+import { Link } from "react-router-dom";
 
 // --- Framer Motion Variants ---
 const pageVariants = {
@@ -454,9 +455,12 @@ export default function ProductDetailPage() {
             />
 
             {product.details && (
-              <div className="md:hidden text-sm text-center ">
-                Click here to check out <a href={"/Return"}> Exchange policy</a>
-              </div>
+              <div className="border  mr-15 border-amber-300 rounded-md py-2  font-bold text-sm text-center bg-amber-100 text-amber-900 shadow-lg animate-glow hover:shadow-amber-500/60 transition-all duration-300">
+              <Link to="/Return" className="hover:text-yellow-500">
+                🔁 Click to view Exchange policy
+              </Link>
+            </div>
+            
             )}
           </motion.div>
         </motion.div>

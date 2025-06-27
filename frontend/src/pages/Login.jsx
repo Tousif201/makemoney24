@@ -21,16 +21,15 @@ export default function Login() {
     if (session) {
       navigate("/dashboard");
     }
-  }, [session, navigate]); // Added navigate to dependency array for useEffect
+  }, [session, navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setLoading(true); // Set loading to true before API call
+    setLoading(true);
 
-    // Basic client-side validation for empty fields
     if (!email.trim() || !password.trim()) {
       toast.error("Please enter both email and password.");
-      setLoading(false); // Reset loading state
+      setLoading(false);
       return;
     }
 
@@ -38,31 +37,27 @@ export default function Login() {
       const payload = { email, password };
       const res = await loginUser(payload);
 
-      // Check if the response indicates OTP verification is needed
       if (
         res.message &&
         res.message.includes("Your email is not verified") &&
         res.email
       ) {
-          console.log("OTP verification message received, redirecting...");
-
-        toast.info(res.message); // Show informative toast
-        navigate(`/otp/${res.email}`); // Redirect to OTP verification page with email
-          console.log("Navigation call made.");
-
-        return; // Stop further execution
+        console.log("OTP verification message received, redirecting...");
+        toast.info(res.message);
+        navigate(`/otp/${res.email}`);
+        console.log("Navigation call made.");
+        return;
       }
 
       localStorage.setItem("authToken", res.authToken);
-
-      toast.success("Login successful!"); // Sonner toast for success
-      navigate("/"); // Redirect to home or dashboard
+      toast.success("Login successful!");
+      navigate("/");
     } catch (err) {
       const errorMessage =
         err.response?.data?.message || err.message || "Login failed. Please try again.";
-      toast.error(errorMessage); // Sonner toast for API errors
+      toast.error(errorMessage);
     } finally {
-      setLoading(false); // Set loading to false after API call (success or failure)
+      setLoading(false);
     }
   };
 
@@ -95,7 +90,7 @@ export default function Login() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full p-3 rounded bg-gray-100 text-black focus:outline-none focus:ring-2 focus:ring-[#9b35db] focus:shadow-[0_0_10px_#9b35db] transition-all duration-300"
-              disabled={loading} // Disable input when loading
+              disabled={loading}
             />
             <div className="relative w-full">
               <input
@@ -105,22 +100,33 @@ export default function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full p-3 rounded bg-gray-100 text-black focus:outline-none focus:ring-2 focus:ring-[#9b35db] focus:shadow-[0_0_10px_#9b35db] transition-all duration-300 pr-10"
-                disabled={loading} // Disable input when loading
+                disabled={loading}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-600 focus:outline-none"
-                disabled={loading} // Disable button when loading
+                disabled={loading}
               >
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
+
+            {/* ✅ Forgot Password Link */}
+            <div className="text-right text-sm">
+              <Link
+                to="/forgot-password"
+                className="text-[#9b35db] hover:underline font-medium"
+              >
+                Forgot Password?
+              </Link>
+            </div>
+
             <motion.button
               type="submit"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              disabled={loading} // Disable button when loading
+              disabled={loading}
               className="w-full p-3 rounded font-semibold bg-[#9b35db] hover:bg-[#B641FF] text-white transition duration-300 shadow-md hover:shadow-[0_0_15px_#b641ff] flex items-center justify-center"
             >
               {loading ? (

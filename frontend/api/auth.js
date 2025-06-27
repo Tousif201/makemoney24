@@ -65,6 +65,24 @@ export const logoutUser = async () => {
   }
 };
 
+
+export const forgotPassword = async (payload)=>{
+  try {
+    const response = await apiClient.post("/forgot-password-request-otp", payload);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: "OTP verification failed" };
+  }
+}
+export const resetPassword = async (payload)=>{
+  try {
+    const response = await apiClient.post("/reset-password", payload);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: "OTP verification failed" };
+  }
+}
+
 // ✅ Get User Profile API
 export const getUserProfile = async (userId) => {
   try {
@@ -139,4 +157,3 @@ export const fetchUserReferralPerformance = async (userId, date,authToken) => {
   }
 };
 
-// Alternatively, to send the date in the body for referral performanc

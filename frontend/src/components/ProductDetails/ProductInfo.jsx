@@ -34,11 +34,10 @@ export default function ProductInfo({
           {[...Array(5)].map((_, i) => (
             <Star
               key={i}
-              className={`h-3 w-3 md:h-6 md:w-6 ${
-                i < Math.floor(averageRating)
-                  ? "fill-yellow-400 text-yellow-400"
-                  : "text-gray-300"
-              }`}
+              className={`h-3 w-3 md:h-6 md:w-6 ${i < Math.floor(averageRating)
+                ? "fill-yellow-400 text-yellow-400"
+                : "text-gray-300"
+                }`}
             />
           ))}
           <span className="ml-2 text-xs md:text-base font-semibold text-gray-700 dark:text-gray-300">
@@ -48,7 +47,8 @@ export default function ProductInfo({
       </div>
 
       {/* price display  */}
-      <div className="flex items-baseline gap-4 ">
+      <div className="flex flex-wrap items-baseline gap-4">
+        {/* Final Price */}
         <span className="md:text-2xl text-lg font-bold text-gray-900 dark:text-white">
           ₹
           {(
@@ -57,20 +57,33 @@ export default function ProductInfo({
           ).toLocaleString()}
         </span>
 
-        {product.discountRate &&
-          product.discountRate > 0 &&
-          product.discountRate <= 100 && (
-            <>
-              <span className="md:text-xl text-base text-gray-500 line-through">
-                ₹{product.price.toLocaleString()}
-              </span>
+        {/* Discount */}
+        {product.discountRate > 0 && product.discountRate <= 100 && (
+          <>
+            <span className="md:text-xl text-base text-gray-500 line-through">
+              ₹{product.price.toLocaleString()}
+            </span>
 
-              <Badge className="bg-green-100 text-green-800 text-xs md:text-base dark:bg-green-900 dark:text-green-200 font-semibold px-3 py-1 rounded-full">
-                Save {product.discountRate}%{" "}
-              </Badge>
-            </>
-          )}
+            <Badge className="bg-green-100 text-green-800 text-xs md:text-base dark:bg-green-900 dark:text-green-200 font-semibold px-3 py-1 rounded-full">
+              Save {product.discountRate}%
+            </Badge>
+          </>
+        )}
+
+        {/* Courier Charge Badge */}
+        <Badge
+          className={`${product.courierCharges > 0
+              ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
+              : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+            } text-xs md:text-base font-semibold px-3 py-1 rounded-full`}
+        >
+          {product.courierCharges > 0
+            ? `Delivery ₹${product.courierCharges.toLocaleString()}`
+            : "Free Delivery"}
+        </Badge>
       </div>
+
+
     </motion.div>
   );
 }

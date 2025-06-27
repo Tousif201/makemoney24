@@ -611,7 +611,7 @@ export default function BrowsePage() {
                     return (
                       <Link key={item.id} to={`/item/${item.id}`}>
                         <Card
-                          className={`group hover:shadow-lg transition-all duration-300 cursor-pointer ${
+                          className={`group hover:shadow-lg transition-all py-0 duration-300 cursor-pointer ${
                             viewMode === "list" ? "flex" : ""
                           }`}
                         >
@@ -696,9 +696,9 @@ export default function BrowsePage() {
                                   </Badge>
                                 )}
                               </div>
-                              <div className="flex items-center justify-between flex-col md:flex-row">
+                              <div className="flex  md:justify-between flex-col  md:flex-row">
                                 <div className="flex items-center gap-2">
-                                  <span className="text-lg font-bold text-gray-800">
+                                  <span className="text-sm font-bold text-gray-800">
                                     ₹{discountedPrice.toLocaleString()}
                                   </span>
                                   {hasDiscount && (
@@ -710,7 +710,7 @@ export default function BrowsePage() {
                                   )}
                                 </div>
                                 {discountRate > 0 && (
-                                  <Badge className="bg-red-600 text-white text-xs px-2 py-0.5 ml-2">
+                                  <Badge className="bg-red-600 text-white text-xs px-2 py-0.5 mt-2">
                                     {discountRate}% OFF
                                   </Badge>
                                 )}

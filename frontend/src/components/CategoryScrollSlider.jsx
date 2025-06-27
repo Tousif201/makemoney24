@@ -11,69 +11,63 @@ const CategoryScrollSlider = ({ type }) => {
 
   // Define styles based on type
   const isServiceType = type === 'services' || type === 'service';
-  
+
   const getContainerStyles = () => {
     if (isServiceType) {
       return "overflow-x-auto px-2 py-4 no-scrollbar bg-gradient-to-r from-blue-300 to-purple-200 rounded-lg shadow-sm";
     }
     return "overflow-x-auto px-2 py-4 no-scrollbar";
-    
+
   };
 
   const getItemStyles = (item) => {
     const isEmiCategory = item.name.toLowerCase().includes("emi");
-    
+
     if (isServiceType) {
       // Service-specific styling with permanent background and hover effects
-      return `flex flex-col items-center justify-start shrink-0 w-20 sm:w-32 relative transition-all duration-300 bg-white/70 backdrop-blur-sm rounded-xl p-2 shadow-sm hover:shadow-lg hover:scale-105 hover:bg-white/90 border border-white/50 hover:border-purple-200 ${
-        isEmiCategory
+      return `flex flex-col items-center justify-start shrink-0 w-20 sm:w-32 relative transition-all duration-300 bg-white/70 backdrop-blur-sm rounded-xl p-2 shadow-sm hover:shadow-lg hover:scale-105 hover:bg-white/90 border border-white/50 hover:border-purple-200 ${isEmiCategory
           ? "animate-pulse border-amber-500 shadow-lg scale-105 bg-amber-50 hover:bg-amber-100"
           : ""
-      }`;
+        }`;
     }
-    
+
     // Product-specific styling (original)
-    return `flex flex-col items-center justify-start shrink-0 w-20 sm:w-32 relative ${
-      isEmiCategory
+    return `flex flex-col items-center justify-start shrink-0 w-20 sm:w-32 relative ${isEmiCategory
         ? "animate-pulse border-amber-500 shadow-lg scale-105 transition-all duration-300 ease-in-out z-10 rounded-xl p-2 bg-amber-50"
         : ""
-    }`;
+      }`;
   };
 
   const getImageStyles = (item) => {
     const isEmiCategory = item.name.toLowerCase().includes("emi");
-    
+
     if (isServiceType) {
       // Service-specific image styling with permanent border and hover effects
-      return `md:w-22 md:h-22 w-14 h-14 object-cover rounded-full border-2 transition-all duration-300 shadow-sm hover:shadow-md ${
-        isEmiCategory 
-          ? "border-amber-400 hover:border-amber-500" 
+      return `md:w-22 md:h-22 w-14 h-14 object-cover rounded-full border-2 transition-all duration-300 shadow-sm hover:shadow-md ${isEmiCategory
+          ? "border-amber-400 hover:border-amber-500"
           : "border-blue-200 hover:border-purple-400"
-      }`;
+        }`;
     }
-    
+
     // Product-specific image styling (original)
-    return `md:w-22 md:h-22 w-14 h-14 object-cover rounded-full ${
-      isEmiCategory ? "border-2 border-amber-400" : ""
-    }`;
+    return `md:w-22 md:h-22 w-14 h-14 object-cover rounded-full ${isEmiCategory ? "border-2 border-amber-400" : ""
+      }`;
   };
 
   const getTextStyles = (item) => {
     const isEmiCategory = item.name.toLowerCase().includes("emi");
-    
+
     if (isServiceType) {
       // Service-specific text styling
-      return `text-center text-xs sm:text-sm mt-1 sm:mt-2 px-1 leading-tight font-medium ${
-        isEmiCategory 
-          ? "text-amber-700 font-bold" 
+      return `text-center text-xs sm:text-sm mt-1 sm:mt-2 px-1 leading-tight font-medium ${isEmiCategory
+          ? "text-amber-700 font-bold"
           : "text-gray-700 hover:text-purple-600"
-      }`;
+        }`;
     }
-    
+
     // Product-specific text styling (original)
-    return `text-center text-xs sm:text-sm mt-1 sm:mt-2 px-1 leading-tight ${
-      isEmiCategory ? "text-amber-700 font-bold" : ""
-    }`;
+    return `text-center text-xs sm:text-sm mt-1 sm:mt-2 px-1 leading-tight ${isEmiCategory ? "text-amber-700 font-bold" : ""
+      }`;
   };
 
   const getFlexContainerStyles = () => {
@@ -135,10 +129,10 @@ const CategoryScrollSlider = ({ type }) => {
   };
 
   if (loading) {
-    const skeletonContainerClass = isServiceType 
+    const skeletonContainerClass = isServiceType
       ? "overflow-x-auto py-4 px-2 no-scrollbar bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg"
       : "overflow-x-auto py-4 px-2 no-scrollbar";
-      
+
     return (
       <div>
         {isServiceType && (
@@ -155,7 +149,7 @@ const CategoryScrollSlider = ({ type }) => {
                 key={index}
                 className="w-20 h-28 sm:w-32 sm:h-40 flex flex-col items-center justify-start shrink-0"
               >
-                
+
                 <Skeleton className={`w-16 h-16 sm:w-28 sm:h-28 rounded-full ${isServiceType ? 'bg-blue-200' : ''}`} />
                 <Skeleton className={`w-14 h-3 sm:w-20 sm:h-4 mt-1 sm:mt-2 rounded-md ${isServiceType ? 'bg-blue-200' : ''}`} />
               </div>
@@ -219,7 +213,7 @@ const CategoryScrollSlider = ({ type }) => {
             const isEmiCategory = item.name.toLowerCase().includes("emi");
             return (
               <Link
-                to={`/browse?categories=${item._id}#products`}
+                to={`/category-browse/${item._id}`}
                 key={item._id}
                 className={getItemStyles(item)}
                 style={isEmiCategory ? { transform: "scale(1.05)" } : {}}

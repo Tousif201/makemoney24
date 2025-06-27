@@ -61,6 +61,11 @@ import ExchangeReturn from "../pages/ExchangeReturn";
 import TodayOrders from "../pages/Dashboard/Admin/TodayOrders";
 import ProductList from "../components/Products/ProductList";
 import ProductDetailPage from "../components/ProductDetails";
+import CategoryProductServices from "../pages/CategoryProduct&Services";
+import ForgotPassword from "../pages/ForgetPassword";
+import ResetPassword from "../pages/ResetPassword";
+import ForgotVerifyOTP from "../pages/ForgotPassOTP";
+import ForgotPassOTP from "../pages/ForgotPassOTP";
 
 const routes = [
   {
@@ -104,7 +109,18 @@ const routes = [
       </MainLayout>
     ),
   },
-
+  {
+    path: "/category-browse/:categoryId",
+    element: (
+      <MainLayout>
+        <CategoryProductServices />
+      </MainLayout>
+    ),
+  },
+  // {
+  //   path: '/browse/:categoryId', // Dynamic route for category products
+  //   element: <CategoryProductServices />,
+  // },
   {
     path: "/about",
     element: (
@@ -154,6 +170,30 @@ const routes = [
     ),
   },
   {
+    path: "/forgot-password",
+    element: (
+      <MainLayout>
+        <ForgotPassword />
+      </MainLayout>
+    ),
+  },
+  {
+    path: "/reset-password/:email",
+    element: (
+      <MainLayout>
+        <ResetPassword />
+      </MainLayout>
+    ),
+  },
+  {
+    path: "/forgot-password-otp",
+    element: (
+      <MainLayout>
+        <ForgotPassOTP />
+      </MainLayout>
+    ),
+  },
+  {
     path: "/signup",
     element: (
       <MainLayout>
@@ -198,7 +238,7 @@ const routes = [
     path: "/accept-tnc",
     element: (
       <MainLayout>
-        < AcceptTermsAndConditionsPage/>
+        < AcceptTermsAndConditionsPage />
       </MainLayout>
     ),
   },
@@ -211,7 +251,7 @@ const routes = [
     ),
   },
 
-    {
+  {
     path: "/Return",
     element: (
       <MainLayout>
@@ -558,6 +598,7 @@ const routes = [
       </DashboardLayout>
     ),
   },
+
   {
     path: "*",
     element: <h1>404 - Page Not Found</h1>,
