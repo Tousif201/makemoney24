@@ -28,6 +28,7 @@ import {
   Ticket,
   Proportions,
   ShoppingBag,
+  Handshake,
 } from "lucide-react";
 
 export const sidebarConfig = {
@@ -88,6 +89,11 @@ export const sidebarConfig = {
       label: "Orders",
       icon: ShoppingCart,
       href: "/dashboard/orders",
+    },
+    {
+      label: "ShopNship",
+      icon: Handshake ,
+      href: "/dashboard/shopNship",
     },
     {
       label: "Tickets",
@@ -198,6 +204,11 @@ export const sidebarConfig = {
           label: "SalesRep",
           icon: Users,
           href: "/dashboard/admin/salesrep",
+        },
+        {
+          label: "ShopNship",
+          icon: Handshake,
+          href: "/dashboard/admin/shopNship",
         },
       ],
     },
