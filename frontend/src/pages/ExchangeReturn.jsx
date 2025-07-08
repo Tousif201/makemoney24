@@ -1,4 +1,3 @@
-
  import React from 'react';
 import { ShoppingBag, FileText, Package, Video, AlertTriangle, XCircle, RefreshCw, CreditCard } from 'lucide-react';
 
@@ -104,11 +103,7 @@ export default function ExchangeReturn() {
             </div>
           ))}
         </div>
-
-    
-
-
-      </div>
+     </div>
     </div>
   );
 }

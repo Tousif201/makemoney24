@@ -1,4 +1,3 @@
-// src/components/ProductDetailPage/ProductActions.jsx
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
@@ -7,6 +6,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Share2, ShoppingCart, Facebook, Twitter, Linkedin, Link } from "lucide-react";
+import { toast } from "sonner";
+import { useNavigate } from "react-router-dom"; // Import useNavigate for navigation
 
 export default function ProductActions({
   product,
@@ -24,8 +25,36 @@ export default function ProductActions({
   shareOnTwitter,
   shareOnWhatsapp,
   shareOnLinkedIn,
-  itemVariants, // Accepting itemVariants for animation
+  itemVariants,
 }) {
+  const navigate = useNavigate(); // Initialize useNavigate
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url: currentProductUrl,
+        });
+        toast.success("Shared successfully!");
+      } catch (error) {
+        if (error.name !== "AbortError") {
+          console.error("Error sharing:", error);
+          toast.error("Failed to share.");
+        }
+      }
+    } else {
+      setIsSharePopoverOpen(true);
+    }
+  };
+
+  const handleBuyNow = () => {
+    // Add logic to handle the buy now action, e.g., add to cart and navigate to checkout
+    handleAddToCart();
+    navigate('/checkout', { state: { product, selectedVariant, quantity } });
+  };
+
   return (
     <motion.div className="space-y-4" variants={itemVariants}>
       <div className="flex gap-4">
@@ -47,6 +76,23 @@ export default function ProductActions({
           Add to Cart
         </Button>
 
+        <Button
+          size="lg"
+          className="flex-1 bg-green-600 hover:bg-green-700 text-white shadow-lg transition-all duration-200 text-base py-3 rounded-lg"
+          onClick={handleBuyNow}
+          disabled={
+            (product.type === "product" &&
+              product.variants &&
+              product.variants.length > 0 &&
+              (!selectedVariant || selectedVariant?.quantity <= 0)) ||
+            (!product.isInStock &&
+              (!selectedVariant || selectedVariant.quantity <= 0))
+          }
+          whileTap={{ scale: 0.95 }}
+        >
+          Buy Now
+        </Button>
+
         {/* Share Button with Popover */}
         <Popover open={isSharePopoverOpen} onOpenChange={setIsSharePopoverOpen}>
           <PopoverTrigger asChild>
@@ -55,9 +101,8 @@ export default function ProductActions({
               variant="outline"
               className="w-10 h-10 p-0 flex-shrink-0 border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 rounded-lg"
               onClick={() => {
-                // If navigator.share is available, use it directly. Otherwise, open popover.
                 if (navigator.share) {
-                  handleShare(); // Assuming handleShare is passed down as a prop if it contains navigator.share logic
+                  handleShare();
                 } else {
                   setIsSharePopoverOpen(true);
                 }
@@ -74,8 +119,7 @@ export default function ProductActions({
                 className="justify-start gap-3 w-full text-left"
                 onClick={shareOnFacebook}
               >
-                <Facebook className="h-5 w-5 text-blue-600" /> Share on
-                Facebook
+                <Facebook className="h-5 w-5 text-blue-600" /> Share on Facebook
               </Button>
               <Button
                 variant="ghost"

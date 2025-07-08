@@ -52,7 +52,9 @@ export function CreateVendorDialog({ children }) {
   const [isSubmitting, setIsSubmitting] = useState(false); // New loading state for submission
 
   const { session } = useSession();
+  
   const salesRepId = session?._id;
+  console.log(salesRepId)
 
   const handleFileChange = (setter) => (e) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -597,7 +599,7 @@ export function CreateVendorDialog({ children }) {
             </div>
           )}
 
-          <DialogFooter className="flex w-full justify-between items-center mt-8">
+          <DialogFooter className="flex w-full justify-center items-center flex-row">
             {currentStep === 1 && (
               <>
                 <Button
@@ -618,7 +620,7 @@ export function CreateVendorDialog({ children }) {
                   disabled={isSubmitting}
                   className="bg-purple-700 hover:bg-purple-600 text-white px-6 py-2 transition-colors duration-200 flex items-center"
                 >
-                  Next Step <ChevronRight className="ml-2 h-4 w-4" />
+                  Next Step <ChevronRight className="ml-2 h-4 w-4 mt-1" />
                 </Button>
               </>
             )}

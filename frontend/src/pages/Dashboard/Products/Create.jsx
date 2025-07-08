@@ -935,7 +935,7 @@ export default function CreateProduct() {
                 Pricing & Variants
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6 space-x-2 grid grid-cols-1 md:grid-cols-2">
+            <CardContent className="space-y-6 space-x-2 grid grid-cols-2 md:grid-cols-2">
               <div className="space-y-2">
                 <Label
                   htmlFor="price"

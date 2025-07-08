@@ -278,13 +278,13 @@ export default function AdminVendorsPage() {
                           </Badge>
                         </TableCell>
                         <TableCell className="whitespace-nowrap">
-                          {vendor.salesRep?.name ? (
+                          {vendor.salesRepName ? (
                             <div>
                               <div className="font-medium">
-                                {vendor.salesRep.name}
+                                {vendor.salesRepName}
                               </div>
                               <div className="text-sm text-muted-foreground">
-                                {vendor.salesRep.email || "N/A"}
+                                {vendor.salesRepEmail || "N/A"}
                               </div>
                             </div>
                           ) : (

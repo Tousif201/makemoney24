@@ -163,7 +163,7 @@ export default function UsersPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-              ₹{totalReferralEarnings.toLocaleString()}
+                ₹{totalReferralEarnings.toLocaleString()}
               </div>
               <p className="text-xs text-muted-foreground">
                 Total earnings disbursed via referrals
@@ -258,11 +258,10 @@ export default function UsersPage() {
                         </TableCell>
                         <TableCell>
                           <Badge
-                            className={`${
-                              user.accountStatus === "active"
+                            className={`${user.accountStatus === "active"
                                 ? "bg-green-100 text-green-800"
                                 : "bg-red-100 text-red-800"
-                            }`}
+                              }`}
                           >
                             {user.accountStatus}
                           </Badge>
@@ -276,10 +275,10 @@ export default function UsersPage() {
                           </div>
                         </TableCell>
                         <TableCell className="font-medium text-green-600">
-                        ₹{user.totalReferralEarnings.toLocaleString()}
+                          ₹{user.totalReferralEarnings.toLocaleString()}
                         </TableCell>
                         <TableCell className="font-medium">
-                        ₹{user.totalSpent.toLocaleString()}
+                          ₹{user.totalSpent.toLocaleString()}
                         </TableCell>
                         <TableCell>
                           {new Date(user.joiningDate).toLocaleDateString()}
@@ -305,13 +304,12 @@ export default function UsersPage() {
               </Table>
             </div>
 
-            <div className="flex items-center justify-between mt-4">
-              <div className="text-sm text-muted-foreground">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-4 gap-3">
+              {/* Pagination Summary */}
+              <div className="text-sm text-muted-foreground text-center sm:text-left">
                 Showing{" "}
                 {totalFilteredUsers > 0
-                  ? pagination.currentPage * pagination.limit -
-                    pagination.limit +
-                    1
+                  ? pagination.currentPage * pagination.limit - pagination.limit + 1
                   : 0}{" "}
                 to{" "}
                 {Math.min(
@@ -320,7 +318,9 @@ export default function UsersPage() {
                 )}{" "}
                 of {totalFilteredUsers} users
               </div>
-              <div className="flex items-center gap-2">
+
+              {/* Pagination Buttons */}
+              <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2">
                 <Button
                   variant="outline"
                   size="sm"
@@ -329,15 +329,14 @@ export default function UsersPage() {
                 >
                   Previous
                 </Button>
-                <div className="flex items-center gap-1">
-                  {/* Render page buttons dynamically based on totalPages */}
+
+                {/* Dynamic Page Numbers */}
+                <div className="flex flex-wrap items-center gap-1">
                   {Array.from({ length: totalPages }, (_, i) => i + 1).map(
                     (pageNumber) => (
                       <Button
                         key={pageNumber}
-                        variant={
-                          currentPage === pageNumber ? "default" : "outline"
-                        }
+                        variant={currentPage === pageNumber ? "default" : "outline"}
                         size="sm"
                         onClick={() => setCurrentPage(pageNumber)}
                         className="w-8 h-8 p-0"
@@ -347,6 +346,7 @@ export default function UsersPage() {
                     )
                   )}
                 </div>
+
                 <Button
                   variant="outline"
                   size="sm"
@@ -357,6 +357,7 @@ export default function UsersPage() {
                 </Button>
               </div>
             </div>
+
           </CardContent>
         </Card>
       </div>

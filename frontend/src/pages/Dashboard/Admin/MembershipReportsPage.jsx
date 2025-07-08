@@ -47,6 +47,7 @@ export default function MembershipReportsPage() {
       setError(null);
       try {
         const data = await adminMembershipReport();
+        console.log("membership data",data)
         setReportData(data);
       } catch (err) {
         console.error("Error fetching membership report:", err);
@@ -98,8 +99,7 @@ export default function MembershipReportsPage() {
     }).format(amount);
   };
 
-  // Dummy logic for membership level based on profileScore
- // Dummy logic for membership level based on profileScore
+  
 const getMembershipBadge = (membershipPackageName) => {
   if (membershipPackageName) {
     let badgeClass = "bg-gray-100 text-gray-800"; // Default badge style
@@ -175,7 +175,7 @@ const getMembershipBadge = (membershipPackageName) => {
 
         {/* Summary Cards */}
         <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 p-4 sm:p-6">
-          <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-purple-50 to-purple-100/50">
+          <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-purple-50 to-purple-100/50 ">
             <div className="absolute top-0 right-0 w-16 sm:w-20 h-16 sm:h-20 bg-purple-500/10 rounded-full -mr-8 sm:-mr-10 -mt-8 sm:-mt-10" />
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-xs sm:text-sm font-medium text-purple-900">
@@ -254,7 +254,7 @@ const getMembershipBadge = (membershipPackageName) => {
             </CardContent>
           </Card>
 
-          <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-orange-50 to-orange-100/50">
+          {/* <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-orange-50 to-orange-100/50">
             <div className="absolute top-0 right-0 w-16 sm:w-20 h-16 sm:h-20 bg-orange-500/10 rounded-full -mr-8 sm:-mr-10 -mt-8 sm:-mt-10" />
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-xs sm:text-sm font-medium text-orange-900">
@@ -277,7 +277,7 @@ const getMembershipBadge = (membershipPackageName) => {
                 {referralEarningRate} from last month
               </p>
             </CardContent>
-          </Card>
+          </Card> */}
         </div>
         <Card className="border-0 shadow-lg">
           <CardHeader className="p-4 sm:p-6">

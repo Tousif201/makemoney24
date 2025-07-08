@@ -1,24 +1,43 @@
-// src/components/ProductDetailPage/ProductMediaGallery.jsx
-import { useEffect, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
-import { PlayCircle } from "lucide-react";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-  // useCarousel, // Removed useCarousel hook
-} from "@/components/ui/carousel";
+import useEmblaCarousel from "embla-carousel-react";
 import SmartMedia from "./SmartMedia";
 
-export default function ProductMediaGallery({
+const DotButton = ({ selected, onClick }) => (
+  <button
+    className={`w-2 h-2 rounded-full ${
+      selected ? "bg-orange-500" : "bg-gray-300"
+    }`}
+    onClick={onClick}
+  />
+);
+
+const ProductMediaGallery = ({
   currentProductImages,
   discountRate,
   openMediaViewer,
   productTitle,
-}) {
+}) => {
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
+  const onSelect = useCallback(() => {
+    if (!emblaApi) return;
+    setSelectedIndex(emblaApi.selectedScrollSnap());
+  }, [emblaApi]);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    onSelect();
+    emblaApi.on("select", onSelect);
+  }, [emblaApi, onSelect]);
+
+  const scrollTo = useCallback(
+    (index) => emblaApi && emblaApi.scrollTo(index),
+    [emblaApi]
+  );
+
   return (
     <div className="flex flex-col items-center">
       <motion.div
@@ -27,43 +46,27 @@ export default function ProductMediaGallery({
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
       >
-        <Carousel
-          // Removed: setApi={setApi}
-          className="w-full h-full"
-          opts={{
-            align: "start",
-            loop: true, // Optional: loop the carousel
-          }}
-        >
-          <CarouselContent className="w-full h-full">
+        <div className="overflow-hidden" ref={emblaRef}>
+          <div className="flex">
             {currentProductImages.map((item, index) => (
-              <CarouselItem key={index} className="w-full h-full">
-                <div className="relative w-full h-full">
-                  <SmartMedia
-                    src={typeof item === "string" ? item : item.url}
-                    alt={`${productTitle} ${index + 1}`}
-                    onClick={() =>
-                      openMediaViewer(
-                        typeof item === "string" ? item : item.url,
-                        "image" // use 'media' since type is abstracted now
-                      )
-                    }
-                  />
-                </div>
-              </CarouselItem>
+              <div className="relative flex-[0_0_100%]" key={index}>
+                <SmartMedia
+                  src={typeof item === "string" ? item : item.url}
+                  alt={`${productTitle} ${index + 1}`}
+                  onClick={() =>
+                    openMediaViewer(
+                      typeof item === "string" ? item : item.url,
+                      "image"
+                    )
+                  }
+                />
+              </div>
             ))}
-          </CarouselContent>
-          {currentProductImages.length > 1 && (
-            <>
-              <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/70 hover:bg-white text-gray-800 rounded-full w-8 h-8 md:w-10 md:h-10 border border-gray-300 z-10" />
-              <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/70 hover:bg-white text-gray-800 rounded-full w-8 h-8 md:w-10 md:h-10 border border-gray-300 z-10" />
-            </>
-          )}
-        </Carousel>
+          </div>
+        </div>
 
         {(() => {
-          const rate = Number(discountRate); // Explicit type conversion
-
+          const rate = Number(discountRate);
           return rate > 0 && rate <= 100 ? (
             <div className="absolute top-4 left-4">
               <Badge className="bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-1 rounded-full shadow-md">
@@ -72,7 +75,21 @@ export default function ProductMediaGallery({
             </div>
           ) : null;
         })()}
+
+       
       </motion.div>
+
+      <div className="flex justify-center mt-2 space-x-2">
+          {currentProductImages.map((_, index) => (
+            <DotButton
+              key={index}
+              selected={index === selectedIndex}
+              onClick={() => scrollTo(index)}
+            />
+          ))}
+        </div>
     </div>
   );
-}
+};
+
+export default ProductMediaGallery;

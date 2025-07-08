@@ -1,7 +1,5 @@
 "use client";
-
 import { useState, useRef, useEffect } from "react";
-// import html2pdf from "html2pdf.js";
 import * as htmlToImage from "html-to-image";
 import {
   Calendar,
@@ -39,7 +37,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
@@ -61,37 +58,29 @@ import {
   fetchUserReferralPerformance,
 } from "../../../../api/auth";
 import { fetchUserEmiDetails } from "../../../../api/emi";
-
 import jsPDF from "jspdf";
 import { TopUpUserProfileScore } from "../../../components/Dialogs/TopUpUserProfileScore";
-// import html2canvas from "html2canvas";
 
 function UsersDetailsPageAdmin() {
   const pdfRef = useRef();
   const [userData, setUserData] = useState(null);
   const [referralData, setReferralData] = useState(null);
   const [emiHistory, setEmiHistory] = useState(null);
-  const [selectedDate, setSelectedDate] = useState(null);
-
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedFilter, setSelectedFilter] = useState("allTime"); // State for selected filter
   const params = useParams();
   const { id } = params;
   const authToken = localStorage.getItem("token");
 
-  // Fixed formatDate function
   const formatDate = (date) => {
-    // Add null/undefined check
     if (!date) {
       return "Select Date";
     }
     const validDate = date instanceof Date ? date : new Date(date);
-
-    // Check if the date is valid
     if (isNaN(validDate.getTime())) {
       return "Invalid Date";
     }
-
     return validDate.toLocaleDateString("en-US", {
       year: "numeric",
       month: "long",
@@ -103,14 +92,15 @@ function UsersDetailsPageAdmin() {
     if (id) {
       try {
         const data = await fetchUserDetails(id);
+        console.log("user detail ",data)
         setUserData(data.data);
       } catch (error) {
         console.error("Error fetching user data:", error);
       }
     }
   };
-  useEffect(() => {
 
+  useEffect(() => {
     fetchUser();
   }, [id]);
 
@@ -118,41 +108,29 @@ function UsersDetailsPageAdmin() {
     const fetchReferrals = async () => {
       if (id) {
         try {
-          const formattedDate = selectedDate
-            ? selectedDate.toISOString().split("T")[0]
-            : null;
-          console.log("Selected date:", selectedDate);
-          console.log("Formatted date being sent to API:", formattedDate);
-          const data = await fetchUserReferralPerformance(
-            id,
-            formattedDate,
-            authToken
-          );
-          console.log("Referral frontend data:", data);
+          const data = await fetchUserReferralPerformance(id, selectedFilter, authToken);
+          
           setReferralData(data.referrals);
         } catch (error) {
           console.error("Error fetching referral data:", error);
         }
       }
     };
-
     fetchReferrals();
-  }, [id, selectedDate, authToken]);
+  }, [id, selectedFilter, authToken]);
 
   useEffect(() => {
     const fetchEmiDetails = async () => {
       if (id) {
         try {
           const data = await fetchUserEmiDetails(id);
-          console.log("front end emi", data);
+         
           setEmiHistory(data.data.emiDetails);
-          console.log(data.data, "Emi History Data");
         } catch (error) {
           console.error("Error fetching EMI history:", error);
         }
       }
     };
-
     fetchEmiDetails();
   }, [id]);
 
@@ -175,10 +153,8 @@ function UsersDetailsPageAdmin() {
         color: "text-blue-600",
       },
     };
-
     const config = statusConfig[status] || statusConfig.inactive;
     const Icon = config.icon;
-
     return (
       <Badge variant={config.variant} className="flex items-center gap-1">
         <Icon className="w-3 h-3" />
@@ -236,65 +212,39 @@ function UsersDetailsPageAdmin() {
   const handleExportPDF = async () => {
     if (!pdfRef.current) return;
     setIsExporting(true);
-
     try {
-      // 📱 Mobile view के लिए longer delay
       await new Promise((resolve) => setTimeout(resolve, 500));
-
-      // 🎯 Mobile detection और appropriate settings
       const isMobile = window.innerWidth <= 768;
-
-      // 📐 Mobile के लिए higher pixel ratio और better quality
       const pixelRatio = isMobile ? 3 : 2;
-
-      // 🖼️ Canvas generation with mobile-optimized settings
       const canvas = await htmlToImage.toCanvas(pdfRef.current, {
         pixelRatio: pixelRatio,
         useCORS: true,
         allowTaint: true,
         backgroundColor: "#ffffff",
-        // 📱 Mobile के लिए specific width/height constraints
         width: isMobile ? pdfRef.current.scrollWidth : undefined,
         height: isMobile ? pdfRef.current.scrollHeight : undefined,
-        // 🎨 Better quality for mobile
         quality: 1.0,
       });
-
       const imgData = canvas.toDataURL("image/png", 1.0);
-
-      // 📄 PDF configuration - mobile के लिए optimized
       const pdf = new jsPDF({
         unit: "mm",
-        format: isMobile ? "a4" : "letter", // Mobile के लिए A4 better है
+        format: isMobile ? "a4" : "letter",
         orientation: "portrait",
       });
-
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
-
-      // 🔢 Aspect ratio calculation
       const canvasAspectRatio = canvas.width / canvas.height;
       const pdfAspectRatio = pdfWidth / pdfHeight;
-
-      let finalWidth,
-        finalHeight,
-        offsetX = 0,
-        offsetY = 0;
-
-      // 📏 Mobile के लिए better fitting logic
+      let finalWidth, finalHeight, offsetX = 0, offsetY = 0;
       if (canvasAspectRatio > pdfAspectRatio) {
-        // Canvas is wider - fit to width
         finalWidth = pdfWidth;
         finalHeight = pdfWidth / canvasAspectRatio;
         offsetY = (pdfHeight - finalHeight) / 2;
       } else {
-        // Canvas is taller - fit to height
         finalHeight = pdfHeight;
         finalWidth = pdfHeight * canvasAspectRatio;
         offsetX = (pdfWidth - finalWidth) / 2;
       }
-
-      // 🖼️ Add image with proper centering
       pdf.addImage(
         imgData,
         "PNG",
@@ -303,32 +253,24 @@ function UsersDetailsPageAdmin() {
         finalWidth,
         finalHeight,
         undefined,
-        "FAST" // Better compression for mobile
+        "FAST"
       );
-
-      // 💾 Create PDF blob
       const timestamp = new Date().toISOString().slice(0, 10);
       const filename = `cashback_card_${timestamp}.pdf`;
-
       const pdfBlob = new Blob([pdf.output("arraybuffer")], {
         type: "application/pdf",
       });
-
-      // 📥 Direct download for all devices (mobile + desktop)
       downloadPDF(pdfBlob, filename);
     } catch (error) {
       console.error("PDF export failed:", error);
-
-      // 🚨 Mobile के लिए user-friendly error message
       if (window.innerWidth <= 768) {
-        alert("PDF export problem ! Please try again।");
+        alert("PDF export problem! Please try again.");
       }
     } finally {
       setIsExporting(false);
     }
   };
 
-  // 📥 Helper function for download
   const downloadPDF = (blob, filename) => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -337,8 +279,6 @@ function UsersDetailsPageAdmin() {
     a.style.display = "none";
     document.body.appendChild(a);
     a.click();
-
-    // Cleanup with slight delay for mobile compatibility
     setTimeout(() => {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
@@ -356,7 +296,6 @@ function UsersDetailsPageAdmin() {
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div>
@@ -370,7 +309,6 @@ function UsersDetailsPageAdmin() {
           </div>
         </div>
 
-        {/* User Info Card */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -398,8 +336,21 @@ function UsersDetailsPageAdmin() {
                   {new Date(userData.joiningDate).toLocaleDateString()}
                 </p>
               </div>
-              <div className="relative">
-                <p className="text-sm text-gray-600">Salary Score</p>
+              <div>
+                <p className="text-sm text-gray-600">Sponsor Code</p>
+                
+                <p className="font-semibold">
+                <p>{userData.referredByCode}</p>
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Password</p>
+                <p className="font-semibold">
+                <p>{userData.password}</p>
+                </p>
+              </div>
+              <div className="relative ">
+                <p className="text-sm font-bold text-gray-900">Salary Score</p>
                 <div className="flex items-center gap-2">
                   <p
                     className={`font-semibold ${getProfileScoreColor(
@@ -420,7 +371,6 @@ function UsersDetailsPageAdmin() {
                 />
               </div>
             </div>
-
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
               <div className="bg-blue-50 p-4 rounded-lg">
                 <div className="flex items-center gap-2">
@@ -457,14 +407,12 @@ function UsersDetailsPageAdmin() {
           </CardContent>
         </Card>
 
-        {/* Download Cards */}
         <div className="w-full md:w-auto flex justify-end mb-4">
           <button
             onClick={handleExportPDF}
             disabled={isExporting}
-            className={`flex items-center gap-2 ${
-              isExporting ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
-            } bg-blue-100 text-black border rounded-sm py-1 px-3`}
+            className={`flex items-center gap-2 ${isExporting ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+              } bg-blue-100 text-black border rounded-sm py-1 px-3`}
           >
             {isExporting ? "Exporting..." : "Export"}
             <Download className="h-4 w-4" />
@@ -486,7 +434,6 @@ function UsersDetailsPageAdmin() {
               />
             </CardContent>
           </Card>
-
           <Card className="border-2 border-dashed border-green-200 hover:border-green-400 transition-colors">
             <CardContent className="p-6">
               <CashbackCardBack />
@@ -494,14 +441,12 @@ function UsersDetailsPageAdmin() {
           </Card>
         </div>
 
-        {/* Main Content Tabs */}
         <Tabs defaultValue="performance" className="space-y-6">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="performance">Daily Performance</TabsTrigger>
             <TabsTrigger value="emi">EMI Details</TabsTrigger>
           </TabsList>
 
-          {/* Performance Tab */}
           <TabsContent value="performance" className="space-y-6">
             <Card>
               <CardHeader>
@@ -512,41 +457,44 @@ function UsersDetailsPageAdmin() {
                       Daily Performance
                     </CardTitle>
                     <CardDescription>
-                      Referral performance for{" "}
-                      {selectedDate
-                        ? formatDate(selectedDate)
-                        : "Select a date to view performance"}
+                      Referral performance for {selectedFilter.replace(/([A-Z])/g, ' $1').trim()}
                     </CardDescription>
                   </div>
-
-                  <div className="flex flex-col items-stretch sm:items-center gap-2 w-full sm:w-auto">
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" className="justify-start">
-                          <Calendar className="w-4 h-4 mr-2" />
-                          {selectedDate
-                            ? formatDate(selectedDate)
-                            : "Select Date"}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="end">
-                        <CalendarComponent
-                          mode="single"
-                          selected={selectedDate}
-                          onSelect={(date) => {
-                            console.log("Date selected from calendar:", date);
-                            setSelectedDate(date);
-                          }}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
+                  <div className="flex flex-row space-x-2">
+                    <Button
+                      variant={selectedFilter === "today" ? "default" : "outline"}
+                      onClick={() => setSelectedFilter("today")}
+                      className="text-xs px-2 py-1" // Adjust padding and font size for mobile
+                    >
+                      Today
+                    </Button>
+                    <Button
+                      variant={selectedFilter === "thisWeek" ? "default" : "outline"}
+                      onClick={() => setSelectedFilter("thisWeek")}
+                      className="text-xs px-2 py-1" // Adjust padding and font size for mobile
+                    >
+                      This Week
+                    </Button>
+                    <Button
+                      variant={selectedFilter === "thisMonth" ? "default" : "outline"}
+                      onClick={() => setSelectedFilter("thisMonth")}
+                      className="text-xs px-2 py-0.5" // Adjust padding and font size for mobile
+                    >
+                      This Month
+                    </Button>
+                    <Button
+                      variant={selectedFilter === "allTime" ? "default" : "outline"}
+                      onClick={() => setSelectedFilter("allTime")}
+                      className="text-xs px-2 py-1" // Adjust padding and font size for mobile
+                    >
+                      All Time
+                    </Button>
                   </div>
+
+
                 </div>
               </CardHeader>
-
               <CardContent>
-                {/* Filters */}
                 <div className="flex flex-col sm:flex-row gap-4 mb-6">
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -568,8 +516,6 @@ function UsersDetailsPageAdmin() {
                     </SelectContent>
                   </Select>
                 </div>
-
-                {/* Referrals Table */}
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
@@ -593,21 +539,15 @@ function UsersDetailsPageAdmin() {
                           <TableCell>
                             {getMembershipStatusBadge(
                               referral.membership ? "active" : "inactive",
-                              referral.membership?.amountPaid
-                                ? "Premium"
-                                : "Basic"
+                              referral.membership?.amountPaid ? "Premium" : "Basic"
                             )}
                           </TableCell>
                           <TableCell className="font-semibold">
-                            ₹
-                            {referral.membership?.amountPaid?.toLocaleString() ||
-                              "-"}
+                            ₹{referral.membership?.amountPaid?.toLocaleString() || "-"}
                           </TableCell>
                           <TableCell>
                             {referral.membership?.purchasedAt
-                              ? new Date(
-                                  referral.membership.purchasedAt
-                                ).toLocaleDateString()
+                              ? new Date(referral.membership.purchasedAt).toLocaleDateString()
                               : "-"}
                           </TableCell>
                         </TableRow>
@@ -615,7 +555,6 @@ function UsersDetailsPageAdmin() {
                     </TableBody>
                   </Table>
                 </div>
-
                 {filteredReferrals.length === 0 && (
                   <div className="text-center py-8">
                     <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
@@ -628,7 +567,6 @@ function UsersDetailsPageAdmin() {
             </Card>
           </TabsContent>
 
-          {/* EMI Tab */}
           <TabsContent value="emi" className="space-y-6">
             <Card>
               <CardHeader>
@@ -640,7 +578,6 @@ function UsersDetailsPageAdmin() {
                   Track all EMI payments, schedules, and outstanding amounts
                 </CardDescription>
               </CardHeader>
-
               <CardContent>
                 <div className="overflow-x-auto">
                   <Table>
@@ -668,10 +605,7 @@ function UsersDetailsPageAdmin() {
                               ₹{emi.totalAmount?.toLocaleString()}
                             </TableCell>
                             <TableCell className="text-green-600">
-                              ₹
-                              {(
-                                emi.paidInstallments * emi.installmentAmount
-                              )?.toLocaleString()}
+                              ₹{(emi.paidInstallments * emi.installmentAmount)?.toLocaleString()}
                             </TableCell>
                             <TableCell className="text-red-600">
                               ₹{emi.remainingAmount?.toLocaleString()}
@@ -685,11 +619,7 @@ function UsersDetailsPageAdmin() {
                                   <div
                                     className="bg-blue-600 h-2 rounded-full"
                                     style={{
-                                      width: `${
-                                        (emi.paidInstallments /
-                                          emi.totalInstallments) *
-                                        100
-                                      }%`,
+                                      width: `${(emi.paidInstallments / emi.totalInstallments) * 100}%`,
                                     }}
                                   ></div>
                                 </div>
@@ -702,9 +632,7 @@ function UsersDetailsPageAdmin() {
                               {emi.nextDueDate ? (
                                 <div className="text-sm">
                                   <p className="font-medium">
-                                    {new Date(
-                                      emi.nextDueDate
-                                    ).toLocaleDateString()}
+                                    {new Date(emi.nextDueDate).toLocaleDateString()}
                                   </p>
                                 </div>
                               ) : (
@@ -713,9 +641,7 @@ function UsersDetailsPageAdmin() {
                             </TableCell>
                             <TableCell>{getStatusBadge(emi.status)}</TableCell>
                             <TableCell className="text-red-700 font-semibold">
-                              {emi.overdueAmount > 0
-                                ? `₹${emi.overdueAmount.toLocaleString()}`
-                                : "-"}
+                              {emi.overdueAmount > 0 ? `₹${emi.overdueAmount.toLocaleString()}` : "-"}
                             </TableCell>
                           </TableRow>
                         ))
@@ -729,7 +655,6 @@ function UsersDetailsPageAdmin() {
                     </TableBody>
                   </Table>
                 </div>
-
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
                   <div className="bg-blue-50 p-4 rounded-lg">
                     <div className="flex items-center gap-2">
@@ -737,8 +662,7 @@ function UsersDetailsPageAdmin() {
                       <span className="text-sm text-blue-600">Active EMIs</span>
                     </div>
                     <p className="text-2xl font-bold text-blue-700">
-                      {emiHistory?.filter((emi) => emi.status === "ongoing")
-                        .length || 0}
+                      {emiHistory?.filter((emi) => emi.status === "ongoing").length || 0}
                     </p>
                   </div>
                   <div className="bg-red-50 p-4 rounded-lg">
@@ -747,28 +671,16 @@ function UsersDetailsPageAdmin() {
                       <span className="text-sm text-red-600">Overdue</span>
                     </div>
                     <p className="text-2xl font-bold text-red-700">
-                      {emiHistory?.filter((emi) => emi.status === "defaulted")
-                        .length || 0}
+                      {emiHistory?.filter((emi) => emi.status === "defaulted").length || 0}
                     </p>
                   </div>
                   <div className="bg-green-50 p-4 rounded-lg">
                     <div className="flex items-center gap-2">
                       <IndianRupee className="w-5 h-5 text-green-600" />
-                      <span className="text-sm text-green-600">
-                        Total Outstanding
-                      </span>
+                      <span className="text-sm text-green-600">Total Outstanding</span>
                     </div>
                     <p className="text-2xl font-bold text-green-700">
-                      ₹
-                      {emiHistory
-                        ?.reduce(
-                          (sum, emi) =>
-                            sum +
-                            (emi.totalAmount -
-                              emi.paidInstallments * emi.installmentAmount),
-                          0
-                        )
-                        ?.toLocaleString() || "0"}
+                      ₹{emiHistory?.reduce((sum, emi) => sum + (emi.totalAmount - emi.paidInstallments * emi.installmentAmount), 0)?.toLocaleString() || "0"}
                     </p>
                   </div>
                 </div>
