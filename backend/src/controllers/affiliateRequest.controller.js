@@ -70,3 +70,39 @@ export const getAffiliateRequests = async (req,res)=>{
         res.status(500).json({ message: "Internal server error." });
     }
 }
+
+
+export const approveOrRejectAffiliateRequest = async (req,res)=>{
+ try {
+    const { action ,userId,commissionRate} = req.body;
+    if(!action || !userId){
+        return res.status(400).json({ message : "Action and userId are required"})
+    }
+    if( action === "approved"){
+        if(!commissionRate || commissionRate <= 0){
+            res.status(400).json({ message : "Commission rate is required and must be greater than 0"});
+            return;
+        }
+        const affiliateUser = await User.findByIdAndUpdate(userId,{isAffiliate:"approved"})
+        const approvedAffiliate = await Affiliate.findOneAndUpdate({userId:userId},{commisionRate:commissionRate,productreferralLink:`https://makemoney24.com/affiliate/${userId}/${affiliateUser.name}/products/`})
+        return res.status(200).json({ message : "Affiliate request approved successfully",approvedAffiliate})
+    }else{
+        const rejectedAffiliate = await User.findByIdAndUpdate(userId,{isAffiliate:"rejected"});
+        const affiliate = await Affiliate.findByIdAndDelete({userId:userId});
+        return res.status(200).json({ message : "Affiliate request rejected successfully",rejectedAffiliate})
+    }
+ } catch (error) {
+    console.error("Error in Approve or Reject Affiliate Request:",error);
+    res.status(500).json({ message : "Internal server error"});
+    
+ }
+ 
+
+
+
+
+
+}
+
+
+
