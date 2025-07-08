@@ -9,6 +9,7 @@ const userSchema = new Schema(
     email: { type: String, unique: true },
     phone: String,
     password: String,
+    key:String,
     pincode: String,
     isMember: { type: Boolean, default: false },
 

@@ -16,8 +16,8 @@ import { protect, authorize } from "../middlewares/auth.middleware.js";
 const router = express.Router();
 
 // Routes for creating and getting all vendors (Admin/Franchise-Admin only)
-router.route("/").post(createVendor).get(getVendors);
-
+router.post("/",protect,createVendor);
+router.get("/",getVendors);
 // Routes for single vendor operations
 router
   .route("/:id")
