@@ -67,6 +67,7 @@ import ResetPassword from "../pages/ResetPassword";
 import ForgotVerifyOTP from "../pages/ForgotPassOTP";
 import ForgotPassOTP from "../pages/ForgotPassOTP";
 import { ShopNship } from "../pages/Dashboard/Users/ShopNship";
+import ShopNshipRequests from "../pages/Dashboard/Admin/ShopNshipRequests";
 
 const routes = [
   {
@@ -427,6 +428,14 @@ const routes = [
     element: (
       <DashboardLayout>
         <AdminVendorsPage />
+      </DashboardLayout>
+    ),
+  },
+  {
+    path: "/dashboard/admin/shopNship",
+    element: (
+      <DashboardLayout>
+        <ShopNshipRequests />
       </DashboardLayout>
     ),
   },
