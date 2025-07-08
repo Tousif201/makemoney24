@@ -6,6 +6,7 @@ import { Vendor } from "../models/Vendor.model.js";
 import { User } from "../models/User.model.js"; // Import User model to update roles
 import { getHashPassword } from "../utils/getPassword.js";
 import { generateUniqueReferralCode } from "../utils/referralGenerator.js";
+import { SalesRep } from "../models/SalesRep.model.js";
 import mongoose from "mongoose";
 
 /**
@@ -21,140 +22,124 @@ export const createVendor = async (req, res) => {
     password,
     pincode,
     commissionRate,
-    referredByCode, // For the new vendor user's referral
-    salesRepId, // ID of the existing sales representative user
-    kycDocumentImage, // NEW: kycDocumentImage from the payload
+    referredByCode,
+
+    kycDocumentImage,
   } = req.body;
-
+console.log(req.body,"req.body create vendor")
+  const salesRepId = req.user._id;
   try {
-    // --- Step 1: Create the User Document for the new Vendor ---
-
-    // 1.1 Basic validation for new user creation
+    // Step 1: Validation
     if (!name || !email || !password || !pincode) {
-      return res
-        .status(400)
-        .json({
-          message:
-            "Name, email, password, and pincode are required for the new vendor user.",
-        });
+      return res.status(400).json({
+        message: "Name, email, password, and pincode are required.",
+      });
     }
 
-    // 1.2 Check if a user with this email already exists
-    let user = await User.findOne({ email });
-    if (user) {
-      return res
-        .status(400)
-        .json({
-          message:
-            "A user with this email already exists. Cannot create a new vendor profile.",
-        });
+    // Step 2: Duplicate email check
+    let existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({
+        message: "A user with this email already exists.",
+      });
     }
 
-    // 1.3 Hash the password for the new user
+    // Step 3: Hash password and generate referral code
     const hashedPassword = await getHashPassword(password);
-
-    // 1.4 Generate unique referral code for the new user
     const referralCode = await generateUniqueReferralCode();
 
-    // 1.5 Create the new User instance with 'vendor' role
-    user = new User({
+    // Step 4: Create User
+    const user = new User({
       name,
       email,
       phone,
       password: hashedPassword,
       pincode,
-      isMember: false, // Vendors are typically not members by default
+      isMember: false,
       referralCode,
       referredByCode: referredByCode || null,
-      roles: ["vendor"], // Explicitly set the role to 'vendor'
-      kycDocumentImage: kycDocumentImage || [], // NEW: Assign kycDocumentImage here
+      roles: ["vendor"],
+      kycDocumentImage: kycDocumentImage || [],
     });
 
-    // 1.6 If referred, link to parent and update parent's profileScore
+    // Step 5: Handle referral if provided
     if (referredByCode) {
       const parentUser = await User.findOne({ referralCode: referredByCode });
       if (parentUser) {
         user.parent = parentUser._id;
-        parentUser.profileScore += 10; // Example: Increment parent's profile score for referral
+        parentUser.profileScore = (parentUser.profileScore || 0) + 10;
         await parentUser.save();
       } else {
-        console.warn(
-          `Referral code ${referredByCode} not found for new vendor user.`
-        );
+        console.warn(`Referral code ${referredByCode} not found.`);
       }
     }
 
-    await user.save(); // Save the new user document
+    await user.save();
 
-    // --- Step 2: Handle Sales Representative Link ---
-
+    // Step 6: Sales Rep check
     let salesRepUser = null;
     if (salesRepId) {
       salesRepUser = await User.findById(salesRepId);
-      // Optional: Add a check to ensure salesRepUser actually has the 'sales-rep' role
-      if (!salesRepUser || !salesRepUser.roles.includes("sales-rep")) {
-        return res
-          .status(400)
-          .json({
-            message:
-              "Invalid sales representative ID or user is not a sales rep.",
-          });
+      if (!salesRepUser || !salesRepUser.roles.includes("sales-rep")|| salesRepUser.roles.includes("admin")) {
+        salesRepUser = null;
       }
     }
-
-    // --- Step 3: Create the Vendor Document linked to the new User and Sales Rep ---
-
-    // 3.1 Check if a vendor profile already exists for this new user (shouldn't happen)
+    const SalesRepresentive = await SalesRep.findOne({userId:salesRepId} );
+console.log(SalesRepresentive,"salesRepresentive before save")
+    // Step 7: Vendor creation
     const existingVendor = await Vendor.findOne({ userId: user._id });
     if (existingVendor) {
-      // This case should ideally not be hit.
-      // In a production app, consider rolling back the user creation if this occurs.
-      return res
-        .status(400)
-        .json({
-          message: "Vendor profile unexpectedly already exists for this user.",
-        });
+      return res.status(400).json({
+        message: "Vendor profile already exists for this user.",
+      });
     }
 
-    // 3.2 Create the new vendor document
     const vendor = new Vendor({
-      name: name, // Use user's name for vendor name
-      userId: user._id, // Link to the newly created user
-      pincode: pincode, // Use user's pincode for vendor pincode
-      commissionRate: commissionRate || 10, // Use default if not provided
-      salesRep: salesRepUser ? salesRepUser._id : null, // Assign sales rep if found
+      name,
+      userId: user._id,
+      pincode,
+      commissionRate: commissionRate || 10,
+      salesRep: salesRepUser?salesRepUser._id: null,
     });
 
-    await vendor.save(); // Save the new vendor document
+    await vendor.save();
 
-    res.status(201).json({
-      message: "Vendor and associated user created successfully",
+    // Step 8: Link vendor to sales rep
+    if (SalesRepresentive) {
+      SalesRepresentive.assignedVendors = SalesRepresentive.assignedVendors || [];
+      SalesRepresentive.assignedVendors.push(vendor._id);
+      await SalesRepresentive.save();
+    }
+console.log(SalesRepresentive,"salesRepresentive after save")
+    // Step 9: Response
+    return res.status(201).json({
+      message: "Vendor and user created successfully.",
       vendor: {
         _id: vendor._id,
         name: vendor.name,
         userId: vendor.userId,
         pincode: vendor.pincode,
         commissionRate: vendor.commissionRate,
-        salesRep: vendor.salesRep, // Include salesRep in the response
+        salesRep: vendor.salesRep,
       },
       user: {
         _id: user._id,
         email: user.email,
         roles: user.roles,
         referralCode: user.referralCode,
-        kycDocumentImage: user.kycDocumentImage, // NEW: Include kycDocumentImage in user response
+        kycDocumentImage: user.kycDocumentImage,
       },
     });
+
   } catch (error) {
     console.error("Error creating vendor and user:", error);
-    // You might want to add more specific error handling here,
-    // e.g., if user creation succeeded but vendor creation failed,
-    // consider rolling back the user creation.
-    res
-      .status(500)
-      .json({ message: "Server error during vendor and user creation" });
+    return res.status(500).json({
+      message: "Server error during vendor and user creation",
+      error: error.message,
+    });
   }
 };
+
 /**
  * @desc Get all vendors
  * @route GET /api/vendors
@@ -164,11 +149,10 @@ export const getVendors = async (req, res) => {
     try {
         const { sortByRevenue } = req.query; // 'highToLow' or 'lowToHigh'
 
-        // 1. Initial lookup to get vendor details and their associated user details
         let pipeline = [
             {
                 $lookup: {
-                    from: 'users', // The collection name for your User model (usually pluralized)
+                    from: 'users',
                     localField: 'userId',
                     foreignField: '_id',
                     as: 'userDetails'
@@ -177,7 +161,21 @@ export const getVendors = async (req, res) => {
             {
                 $unwind: {
                     path: '$userDetails',
-                    preserveNullAndEmptyArrays: true // Keep vendors even if no userDetails found
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: 'salesRep',
+                    foreignField: '_id',
+                    as: 'salesRepDetails'
+                }
+            },
+            {
+                $unwind: {
+                    path: '$salesRepDetails',
+                    preserveNullAndEmptyArrays: true
                 }
             },
             {
@@ -188,30 +186,29 @@ export const getVendors = async (req, res) => {
                     commissionRate: 1,
                     createdAt: 1,
                     updatedAt: 1,
-                    'userId': '$userDetails._id',
-                    'userName': '$userDetails.name',
-                    'userEmail': '$userDetails.email',
-                    'userPhone': '$userDetails.phone'
-                    // You can add more vendor or user fields here if needed
+                    userId: '$userDetails._id',
+                    userName: '$userDetails.name',
+                    userEmail: '$userDetails.email',
+                    userPhone: '$userDetails.phone',
+                    salesRep: '$salesRepDetails._id',
+                    salesRepName: '$salesRepDetails.name',
+                    salesRepEmail: '$salesRepDetails.email',
                 }
             },
-            // 2. Lookup orders for each vendor
             {
                 $lookup: {
-                    from: 'orders', // The collection name for your Order model
+                    from: 'orders',
                     localField: '_id',
                     foreignField: 'vendorId',
                     as: 'orders'
                 }
             },
-            // 3. Unwind orders to filter and group
             {
                 $unwind: {
                     path: '$orders',
-                    preserveNullAndEmptyArrays: true // Keep vendors even if they have no orders
+                    preserveNullAndEmptyArrays: true
                 }
             },
-            // 4. Filter for delivered orders and group by vendor to calculate totals
             {
                 $group: {
                     _id: '$_id',
@@ -224,6 +221,9 @@ export const getVendors = async (req, res) => {
                     userName: { $first: '$userName' },
                     userEmail: { $first: '$userEmail' },
                     userPhone: { $first: '$userPhone' },
+                    salesRep: { $first: '$salesRep' },
+                    salesRepName: { $first: '$salesRepName' },
+                    salesRepEmail: { $first: '$salesRepEmail' },
                     totalRevenue: {
                         $sum: {
                             $cond: {
@@ -237,14 +237,13 @@ export const getVendors = async (req, res) => {
                         $sum: {
                             $cond: {
                                 if: { $eq: ['$orders.orderStatus', 'placed'] },
-                                then: 1, // Count 1 for each delivered order
+                                then: 1,
                                 else: 0
                             }
                         }
                     }
                 }
             },
-            // 5. Project the final desired fields (optional, but good for cleanliness)
             {
                 $project: {
                     _id: 1,
@@ -257,28 +256,29 @@ export const getVendors = async (req, res) => {
                     userName: 1,
                     userEmail: 1,
                     userPhone: 1,
+                    salesRep: 1,
+                    salesRepName: 1,
+                    salesRepEmail:1,
                     totalRevenue: 1,
                     totalOrders: 1
                 }
             }
         ];
 
-        // 6. Apply sorting based on sortByRevenue query parameter
         if (sortByRevenue === 'lowToHigh') {
-            pipeline.push({ $sort: { totalRevenue: 1 } }); // Ascending
+            pipeline.push({ $sort: { totalRevenue: 1 } });
         } else {
-            pipeline.push({ $sort: { totalRevenue: -1 } }); // Default: Descending
+            pipeline.push({ $sort: { totalRevenue: -1 } });
         }
 
         const vendorsWithStats = await Vendor.aggregate(pipeline);
-
         res.status(200).json(vendorsWithStats);
-
     } catch (error) {
         console.error("Error fetching vendors with analytics:", error);
         res.status(500).json({ message: "Server error fetching vendors with analytics" });
     }
 };
+
 
 /**
  * @desc Get single vendor by ID

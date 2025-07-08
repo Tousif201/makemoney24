@@ -1,6 +1,7 @@
 import { User } from "../models/User.model.js";
 import { sendEmail } from "../utils/nodeMailerOtp.js";
 import { getHashPassword } from "../utils/getPassword.js";
+import { SalesRep } from "../models/SalesRep.model.js";
 // import { v4 as uuidv4 } from "uuid";
 
 export const createSalesRep = async (req, res) => {
@@ -52,7 +53,10 @@ export const createSalesRep = async (req, res) => {
       referralCode,
       kycDocumentImage: validDocuments,
     });
-
+  const salesRep = new SalesRep({
+      userId: newUser._id,
+  });
+  await salesRep.save();
     res.status(201).json({
       success: true,
       message: "Sales rep created successfully.",

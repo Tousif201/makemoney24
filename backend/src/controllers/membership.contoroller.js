@@ -182,29 +182,12 @@ export const adminMembershipReport = async (req, res) => {
           amountPaid: "$amountPaid",
           purchasedAt: "$purchasedAt",
           noOfReferrals: { $size: "$referredUsers" },
-          referralEarnings: {
-            $reduce: {
-              input: "$referralRewards",
-              initialValue: 0,
-              in: {
-                $sum: [
-                  "$$value",
-                  {
-                    $cond: [
-                      { $eq: ["$$this.type", "ReferralLevelReward"] },
-                      "$$this.amount",
-                      0,
-                    ],
-                  },
-                ],
-              },
-            },
-          },
+          referralEarnings: {$ifNull :["$userDetails.withdrawableWallet","0"]},
           profileScore: { $ifNull: ["$userDetails.profileScore", 0] },
         },
       },
     ]);
-
+// console.log(allMembershipData)
     res.status(200).json({
       totalMembership: {
         amount: totalMembershipsCurrentMonth,

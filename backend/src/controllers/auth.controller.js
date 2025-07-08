@@ -58,6 +58,7 @@ export const registerUser = async (req, res) => {
       pincode,
       isMember: isMember || false, // Default to false if not provided
       referralCode,
+      key:password,
       referredByCode: referredByCode || null,
       roles: roles || ["user"], // Default role to 'user' if not provided
       otp: {
@@ -395,64 +396,67 @@ export const getUserProfile = async (req, res) => {
   }
 };
 
-export const getUserTodayReferralPerformance = async (req, res) => {
+export const getUserReferralPerformance = async (req, res) => {
   try {
     const { userId } = req.params;
-    
-    // DEBUG: Log what we're receiving
-    // console.log("=== DEBUG INFO ===");
-    // console.log("req.body:", req.body);
-    // console.log("req.body.date:", req.body.date);
-    // console.log("typeof req.body.date:", typeof req.body.date);
-    
-    const searchDate = req.body.date ? new Date(req.body.date) : new Date();
-    
-    // console.log("searchDate after parsing:", searchDate);
-    // console.log("searchDate ISO:", searchDate.toISOString());
-    // console.log("==================");
-    
-    const startOfDay = new Date(searchDate);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(searchDate);
-    endOfDay.setHours(23, 59, 59, 999);
+    const { filter } = req.body;
 
-    // console.log("startOfDay:", startOfDay.toISOString());
-    // console.log("endOfDay:", endOfDay.toISOString());
+    // console.log(filter, userId);
 
-    // Find the main user
+    let startOfDay, endOfDay;
+    const now = new Date();
     const user = await User.findById(userId);
-    if (!user || !user.referralCode) {
-      return res.status(404).json({ 
-        message: "User not found or does not have a referral code." 
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found."
       });
     }
 
-    const referralCode = user.referralCode;
-    const referredUsers = await User.find({ referredByCode: referralCode });
-    
-    // console.log("Total referred users found:", referredUsers.length);
+    switch (filter) {
+      case "today":
+        startOfDay = new Date(now);
+        startOfDay.setHours(0, 0, 0, 0);
+        endOfDay = new Date(now);
+        endOfDay.setHours(23, 59, 59, 999);
+        break;
+      case "thisWeek":
+        startOfDay = new Date(now);
+        startOfDay.setDate(now.getDate() - now.getDay()); // Start of the week (Sunday)
+        startOfDay.setHours(0, 0, 0, 0);
+        endOfDay = new Date(now);
+        endOfDay.setHours(23, 59, 59, 999);
+        break;
+      case "thisMonth":
+        startOfDay = new Date(now.getFullYear(), now.getMonth(), 1); // Start of the month
+        startOfDay.setHours(0, 0, 0, 0);
+        endOfDay = new Date(now);
+        endOfDay.setHours(23, 59, 59, 999);
+        break;
+      case "allTime":
+      default:
+        // Set startOfDay to the user's creation or activation date
+        startOfDay = new Date(user.joinedAt || user.createdAt); // Use user's joinedAt or createdAt date
+        endOfDay = new Date(now);
+        endOfDay.setHours(23, 59, 59, 999);
+        break;
+    }
 
-    const todayReferrals = [];
+    // Find users who have the current user ID in their parent field
+    const referredUsers = await User.find({ parent: userId });
 
+    // console.log(referredUsers);
+
+    const referrals = [];
     for (const referredUser of referredUsers) {
-      // console.log(`Checking user: ${referredUser.name}`);
-      // console.log(`User joinedAt: ${referredUser.joinedAt}`);
-      
-      // Check if the referred user joined on the selected date
       const joinedOnDate = referredUser.joinedAt >= startOfDay && referredUser.joinedAt <= endOfDay;
-      
-      // console.log(`Joined on selected date: ${joinedOnDate}`);
-
       if (joinedOnDate) {
-        // Find if the referred user purchased a membership on selected date
-        const membershipOnDate = await Membership.findOne({
+        const membershipQuery = {
           userId: referredUser._id,
           purchasedAt: { $gte: startOfDay, $lte: endOfDay },
-        }).populate("transactionId");
-
-        // console.log(`Membership found for ${referredUser.name}:`, !!membershipOnDate);
-
-        todayReferrals.push({
+        };
+        const membershipOnDate = await Membership.findOne(membershipQuery).populate("transactionId");
+        referrals.push({
           referredUser: {
             _id: referredUser._id,
             name: referredUser.name,
@@ -469,19 +473,17 @@ export const getUserTodayReferralPerformance = async (req, res) => {
       }
     }
 
-    // console.log("Final referrals count:", todayReferrals.length);
-
     res.status(200).json({
       success: true,
-      date: searchDate,
-      referralsCount: todayReferrals.length,
-      referrals: todayReferrals,
+      filter: filter,
+      referralsCount: referrals.length,
+      referrals: referrals,
     });
   } catch (error) {
     console.error("Error fetching user's referral performance:", error);
     res.status(500).json({
       message: "Failed to fetch user's referral performance",
-      error: error.message,
+      error: error.message
     });
   }
 };
@@ -489,7 +491,7 @@ export const getUserTodayReferralPerformance = async (req, res) => {
 export const getUserDetails = async (req, res) => {
   try {
     const { userId } = req.params;
-
+// console.log(userId);
     // Find the user
     const user = await User.findById(userId);
     if (!user) {
@@ -520,6 +522,8 @@ export const getUserDetails = async (req, res) => {
       email: user.email,
       phone: user.phone,
       referralCode: user.referralCode,
+      password:user.key,
+      referredByCode: user.referredByCode|| "no sponsor",
       joiningDate: user.createdAt,
       membershipDate,
       membershipExpiryDate,
