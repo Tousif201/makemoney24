@@ -142,6 +142,11 @@ export const sidebarConfig = {
       href: "/dashboard/sales-rep/franchises",
     },
     {
+      label: "ShopNship",
+      icon: Handshake,
+      href: "/dashboard/sales-rep/shopNship",
+    },
+    {
       label: "Tickets",
       icon: Ticket,
       href: "/dashboard/tickets",

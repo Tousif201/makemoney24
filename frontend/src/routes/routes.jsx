@@ -66,8 +66,9 @@ import ForgotPassword from "../pages/ForgetPassword";
 import ResetPassword from "../pages/ResetPassword";
 import ForgotVerifyOTP from "../pages/ForgotPassOTP";
 import ForgotPassOTP from "../pages/ForgotPassOTP";
-import { ShopNship } from "../pages/Dashboard/Users/ShopNship";
+import  {ShopNship}  from "../pages/Dashboard/Users/ShopNship";
 import ShopNshipRequests from "../pages/Dashboard/Admin/ShopNshipRequests";
+import  ShopNshipSalesrep  from "../pages/Dashboard/SalesRep/ShopNshipsalesrep";
 
 const routes = [
   {
@@ -355,6 +356,14 @@ const routes = [
     element: (
       <DashboardLayout>
         <FranchisePage />
+      </DashboardLayout>
+    ),
+  },
+  {
+    path: "/dashboard/sales-rep/shopNship",
+    element: (
+      <DashboardLayout>
+        <ShopNshipSalesrep />
       </DashboardLayout>
     ),
   },

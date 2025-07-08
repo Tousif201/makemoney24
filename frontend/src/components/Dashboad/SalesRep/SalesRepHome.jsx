@@ -22,6 +22,7 @@ import { CreateVendorDialog } from "./CreateVendorDialog";
 import { CreateFranchiseDialog } from "./CreateFranchiseDialog";
 import { useEffect, useState } from "react";
 import { useSession } from "../../../context/SessionContext";
+import CreateShopNshipDialog from "./CreateShopnshipDialog";
 
 export default function SalesRepHome() {
   const [stats, setStats] = useState([]);
@@ -92,6 +93,12 @@ export default function SalesRepHome() {
           </p>
         </div>
         <div className="flex gap-2">
+        <CreateShopNshipDialog>
+            <Button className="bg-purple-700 hover:bg-purple-400">
+              <Plus className="mr-2 h-4 w-4" />
+              Create ShopNship User
+            </Button>
+          </CreateShopNshipDialog>
           <CreateVendorDialog>
             <Button className="bg-purple-700 hover:bg-purple-400">
               <Plus className="mr-2 h-4 w-4" />
