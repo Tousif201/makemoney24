@@ -68,5 +68,6 @@ router.use("/admin-vendor", adminVendorRouter);
 router.use("/coupon-code", couponCodeRouter);
 router.use("/membership-packages", membershipPackagesRouter);
 router.use("/location", locationRouter);
+router.use("/affiliate", affiliateRoutes);
 
 export default router;

@@ -1,6 +1,6 @@
-import { User } from "../models/User.model";
-import { Affiliate } from "../models/Affiliate.model";
-import { Address } from "../models/Address.model";
+import { User } from "../models/User.model.js";
+import { Affiliate } from "../models/Affiliate.model.js";
+import { Address } from "../models/Address.model.js";
 
 export const affiliateRequest = async (req,res)=>{
     try {
@@ -18,8 +18,8 @@ export const affiliateRequest = async (req,res)=>{
         }
 
      const newAddress = new Address({
-      addressLine1,
-      city,
+         city,
+         addressLine1:address,
       state,
       pincode,
       isDefault:isDefault||false,

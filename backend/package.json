@@ -6,7 +6,7 @@
     "test": "jest",
     "build": "echo \"No build step configured\"",
     "start": "node src/index.js",
-    "dev": "nodemon src/index.js",
+    "dev": " npx nodemon src/index.js",
     "lint": "eslint .",
     "test:coverage": "jest --coverage"
   },
@@ -24,6 +24,7 @@
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.15.0",
+    "mongoose-aggregate-paginate-v2": "^1.1.4",
     "multer": "^2.0.0",
     "node-cron": "^4.1.0",
     "nodemailer": "^7.0.3",
