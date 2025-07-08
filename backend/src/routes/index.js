@@ -5,6 +5,7 @@ import vendorsRouter from "./vendor.routes.js";
 import vendorAvailablityRouter from "./vendorAvailability.routes.js";
 import reviewRoutes from "./review.routes.js";
 import uploadRoutes from "./upload.routes.js";
+import affiliateRoutes from "./affiliate.routes.js";
 import categoriesRoutes from "./category.routes.js";
 import productServicesRoutes from "./productService.routes.js";
 import bannerRoutes from "./banner.routes.js";
