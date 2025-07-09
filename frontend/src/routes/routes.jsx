@@ -64,11 +64,17 @@ import ProductDetailPage from "../components/ProductDetails";
 import CategoryProductServices from "../pages/CategoryProduct&Services";
 import ForgotPassword from "../pages/ForgetPassword";
 import ResetPassword from "../pages/ResetPassword";
-import ForgotVerifyOTP from "../pages/ForgotPassOTP";
+// import ForgotVerifyOTP from "../pages/ForgotPassOTP";
 import ForgotPassOTP from "../pages/ForgotPassOTP";
 import  {ShopNship}  from "../pages/Dashboard/Users/ShopNship";
 import ShopNshipRequests from "../pages/Dashboard/Admin/ShopNshipRequests";
 import  ShopNshipSalesrep  from "../pages/Dashboard/SalesRep/ShopNshipsalesrep";
+import AffiliateHome  from "../pages/Dashboard/Affiliate/AffiliateHome";
+import  Bucket  from "../pages/Dashboard/Affiliate/Bucket";
+import OrdersAffiliate  from "../pages/Dashboard/Affiliate/OrdersAffiliate";
+import AffiliateCommission from "../pages/Dashboard/Affiliate/Reports/AffiliateCommission";
+import  AffiliateNetwork  from "../pages/Dashboard/Affiliate/Reports/AffiliateNetwork";
+import AffiliateTicket from "../pages/Dashboard/Affiliate/AffilaiteTicket";
 
 const routes = [
   {
@@ -120,10 +126,7 @@ const routes = [
       </MainLayout>
     ),
   },
-  // {
-  //   path: '/browse/:categoryId', // Dynamic route for category products
-  //   element: <CategoryProductServices />,
-  // },
+  
   {
     path: "/about",
     element: (
@@ -625,7 +628,58 @@ const routes = [
       </DashboardLayout>
     ),
   },
+  
+  {
+    path: "/dashboard/home",
+    element: (
+      <DashboardLayout>
+        <AffiliateHome />
+      </DashboardLayout>
+    ),
+  },
 
+  {
+    path: "/dashboard/bucket",
+    element: (
+      <DashboardLayout>
+        <Bucket />
+      </DashboardLayout>
+    ),
+  },
+  {
+    path: "/dashboard/ordersaf",
+    element: (
+      <DashboardLayout>
+        <OrdersAffiliate />
+      </DashboardLayout>
+    ),
+  },
+  {
+    path: "/dashboard/reports/commission",
+    element: (
+      <DashboardLayout>
+        <AffiliateCommission />
+      </DashboardLayout>
+    ),
+  },
+  
+  {
+    path: "/dashboard/reports/network",
+    element: (
+      <DashboardLayout>
+        <AffiliateNetwork />
+      </DashboardLayout>
+    ),
+  },
+
+  {
+    path: "/dashboard/affiliate/tickets",
+    element: (
+      <DashboardLayout>
+        <AffiliateTicket />
+      </DashboardLayout>
+    ),
+  },
   {
     path: "*",
     element: <h1>404 - Page Not Found</h1>,

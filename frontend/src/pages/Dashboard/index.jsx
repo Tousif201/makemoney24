@@ -5,6 +5,7 @@ import UserHome from "../../components/Dashboad/User/UserHome";
 import FranchiseHome from "../../components/Dashboad/Franchise/FranchiseHome";
 import SalesRepHome from "../../components/Dashboad/SalesRep/SalesRepHome";
 import { useSession } from "../../context/SessionContext";
+import AffiliateHome from "./Affiliate/AffiliateHome";
 
 function DashboardHome() {
   const { user, loading } = useSession();
@@ -29,6 +30,8 @@ function DashboardHome() {
       {user.roles?.includes("franchise-admin") && <FranchiseHome />}
 
       {user.roles?.includes("sales-rep") && <SalesRepHome />}
+
+      {/* {user.roles?.includes("affiliate") && <AffiliateHome />} */}
     </div>
   );
 }

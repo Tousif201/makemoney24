@@ -29,6 +29,8 @@ import {
   Proportions,
   ShoppingBag,
   Handshake,
+  HomeIcon,
+  ListOrderedIcon,
 } from "lucide-react";
 
 export const sidebarConfig = {
@@ -152,12 +154,9 @@ export const sidebarConfig = {
       href: "/dashboard/tickets",
     },
   ],
+
   "franchise-admin": [
-    // {
-    //   label: "Vendors",
-    //   icon: Package,
-    //   href: "/dashboard/vendors",
-    // },
+    
     {
       label: "Users",
       icon: Users,
@@ -190,6 +189,47 @@ export const sidebarConfig = {
       href: "/dashboard/tickets",
     },
   ],
+
+  affiliate: [
+
+    {
+      label: "Home",
+      icon: HomeIcon,
+      href: "/dashboard/home",
+    },
+    {
+      label: "Bucket",
+      icon: Milestone,
+      href: "/dashboard/bucket",
+    },
+    {
+      label: "Orders",
+      icon: ListOrderedIcon,
+      href: "/dashboard/ordersaf",
+    },
+    {
+      label: "Reports",
+      icon: History,
+      items: [
+        {
+          label: "Commission",
+          href: "/dashboard/reports/commission",
+          icon: IndianRupee ,
+        },
+        {
+          label: "Network",
+          href: "/dashboard/reports/network",
+          icon: Settings,
+        },
+      ],
+    },
+    {
+      label: "Tickets",
+      icon: Ticket,
+      href: "/dashboard/affiliate/tickets",
+    },
+  ],
+
   admin: [
     {
       label: "Distribution",
