@@ -1,5 +1,4 @@
-// src/pages/Create.jsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
@@ -29,16 +28,22 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useSession } from "../../../context/SessionContext";
 import { deleteFiles, uploadFiles } from "../../../../api/upload";
 import { createProductService } from "../../../../api/vendor";
-// Updated imports for categories API: Using getAllCategoriesFlat
 import { getAllCategoriesFlat } from "../../../../api/categories";
 import PortableTextEditor from "./RichTextEditor";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Info } from "lucide-react";
 
 export default function CreateProduct() {
   const { session, loading: sessionLoading } = useSession();
   const [formData, setFormData] = useState({
     vendorId: "",
-    categoryId: "", // This will hold the ID of the *most specific* category (Level 2 or 3)
-    type: "", // 'product' or 'service' - crucial for fetching relevant categories
+    categoryId: "", // This will hold the ID of the *most specific* category selected
+    type: "",
     title: "",
     description: "",
     price: "",
@@ -46,12 +51,13 @@ export default function CreateProduct() {
     details: "",
     variants: [],
     pincode: "",
-    localMediaFiles: [], // For main product/service portfolio
-    localMediaPreviews: [], // For main product/service portfolio
-    portfolio: [], // For main product/service portfolio
+    localMediaFiles: [],
+    localMediaPreviews: [],
+    portfolio: [],
     isBookable: false,
     isInStock: true,
     discountRate: "",
+    affiliatecomission: "", // Added to state
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -60,30 +66,13 @@ export default function CreateProduct() {
   const [formSuccess, setFormSuccess] = useState(null);
 
   // --- Category Management States ---
-  const [allCategories, setAllCategories] = useState([]); // Stores flat list of all categories
+  const [allCategories, setAllCategories] = useState([]);
   const [fetchingCategories, setFetchingCategories] = useState(false);
   const [categoryError, setCategoryError] = useState(null);
-
-  // Helper to get category level (similar to CategoryManagementPage)
-  const getCategoryLevel = (category, categoriesArray) => {
-    if (!category || !categoriesArray) return 0; // Invalid input
-
-    let level = 1;
-    let current = category;
-    while (current && current.parentId) {
-      const parent = categoriesArray.find(
-        (cat) => cat._id === current.parentId
-      );
-      if (parent) {
-        level++;
-        current = parent;
-      } else {
-        // Parent not found, might be a data inconsistency, break and return current level
-        break;
-      }
-    }
-    return level;
-  };
+  // New states for cascading dropdowns
+  const [selectedLevel1, setSelectedLevel1] = useState("");
+  const [selectedLevel2, setSelectedLevel2] = useState("");
+  const [selectedLevel3, setSelectedLevel3] = useState("");
 
   // Set vendorId from session.id once it's available
   useEffect(() => {
@@ -95,7 +84,7 @@ export default function CreateProduct() {
     }
   }, [session, sessionLoading, formData.vendorId]);
 
-  // Effect to fetch all categories when component mounts or type changes
+  // Effect to fetch all categories when component mounts
   useEffect(() => {
     const fetchAllCategories = async () => {
       setFetchingCategories(true);
@@ -106,7 +95,8 @@ export default function CreateProduct() {
       } catch (error) {
         console.error("Error fetching all categories:", error);
         setCategoryError(
-          `Failed to load categories: ${error.response?.data?.message || error.message
+          `Failed to load categories: ${
+            error.response?.data?.message || error.message
           }`
         );
         setAllCategories([]);
@@ -116,30 +106,23 @@ export default function CreateProduct() {
     };
 
     fetchAllCategories();
-  }, []); // Fetch all categories once on mount
+  }, []);
 
-  // Filter categories and update form data when type or allCategories changes
-  useEffect(() => {
-    if (!formData.type) {
-      setFormData((prev) => ({ ...prev, categoryId: "" }));
-      return;
-    }
+  // Memoized category lists for the three dropdowns
+  const level1Categories = useMemo(() => {
+    if (!formData.type || !allCategories) return [];
+    return allCategories.filter((cat) => cat.type === formData.type && !cat.parentId);
+  }, [allCategories, formData.type]);
 
-    // Check if the currently selected category is valid for the new type, and is level 2 or 3
-    const currentCategoryValid = allCategories.some(
-      (cat) =>
-        cat._id === formData.categoryId &&
-        cat.type === formData.type &&
-        (getCategoryLevel(cat, allCategories) === 1 ||
+  const level2Categories = useMemo(() => {
+    if (!selectedLevel1 || !allCategories) return [];
+    return allCategories.filter((cat) => cat.parentId === selectedLevel1);
+  }, [allCategories, selectedLevel1]);
 
-          getCategoryLevel(cat, allCategories) === 2 ||
-          getCategoryLevel(cat, allCategories) === 3)
-    );
-
-    if (!currentCategoryValid) {
-      setFormData((prev) => ({ ...prev, categoryId: "" }));
-    }
-  }, [formData.type, allCategories, formData.categoryId]); // Re-evaluate when type or available categories change
+  const level3Categories = useMemo(() => {
+    if (!selectedLevel2 || !allCategories) return [];
+    return allCategories.filter((cat) => cat.parentId === selectedLevel2);
+  }, [allCategories, selectedLevel2]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -148,21 +131,39 @@ export default function CreateProduct() {
       [name]: type === "checkbox" ? checked : value,
     }));
   };
-
-  const handleSelectChange = (name, value) => {
-    if (name === "type") {
-      setFormData((prev) => ({
-        ...prev,
-        type: value,
-        categoryId: "", // Reset category selection when type changes
-      }));
-    } else if (name === "categoryId") {
-      setFormData((prev) => ({
-        ...prev,
-        categoryId: value,
-      }));
-    }
+  
+  // --- New Category Handlers ---
+  const handleTypeChange = (value) => {
+    setSelectedLevel1("");
+    setSelectedLevel2("");
+    setSelectedLevel3("");
+    setFormData((prev) => ({
+      ...prev,
+      type: value,
+      categoryId: "", // Reset categoryId
+    }));
   };
+
+  const handleLevel1Change = (value) => {
+    setSelectedLevel1(value);
+    setSelectedLevel2("");
+    setSelectedLevel3("");
+    setFormData((prev) => ({ ...prev, categoryId: value || "" }));
+  };
+
+  const handleLevel2Change = (value) => {
+    setSelectedLevel2(value);
+    setSelectedLevel3("");
+    // If user unselects L2, fallback to L1, otherwise use L2
+    setFormData((prev) => ({ ...prev, categoryId: value || selectedLevel1 }));
+  };
+
+  const handleLevel3Change = (value) => {
+    setSelectedLevel3(value);
+    // If user unselects L3, fallback to L2, otherwise use L3
+    setFormData((prev) => ({ ...prev, categoryId: value || selectedLevel2 }));
+  };
+
 
   const handleSwitch = (name, checked) => {
     setFormData((prev) => ({
@@ -195,28 +196,28 @@ export default function CreateProduct() {
     setFormData((prev) => ({
       ...prev,
       localMediaFiles: prev.localMediaFiles.filter((_, i) => i !== index),
-      localMediaPreviews: prev.localMediaPreviews.filter((_, i) => i !== index),
+      localMediaPreviews: prev.localMediaPreviews.filter(
+        (_, i) => i !== index
+      ),
     }));
   };
 
   const removeUploadedMedia = async (key, url) => {
     if (!key) return;
 
-    setFormSuccess(null);
-    setFormError(null);
     setIsUploading(true);
-
     try {
       await deleteFiles([key]);
       setFormData((prev) => ({
         ...prev,
         portfolio: prev.portfolio.filter((item) => item.key !== key),
       }));
-      setFormSuccess("Media deleted successfully!");
+      toast.success("Media deleted successfully!");
     } catch (error) {
       console.error("Failed to delete media:", error);
-      setFormError(
-        `Failed to delete media: ${error.response?.data?.message || error.message
+      toast.error(
+        `Failed to delete media: ${
+          error.response?.data?.message || error.message
         }`
       );
     } finally {
@@ -244,7 +245,7 @@ export default function CreateProduct() {
         size: "",
         sku: generateSku(prev.title, "", ""), // Initial SKU based on title
         quantity: 0,
-        images: [], // Stores URLs of uploaded variant images
+        images: [], // Stores {url, key} of uploaded variant images
         localVariantMediaFiles: [], // Stores File objects for variant images
         localVariantMediaPreviews: [], // Stores Object URLs for variant image previews
       };
@@ -260,8 +261,7 @@ export default function CreateProduct() {
       const newVariants = [...prev.variants];
       newVariants[index] = { ...newVariants[index], [field]: value };
 
-      // Auto-generate SKU when color, size, or title changes
-      if (field === "color" || field === "size" || field === "title") {
+      if (field === "color" || field === "size") {
         newVariants[index].sku = generateSku(
           prev.title,
           newVariants[index].color,
@@ -275,7 +275,6 @@ export default function CreateProduct() {
   const handleRemoveVariant = (indexToRemove) => {
     setFormData((prev) => {
       const variantToRemove = prev.variants[indexToRemove];
-      // Revoke object URLs for local variant media previews
       variantToRemove.localVariantMediaPreviews.forEach(URL.revokeObjectURL);
 
       return {
@@ -310,7 +309,7 @@ export default function CreateProduct() {
       };
       return { ...prev, variants: newVariants };
     });
-    e.target.value = null; // Clear the input so same file can be selected again
+    e.target.value = null;
   };
 
   const removeLocalVariantMedia = (variantIndex, mediaIndex) => {
@@ -329,15 +328,12 @@ export default function CreateProduct() {
     });
   };
 
-  const removeUploadedVariantMedia = async (variantIndex, key, url) => {
+  const removeUploadedVariantMedia = async (variantIndex, key) => {
     if (!key) return;
 
-    setFormSuccess(null);
-    setFormError(null);
-    setIsUploading(true); // Re-using global upload state for simplicity
-
+    setIsUploading(true);
     try {
-      await deleteFiles([key]); // Assuming deleteFiles can handle variant image keys
+      await deleteFiles([key]);
       setFormData((prev) => {
         const newVariants = [...prev.variants];
         const variant = newVariants[variantIndex];
@@ -346,11 +342,12 @@ export default function CreateProduct() {
         }
         return { ...prev, variants: newVariants };
       });
-      setFormSuccess("Variant media deleted successfully!");
+      toast.success("Variant media deleted successfully!");
     } catch (error) {
       console.error("Failed to delete variant media:", error);
-      setFormError(
-        `Failed to delete variant media: ${error.response?.data?.message || error.message
+      toast.error(
+        `Failed to delete variant media: ${
+          error.response?.data?.message || error.message
         }`
       );
     } finally {
@@ -358,304 +355,112 @@ export default function CreateProduct() {
     }
   };
 
-  // --- End Variant Handlers ---
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     setFormError(null);
-
     setFormSuccess(null);
-
-    setIsSubmitting(true);
-
-    setIsUploading(true); // Set to true for the entire upload process
-
-    if (!session?.id) {
-      setFormError("Authentication error: Vendor ID not found. Please log in.");
-
-      setIsSubmitting(false);
-
-      setIsUploading(false);
-
+    
+    if (
+      !formData.vendorId ||
+      !formData.categoryId ||
+      !formData.type ||
+      !formData.title ||
+      !formData.price
+    ) {
+      const errorMessage = "Please fill all required fields: Type, Category, Title, and Price.";
+      setFormError(errorMessage);
+      toast.error(errorMessage);
       return;
     }
 
-    let currentPortfolio = [...formData.portfolio]; // Will be updated with uploaded main media
 
-    let currentVariants = formData.variants; // Deep copy to modify
-
-    const uploadPromises = [];
-
-    const uploadErrors = []; // To collect all errors
-
-    // Promise for main product/service media upload
-
-    if (formData.localMediaFiles.length > 0) {
-      const mainUploadPromise = uploadFiles(formData.localMediaFiles)
-        .then((uploadedMediaArray) => {
-          currentPortfolio = [...currentPortfolio, ...uploadedMediaArray];
-        })
-
-        .catch((error) => {
-          uploadErrors.push(
-            `Main media upload failed: ${error.response?.data?.message || error.message
-            }`
-          );
-
-          console.error("Error during main media upload:", error);
-        });
-
-      uploadPromises.push(mainUploadPromise);
-    }
-
-    // Promises for variant media uploads (if type is product)
-
-    if (formData.type === "product") {
-      currentVariants.forEach((variant, index) => {
-        if (variant.localVariantMediaFiles.length > 0) {
-          const variantUploadPromise = uploadFiles(
-            variant.localVariantMediaFiles
-          )
-            .then((uploadedVariantImages) => {
-              variant.images = [
-                ...variant.images,
-
-                ...uploadedVariantImages.map((item) => ({
-                  url: item.url,
-
-                  key: item.key,
-
-                  type: item.type,
-                })),
-              ];
-            })
-
-            .catch((error) => {
-              uploadErrors.push(
-                `Variant ${index} media upload failed: ${error.response?.data?.message || error.message
-                }`
-              );
-
-              console.error(
-                `Error during variant ${index} media upload:`,
-
-                error
-              );
-            });
-
-          uploadPromises.push(variantUploadPromise);
-        }
-      });
-    }
+    setIsSubmitting(true);
+    setIsUploading(true);
 
     try {
-      // Wait for all uploads to settle (succeed or fail)
-
-      await Promise.allSettled(uploadPromises); // Use allSettled to ensure all promises run
-
-      if (uploadErrors.length > 0) {
-        setFormError(uploadErrors.join("; "));
-
-        setIsSubmitting(false);
-
-        setIsUploading(false);
-
-        return;
+      // Media Upload Logic
+      let uploadedPortfolio = [...formData.portfolio];
+      if (formData.localMediaFiles.length > 0) {
+        const uploaded = await uploadFiles(formData.localMediaFiles);
+        uploadedPortfolio = [...uploadedPortfolio, ...uploaded];
       }
 
-      // Update formData with the new portfolio and variant images, and clear local files
-
-      setFormData((prev) => ({
-        ...prev,
-
-        portfolio: currentPortfolio,
-
-        localMediaFiles: [], // Clear after successful processing
-
-        localMediaPreviews: [], // Clear after successful processing
-
-        variants: currentVariants.map((v) => ({
-          ...v,
-
-          localVariantMediaFiles: [], // Clear after successful processing
-
-          localVariantMediaPreviews: [], // Clear after successful processing
-        })),
-      }));
-
-      const productServicePayload = {
-        vendorId: session.id,
-
-        discountRate: formData.discountRate,
-
-        categoryId: formData.categoryId,
-
-        type: formData.type,
-
-        title: formData.title,
-        details: formData.details,
-        description: formData.description,
-
-        price: parseFloat(formData.price),
-        courierCharges: parseFloat(formData.courierCharges),
-
-        portfolio: currentPortfolio.map((item) => ({
-          // Use the updated currentPortfolio
-
-          type: item.type,
-
-          url: item.url,
-
-          key: item.key,
-        })),
-
-        pincode: formData.pincode,
-
-        isBookable: formData.type === "service" ? formData.isBookable : false,
-
-        isInStock: formData.isInStock,
-
-        variants:
-          formData.type === "product"
-            ? currentVariants.map((variant) => ({
-              // Use the updated currentVariants
-
-              color: variant.color,
-
-              size: variant.size,
-
-              sku: variant.sku,
-
-              quantity: parseInt(variant.quantity) || 0,
-
-              images: variant.images.map(({ url }) => url),
-            }))
-            : [],
-      };
-
-      // --- Validation Checks ---
-
-      if (
-        !productServicePayload.vendorId ||
-        !productServicePayload.categoryId || // categoryId is now mandatory
-        !productServicePayload.type ||
-        !productServicePayload.title ||
-        isNaN(productServicePayload.price)
-      ) {
-        setFormError(
-          "Please fill all required fields: Vendor ID, Category, Type, Title, Price."
-        );
-
-        setIsSubmitting(false);
-
-        setIsUploading(false); // Make sure to set to false
-
-        return;
-      }
-
-      if (productServicePayload.price < 0) {
-        setFormError("Price cannot be negative.");
-
-        setIsSubmitting(false);
-
-        setIsUploading(false); // Make sure to set to false
-
-        return;
-      }
-
-      if (!["product", "service"].includes(productServicePayload.type)) {
-        setFormError('Type must be "product" or "service".');
-
-        setIsSubmitting(false);
-
-        setIsUploading(false); // Make sure to set to false
-
-        return;
-      }
-
-      const selectedCategory = allCategories.find(
-        (cat) => cat._id === formData.categoryId
+      let updatedVariants = await Promise.all(
+        formData.variants.map(async (variant) => {
+          if (variant.localVariantMediaFiles.length > 0) {
+            const uploadedImages = await uploadFiles(
+              variant.localVariantMediaFiles
+            );
+            return {
+              ...variant,
+              images: [...variant.images, ...uploadedImages],
+            };
+          }
+          return variant;
+        })
       );
+      
+      setIsUploading(false);
 
-      if (!selectedCategory) {
-        setFormError("Selected category is invalid.");
-
-        setIsSubmitting(false);
-
-        setIsUploading(false); // Make sure to set to false
-
-        return;
-      }
-
-      const categoryLevel = getCategoryLevel(selectedCategory, allCategories);
-
-
-      if (
-        formData.type === "product" &&
-        productServicePayload.variants.some((v) => v.quantity < 0)
-      ) {
-        setFormError("Variant quantity cannot be negative.");
-
-        setIsSubmitting(false);
-
-        setIsUploading(false); // Make sure to set to false
-
-        return;
-      }
-
-      // --- End Validation Checks ---
-
-      const createdProduct = await createProductService(productServicePayload);
+      const payload = {
+        ...formData,
+        price: parseFloat(formData.price),
+        courierCharges: parseFloat(formData.courierCharges) || 0,
+        discountRate: parseFloat(formData.discountRate) || 0,
+        affiliatecomission: parseFloat(formData.affiliatecomission) || 0,
+        portfolio: uploadedPortfolio,
+        variants: updatedVariants.map((v) => ({
+          color: v.color,
+          size: v.size,
+          sku: v.sku,
+          quantity: parseInt(v.quantity, 10) || 0,
+          images: v.images.map((img) => img.url),
+        })),
+        isBookable: formData.type === "service" ? formData.isBookable : undefined,
+      };
+      
+      await createProductService(payload);
 
       toast.success("Product/Service created successfully!");
-
       setFormSuccess("Product/Service created successfully!");
 
-      // Reset form after successful submission
-
+      // Reset form
       setFormData({
-        vendorId: session.id, // Keep vendorId
-
+        vendorId: session.id,
         categoryId: "",
-
         type: "",
-
         title: "",
-
         description: "",
-
         price: "",
         courierCharges: "",
-        discountRate: "",
-        variants: [], // Reset variants to empty array
-
+        details: "",
+        variants: [],
         pincode: "",
-
         localMediaFiles: [],
-
         localMediaPreviews: [],
-
-        portfolio: [], // Reset portfolio here as well
-
+        portfolio: [],
         isBookable: false,
-
         isInStock: true,
+        discountRate: "",
+        affiliatecomission: "",
       });
+      setSelectedLevel1("");
+      setSelectedLevel2("");
+      setSelectedLevel3("");
     } catch (apiError) {
       console.error("Error creating product:", apiError);
-
-      setFormError(
-        `Failed to create product: ${apiError.response?.data?.message || apiError.message
-        }`
-      );
+      const errorMessage = `Failed to create product: ${
+        apiError.response?.data?.message || apiError.message
+      }`;
+      setFormError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
-
-      setIsUploading(false); // Ensure this is always called at the very end
+      setIsUploading(false);
     }
   };
 
-  // Cleanup for local media previews (main and variant)
+  // Cleanup for local media previews
   useEffect(() => {
     return () => {
       formData.localMediaPreviews.forEach(URL.revokeObjectURL);
@@ -699,35 +504,7 @@ export default function CreateProduct() {
       </div>
     );
   }
-
-  // Filter and format categories for the single select dropdown
-  const getSelectableCategories = () => {
-    if (!formData.type || allCategories.length === 0) return [];
-
-    const filteredCategories = allCategories
-      .filter((cat) => cat.type === formData.type)
-      .map((cat) => ({
-        ...cat,
-        level: getCategoryLevel(cat, allCategories),
-      }))
-      .filter((cat) => cat.level === 1 || cat.level === 2 || cat.level === 3)
-      .sort((a, b) => {
-        // Sort by parent, then by name within same parent
-        const getFullPath = (c) => {
-          let path = [c.name];
-          let current = c;
-          while (current.parentId) {
-            current = allCategories.find((p) => p._id === current.parentId);
-            if (current) path.unshift(current.name);
-            else break;
-          }
-          return path.join(" > ");
-        };
-        return getFullPath(a).localeCompare(getFullPath(b));
-      });
-
-    return filteredCategories;
-  };
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 md:p-6 lg:p-8">
       <div className="max-w-4xl mx-auto">
@@ -764,12 +541,7 @@ export default function CreateProduct() {
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label
-                    htmlFor="vendorId"
-                    className="text-sm font-medium text-slate-700"
-                  >
-                    Vendor ID
-                  </Label>
+                  <Label htmlFor="vendorId">Vendor ID</Label>
                   <Input
                     id="vendorId"
                     name="vendorId"
@@ -777,19 +549,11 @@ export default function CreateProduct() {
                     disabled
                     className="h-11 bg-slate-100 text-slate-500"
                   />
-                  <p className="text-xs text-slate-500">
-                    Automatically set from your session.
-                  </p>
                 </div>
                 <div className="space-y-2">
-                  <Label
-                    htmlFor="type"
-                    className="text-sm font-medium text-slate-700"
-                  >
-                    Type
-                  </Label>
+                  <Label htmlFor="type">Type</Label>
                   <Select
-                    onValueChange={(value) => handleSelectChange("type", value)}
+                    onValueChange={handleTypeChange}
                     value={formData.type}
                   >
                     <SelectTrigger className="h-11 w-full">
@@ -802,86 +566,95 @@ export default function CreateProduct() {
                   </Select>
                 </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="categoryId"
-                    className="text-sm font-medium text-slate-700"
-                  >
+
+              {/* === NEW CASCADING CATEGORY SECTION === */}
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <Label className="text-sm font-medium text-slate-700">
                     Category
                   </Label>
+                  {fetchingCategories && (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  )}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+                  {/* Level 1 */}
                   <Select
-                    onValueChange={(value) =>
-                      handleSelectChange("categoryId", value)
-                    }
-                    value={formData.categoryId}
+                    onValueChange={handleLevel1Change}
+                    value={selectedLevel1}
                     disabled={!formData.type || fetchingCategories}
                   >
-                    <SelectTrigger className="h-11 w-full">
-                      <SelectValue
-                        placeholder={
-                          fetchingCategories
-                            ? "Loading categories..."
-                            : !formData.type
-                              ? "Select type first"
-                              : "Select Category (Level 2 or 3)"
-                        }
-                      />
+                    <SelectTrigger className="h-11">
+                      <SelectValue placeholder="Select Level 1" />
                     </SelectTrigger>
                     <SelectContent>
-                      {categoryError && (
-                        <div className="p-2 text-red-500 text-sm">
-                          {categoryError}
-                        </div>
-                      )}
-                      {!formData.type && (
+                      {level1Categories.length > 0 ? (
+                        level1Categories.map((cat) => (
+                          <SelectItem key={cat._id} value={cat._id}>
+                            {cat.name}
+                          </SelectItem>
+                        ))
+                      ) : (
                         <div className="p-2 text-slate-500 text-sm">
-                          Please select a product type first.
+                          Select a type first.
                         </div>
                       )}
-                      {getSelectableCategories().length === 0 &&
-                        !fetchingCategories &&
-                        !categoryError &&
-                        formData.type && (
-                          <div className="p-2 text-slate-500 text-sm">
-                            No Level 2 or Level 3 categories found for "
-                            {formData.type}".
-                          </div>
-                        )}
-                      {getSelectableCategories().map((cat) => (
-                        <SelectItem key={cat._id} value={cat._id}>
-                          {"\u00A0\u00A0".repeat(cat.level - 1)}{" "}
-                          {/* Indent for Level 3 */}
-                          {cat.name} (Level {cat.level})
-                        </SelectItem>
-                      ))}
+                    </SelectContent>
+                  </Select>
+                  {/* Level 2 */}
+                  <Select
+                    onValueChange={handleLevel2Change}
+                    value={selectedLevel2}
+                    disabled={!selectedLevel1}
+                  >
+                    <SelectTrigger className="h-11">
+                      <SelectValue placeholder="Select Level 2" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {level2Categories.length > 0 ? (
+                        level2Categories.map((cat) => (
+                          <SelectItem key={cat._id} value={cat._id}>
+                            {cat.name}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <div className="p-2 text-slate-500 text-sm">
+                          No sub-categories.
+                        </div>
+                      )}
+                    </SelectContent>
+                  </Select>
+                  {/* Level 3 */}
+                  <Select
+                    onValueChange={handleLevel3Change}
+                    value={selectedLevel3}
+                    disabled={!selectedLevel2}
+                  >
+                    <SelectTrigger className="h-11">
+                      <SelectValue placeholder="Select Level 3" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {level3Categories.length > 0 ? (
+                        level3Categories.map((cat) => (
+                          <SelectItem key={cat._id} value={cat._id}>
+                            {cat.name}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <div className="p-2 text-slate-500 text-sm">
+                          No sub-categories.
+                        </div>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="pincode"
-                    className="text-sm font-medium text-slate-700"
-                  >
-                    Pincode
-                  </Label>
-                  <Input
-                    id="pincode"
-                    name="pincode"
-                    value={formData.pincode}
-                    onChange={handleChange}
-                    placeholder="Enter pincode"
-                    className="h-11"
-                  />
-                </div>
+                {categoryError && (
+                  <p className="text-xs text-red-600 pt-1">{categoryError}</p>
+                )}
               </div>
+
               <div className="space-y-2">
-                <Label
-                  htmlFor="title"
-                  className="text-sm font-medium text-slate-700"
-                >
-                  Product Title
-                </Label>
+                <Label htmlFor="title">Product Title</Label>
                 <Input
                   id="title"
                   name="title"
@@ -891,31 +664,33 @@ export default function CreateProduct() {
                   className="h-11"
                 />
               </div>
-              <div className="space-y-2">
-                <Label
-                  htmlFor="details"
-                  className="text-sm font-medium text-slate-700"
-                >
-                  Product Details
-                </Label>
 
+              <div className="space-y-2">
+                <Label htmlFor="pincode">Pincode</Label>
+                <Input
+                  id="pincode"
+                  name="pincode"
+                  value={formData.pincode}
+                  onChange={handleChange}
+                  placeholder="Enter pincode"
+                  className="h-11"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="details">Product Details</Label>
                 <PortableTextEditor
                   onChange={(val) => {
                     setFormData((prevFormData) => ({
-                      ...prevFormData, // Spread the existing formData to keep other properties
-                      details: val, // Update the 'details' property with the new 'val'
+                      ...prevFormData,
+                      details: val,
                     }));
                   }}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label
-                  htmlFor="description"
-                  className="text-sm font-medium text-slate-700"
-                >
-                  Description
-                </Label>
+                <Label htmlFor="description">Description</Label>
                 <Textarea
                   id="description"
                   name="description"
@@ -927,8 +702,10 @@ export default function CreateProduct() {
               </div>
             </CardContent>
           </Card>
+          
+         {/* //pricing  varient*/}
 
-          <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+         <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center gap-2 text-xl">
                 <DollarSign className="h-5 w-5 text-green-600" />
@@ -987,6 +764,51 @@ export default function CreateProduct() {
                   className="h-11"
                   max="100"
                 />
+              </div>
+              <div className="space-y-2">
+                <TooltipProvider delayDuration={500}>
+                  {/* Label Tooltip */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Label
+                        htmlFor="affiliatecomission"
+                        className="text-sm font-medium text-slate-700 flex items-center gap-1 cursor-pointer"
+                      >
+                        Affiliate Commission (%) <Info className="w-4 h-4 text-muted-foreground" />
+                      </Label>
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="bottom"
+                      sideOffset={8}
+                      className="text-xs text-red-500 bg-white border rounded shadow-md w-[250px] sm:w-auto text-wrap"
+                    >
+                      The % commission given to ShopNShip user if they resale the products.
+                    </TooltipContent>
+                  </Tooltip>
+
+                  {/* Input Tooltip */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Input
+                        id="affiliatecomission"
+                        name="affiliatecomission"
+                        type="number"
+                        value={formData.affiliatecomission}
+                        onChange={handleChange}
+                        placeholder="0.00"
+                        className="h-11"
+                        max="100"
+                      />
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="bottom"
+                      sideOffset={8}
+                      className="text-xs text-red-500 bg-white border rounded shadow-md w-[250px] sm:w-auto text-wrap"
+                    >
+                      The % commission given to ShopNShip user if they resale the products.
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
               {/* Variant Section */}
               {formData.type === "product" && (
@@ -1382,6 +1204,9 @@ export default function CreateProduct() {
               )}
             </Button>
           </div>
+
+
+
         </form>
       </div>
     </div>

@@ -75,6 +75,10 @@ import OrdersAffiliate  from "../pages/Dashboard/Affiliate/OrdersAffiliate";
 import AffiliateCommission from "../pages/Dashboard/Affiliate/Reports/AffiliateCommission";
 import  AffiliateNetwork  from "../pages/Dashboard/Affiliate/Reports/AffiliateNetwork";
 import AffiliateTicket from "../pages/Dashboard/Affiliate/AffilaiteTicket";
+import ShopNshipUserDetail from "../pages/Dashboard/Admin/ShopNshipUserDetail";
+import AffiliateLogin from "../pages/LoginAffiliate";
+import ShopNshipProductList from "../pages/ShopNshipProducts";
+import ShopNshipProductDetailsPage from "../pages/ShopNshipProductDetailsPage";
 
 const routes = [
   {
@@ -175,6 +179,32 @@ const routes = [
       </MainLayout>
     ),
   },
+  {
+    path: "/affiliate-login",
+    element: (
+      <MainLayout>
+        <AffiliateLogin />
+      </MainLayout>
+    ),
+  },
+  {
+     path: "/shopNship/:userId/:companyName/products/",
+    
+    element: (
+      <MainLayout>
+        <ShopNshipProductList />
+      </MainLayout>
+    ),
+  },
+  {
+    path: "/shopNship/:userId/:companyName/products/:productId",
+   
+   element: (
+     <MainLayout>
+       <ShopNshipProductDetailsPage />
+     </MainLayout>
+   ),
+ },
   {
     path: "/forgot-password",
     element: (
@@ -630,7 +660,7 @@ const routes = [
   },
   
   {
-    path: "/dashboard/home",
+    path: "/dashboard",
     element: (
       <DashboardLayout>
         <AffiliateHome />
@@ -677,6 +707,14 @@ const routes = [
     element: (
       <DashboardLayout>
         <AffiliateTicket />
+      </DashboardLayout>
+    ),
+  },
+  {
+    path: "/dashboard/admin/shopNship/:id",
+    element: (
+      <DashboardLayout>
+        <ShopNshipUserDetail />
       </DashboardLayout>
     ),
   },

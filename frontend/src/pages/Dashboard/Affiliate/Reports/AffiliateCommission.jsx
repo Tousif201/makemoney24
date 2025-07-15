@@ -25,10 +25,10 @@ import {
 
 // Dummy commission data
 const commissionData = [
-  { period: "January 2024", sales: "$12,450", commission: "$1,245", status: "Paid" },
-  { period: "December 2023", sales: "$10,230", commission: "$1,023", status: "Paid" },
-  { period: "November 2023", sales: "$8,760", commission: "$876", status: "Pending" },
-  { period: "October 2023", sales: "$9,340", commission: "$934", status: "Paid" },
+  { period: "January 2024", sales: "₹12,450", commission: "₹1,245", status: "Paid" },
+  { period: "December 2023", sales: "₹10,230", commission: "₹1,023", status: "Paid" },
+  { period: "November 2023", sales: "₹8,760", commission: "₹876", status: "Pending" },
+  { period: "October 2023", sales: "₹9,340", commission: "₹934", status: "Paid" },
 ];
 
 // Stats Section
@@ -41,7 +41,7 @@ function CommissionStats() {
           <DollarSign className="h-4 w-4 text-green-600" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">$4,078</div>
+          <div className="text-2xl font-bold">₹4,078</div>
           <p className="text-xs text-muted-foreground">
             <span className="text-green-600">+15.2%</span> from last month
           </p>
@@ -54,7 +54,7 @@ function CommissionStats() {
           <Clock className="h-4 w-4 text-orange-600" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">$876</div>
+          <div className="text-2xl font-bold">₹876</div>
           <p className="text-xs text-muted-foreground">To be paid next cycle</p>
         </CardContent>
       </Card>
@@ -113,7 +113,7 @@ function CommissionTable({ commissions }) {
 // Main Page
 export default function AffiliateCommission() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-5">
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Commission</h2>
         <p className="text-muted-foreground">

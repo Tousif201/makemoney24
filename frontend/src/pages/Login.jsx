@@ -164,6 +164,19 @@ export default function Login() {
               Signup
             </Link>
           </p>
+           
+           <div>
+           <p className="text-center mt-4 text-sm text-gray-900">
+            Are You ShopNship Affiliate user then Login Here{" "}
+            <Link
+              to="/affiliate-login"
+              className="text-[#550b80] underline font-medium"
+            >
+              AffiliateLogin
+            </Link>
+          </p>
+           </div>
+          
         </motion.div>
 
         {/* Right Side Image */}

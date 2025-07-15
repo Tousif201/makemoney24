@@ -94,3 +94,21 @@ export const getAllVendors = async (sortByRevenue = null) => {
     throw error.response?.data || { message: "Failed to fetch all vendors" };
   }
 };
+
+
+export const AddVendorAddress = async (addressData) => {
+  try {
+    const token = localStorage.getItem("authToken");
+    if (!token) throw new Error("Token not found");
+    const response = await apiClient.post("/create-address", addressData, { // <-- Adjust endpoint if needed
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error creating address:", error.response?.data?.message || error.message);
+    // Re-throw the error so the component can handle it
+    throw error;
+  }
+};

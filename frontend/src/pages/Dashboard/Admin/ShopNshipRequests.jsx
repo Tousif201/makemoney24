@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import {
   Card,
   CardContent,
@@ -29,60 +30,31 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { MoreHorizontal } from "lucide-react";
-
-// Dummy Data
-const dummyApprovedUsers = [
-  {
-    name: "Ravi Sharma",
-    companyname: "Priyanshu Pvt Ltd",
-    email: "ravi@example.com",
-    city: "Jabalpur",
-    pincode: "110001",
-    address: "Connaught Place, Delhi",
-  },
-  {
-    name: "Sneha Reddy",
-    companyname: "SR Group",
-    email: "sneha@example.com",
-    city: "Bangalore",
-    pincode: "560001",
-    address: "MG Road",
-  },
-];
-
-const dummyPendingUsers = [
-  {
-    name: "Aman Gupta",
-    companyname: "Manish Corp",
-    email: "aman@example.com",
-    city: "Mumbai",
-    pincode: "400001",
-    address: "Fort",
-  },
-  {
-    name: "Priya Das",
-    companyname: "PD Solutions",
-    email: "priya@example.com",
-    city: "Kolkata",
-    pincode: "700001",
-    address: "Salt Lake",
-  },
-];
+import { toast } from "sonner";
+import { getAffiliateRequests, handleAffiliateRequest } from "../../../../api/affiliate";
 
 // ActionCell Component for Dialog
-const ActionCell = ({ user }) => {
+const ActionCell = ({ user, onAction }) => {
   const [open, setOpen] = useState(false);
   const [commission, setCommission] = useState("");
 
-  const handleApprove = () => {
-    console.log("✅ Approved with commission:", commission, "for user:", user.name);
-    // TODO: Send to backend
+  const handleApprove = async () => {
+    try {
+      await onAction('approved', user.userId, commission);
+      toast.success("Request approved successfully");
+    } catch (error) {
+      toast.error("Failed to approve request");
+    }
     setOpen(false);
   };
 
-  const handleReject = () => {
-    console.log("❌ Rejected request for:", user.name);
-    // TODO: Send to backend
+  const handleReject = async () => {
+    try {
+      await onAction('rejected', user.userId);
+      toast.success("Request rejected successfully");
+    } catch (error) {
+      toast.error("Failed to reject request");
+    }
     setOpen(false);
   };
 
@@ -96,14 +68,12 @@ const ActionCell = ({ user }) => {
       >
         <MoreHorizontal className="h-5 w-5" />
       </Button>
-
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle>Manage Request - {user.name}</DialogTitle>
           </DialogHeader>
-
-          <div className="space-y-3 mt-4">
+          {/* <div className="space-y-3 mt-4">
             <label htmlFor="commission" className="text-sm font-medium">
               Commission Rate (%)
             </label>
@@ -115,9 +85,8 @@ const ActionCell = ({ user }) => {
               onChange={(e) => setCommission(e.target.value)}
               className="w-full"
             />
-          </div>
-
-          <DialogFooter className="flex justify-end space-x-2 mt-6">
+          </div> */}
+          <DialogFooter className="flex justify-center space-x-2 mt-6">
             <Button onClick={handleReject} variant="outline">
               ❌ Reject
             </Button>
@@ -137,6 +106,44 @@ const ActionCell = ({ user }) => {
 // Main Component
 const ShopNshipRequests = () => {
   const [tab, setTab] = useState("approved");
+  const [approvedUsers, setApprovedUsers] = useState([]);
+  const [pendingUsers, setPendingUsers] = useState([]);
+
+  useEffect(() => {
+    const fetchAffiliateRequests = async () => {
+      try {
+        const data = await getAffiliateRequests();
+        console.log("Fetched affiliate requests:", data);
+
+        // Assuming the backend response includes an `isAffiliate` field
+        const approved = data.filter((user) => user.isAffiliate === "approved");
+        const pending = data.filter((user) => user.isAffiliate === "pending");
+
+        setApprovedUsers(approved);
+        setPendingUsers(pending);
+      } catch (error) {
+        toast.error("Failed to fetch affiliate requests");
+      }
+    };
+
+    fetchAffiliateRequests();
+  }, []);
+
+  const handleAction = async (action, userId, commissionRate = null) => {
+    try {
+      await handleAffiliateRequest(action, userId, commissionRate);
+
+      if (action === 'approved') {
+        const approvedUser = pendingUsers.find((user) => user.userId === userId);
+        setApprovedUsers([...approvedUsers, { ...approvedUser, isAffiliate: "approved" }]);
+      }
+
+      const updatedPendingUsers = pendingUsers.filter((user) => user.userId !== userId);
+      setPendingUsers(updatedPendingUsers);
+    } catch (error) {
+      toast.error("Failed to handle the request");
+    }
+  };
 
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
@@ -146,24 +153,21 @@ const ShopNshipRequests = () => {
           <CardHeader>
             <CardTitle className="text-lg">Total ShopNship Users</CardTitle>
           </CardHeader>
-          <CardContent className="text-3xl font-bold">124</CardContent>
+          <CardContent className="text-3xl font-bold">{approvedUsers.length}</CardContent>
         </Card>
-
         <Card className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-white shadow-lg">
           <CardHeader>
             <CardTitle className="text-lg">Pending Requests</CardTitle>
           </CardHeader>
-          <CardContent className="text-3xl font-bold">8</CardContent>
+          <CardContent className="text-3xl font-bold">{pendingUsers.length}</CardContent>
         </Card>
       </div>
-
       {/* Tabs */}
       <Tabs defaultValue="approved" value={tab} onValueChange={setTab}>
         <TabsList className="mb-4 bg-gray-100">
           <TabsTrigger value="approved">✅ Approved Users</TabsTrigger>
           <TabsTrigger value="pending">🕒 Pending Requests</TabsTrigger>
         </TabsList>
-
         {/* Approved Tab */}
         <TabsContent value="approved">
           <Card>
@@ -174,39 +178,45 @@ const ShopNshipRequests = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>Id</TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Company</TableHead>
+                    <TableHead>Total Sale</TableHead>
+                    <TableHead>Total Earning</TableHead>
                     <TableHead>Pincode</TableHead>
                     <TableHead>City</TableHead>
                     <TableHead>Address</TableHead>
-                    {/* <TableHead>Action</TableHead> */}
-                    <TableHead>Status</TableHead>
+                    {/* <TableHead>Status</TableHead> */}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {dummyApprovedUsers.map((user, idx) => (
+                  {approvedUsers.map((user, idx) => (
                     <TableRow key={idx}>
+                      <TableCell>
+                        <Link
+                          to={`/dashboard/admin/shopNship/${user.userId}`}
+                          className="text-blue-600 underline hover:text-blue-800"
+                        >
+                          {user.userId}
+                        </Link>
+                      </TableCell>
                       <TableCell>{user.name}</TableCell>
                       <TableCell>{user.email}</TableCell>
-                      <TableCell>{user.companyname}</TableCell>
-                      <TableCell>{user.pincode}</TableCell>
-                      <TableCell>{user.city}</TableCell>
-                      <TableCell>{user.address}</TableCell>
-                      {/* <TableCell>
-                        <ActionCell user={user} />
-                      </TableCell> */}
-                      <TableCell>
-                        <span className="text-green-600 font-medium">Approved</span>
-                      </TableCell>
+                      <TableCell>{user.companyName}</TableCell>
+                      <TableCell>{user.TotalProductSaled}</TableCell>
+                      <TableCell>{user.TotalCommissionEarned}</TableCell>
+                      <TableCell>{user.address?.pincode}</TableCell>
+                      <TableCell>{user.address?.city}</TableCell>
+                      <TableCell>{user.address?.addressLine1}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
+
               </Table>
             </CardContent>
           </Card>
         </TabsContent>
-
         {/* Pending Tab */}
         <TabsContent value="pending">
           <Card>
@@ -227,16 +237,16 @@ const ShopNshipRequests = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {dummyPendingUsers.map((user, idx) => (
+                  {pendingUsers.map((user, idx) => (
                     <TableRow key={idx}>
                       <TableCell>{user.name}</TableCell>
                       <TableCell>{user.email}</TableCell>
-                      <TableCell>{user.companyname}</TableCell>
-                      <TableCell>{user.pincode}</TableCell>
-                      <TableCell>{user.city}</TableCell>
-                      <TableCell>{user.address}</TableCell>
+                      <TableCell>{user.companyName}</TableCell>
+                      <TableCell>{user.address?.pincode}</TableCell>
+                      <TableCell>{user.address?.city}</TableCell>
+                      <TableCell>{user.address?.addressLine1}</TableCell>
                       <TableCell>
-                        <ActionCell user={user} />
+                        <ActionCell user={user} onAction={handleAction} />
                       </TableCell>
                     </TableRow>
                   ))}

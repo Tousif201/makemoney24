@@ -1,3 +1,6 @@
+import React, { useState, useEffect } from "react";
+import axios from 'axios';
+import { AddVendorAddress } from "../../../../api/Vendors";
 import { StatCard } from "@/components/ui/stat-card";
 import { OrderCard } from "@/components/ui/order-card";
 import { OrdersTrendChart } from "@/components/charts/orders-trend-chart";
@@ -8,7 +11,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   ShoppingCart,
   DollarSign,
@@ -16,10 +24,10 @@ import {
   Package,
   RocketIcon,
   IndianRupee,
+  Plus,
 } from "lucide-react";
 import { useSession } from "../../../context/SessionContext";
 import { getVendorDashboardAnalytics } from "../../../../api/analytics";
-import { useState, useEffect } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -28,6 +36,13 @@ export default function VendorHome() {
   const [analyticsData, setAnalyticsData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [agreed, setAgreed] = useState(false);
+  const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
+  const [country, setCountry] = useState("");
+  const [pincode, setPincode] = useState("");
+  const [isDefault, setIsDefault] = useState(false);
 
   useEffect(() => {
     const fetchAnalytics = async () => {
@@ -52,6 +67,26 @@ export default function VendorHome() {
     };
     fetchAnalytics();
   }, [session, sessionLoading]);
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    try {
+      const addressData = {
+        address,
+        city,
+        state,
+        country,
+        pincode,
+        isDefault,
+      };
+      const response = await AddVendorAddress(addressData);
+      console.log("Address created successfully:", response);
+      // Optionally, you can close the dialog or show a success message here
+    } catch (error) {
+      console.error("Failed to create address:", error);
+      // Optionally, you can show an error message here
+    }
+  };
 
   const stats = [
     {
@@ -148,14 +183,61 @@ export default function VendorHome() {
         <p className="text-gray-600 text-lg">
           Welcome back! Here's a quick look at your store's performance.
         </p>
+        <Dialog>
+          <DialogTrigger asChild>
+            <div className="flex justify-end mr-3">
+              <button className="flex rounded-sm bg-teal-600 text-amber-50 px-3 py-1 font-semibold border-blue-700 border">
+                <Plus className="h-5 mt-0.5" /> Add address
+              </button>
+            </div>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Add New Address</DialogTitle>
+            </DialogHeader>
+            <form className="space-y-4" onSubmit={handleSubmit}>
+              <div>
+                <Label>Address</Label>
+                <Input placeholder="Enter your address" value={address} onChange={(e) => setAddress(e.target.value)} required />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>City</Label>
+                  <Input placeholder="Enter city" value={city} onChange={(e) => setCity(e.target.value)} required />
+                </div>
+                <div>
+                  <Label>State</Label>
+                  <Input placeholder="Enter state" value={state} onChange={(e) => setState(e.target.value)} required />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Country</Label>
+                  <Input placeholder="Enter country" value={country} onChange={(e) => setCountry(e.target.value)} required />
+                </div>
+                <div>
+                  <Label>Pincode</Label>
+                  <Input placeholder="Enter pincode" value={pincode} onChange={(e) => setPincode(e.target.value)} required />
+                </div>
+              </div>
+              <div className="flex items-center space-x-2 mt-4">
+                <Checkbox id="terms" checked={isDefault} onCheckedChange={setIsDefault} />
+                <Label htmlFor="terms">Is This Your Default Address</Label>
+              </div>
+              <DialogFooter className="pt-4">
+                <Button type="submit" disabled={agreed}>
+                  Submit
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
-
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat, index) => (
           <StatCard key={index} {...stat} />
         ))}
       </div>
-
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div className="xl:col-span-2">
           <Card className="border-purple-200 shadow-sm transition-all duration-300 hover:shadow-md">
@@ -180,7 +262,6 @@ export default function VendorHome() {
             </CardContent>
           </Card>
         </div>
-
         <div>
           <Card className="border-purple-200 shadow-sm transition-all duration-300 hover:shadow-md">
             <CardHeader>

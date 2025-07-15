@@ -89,3 +89,21 @@ console.log(token)
     throw error.response?.data || { message: "Failed to fetch profile" };
   }
 };
+
+
+export const createAffiliate = async (affiliateData) => {
+  try {
+    const token = localStorage.getItem("authToken");
+    const { data } = await apiClient.post("/create-affiliate", affiliateData,{
+      headers :{
+        Authorization:`Bearer ${token}`
+      }
+    });
+
+    return data;
+  } catch (error) {
+    console.error("Error creating affiliate:", error.response?.data || error.message);
+    // Re-throw a clearer error for the UI to catch
+    throw new Error(error.response?.data?.message || "Failed to create the new affiliate.");
+  }
+};

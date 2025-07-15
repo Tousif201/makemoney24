@@ -1,6 +1,5 @@
 "use client";
-
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Plus,
   Search,
@@ -27,31 +26,52 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
-const products = [
-  { id: 1, name: "Wireless Headphones", type: "Electronics", price: "$99.99", stock: 45, status: "Active" },
-  { id: 2, name: "Smart Watch", type: "Electronics", price: "$199.99", stock: 23, status: "Active" },
-  { id: 3, name: "Yoga Mat", type: "Fitness", price: "$29.99", stock: 0, status: "Out of Stock" },
-  { id: 4, name: "Coffee Maker", type: "Appliances", price: "$79.99", stock: 12, status: "Low Stock" },
-  { id: 5, name: "Bluetooth Speaker", type: "Electronics", price: "$49.99", stock: 67, status: "Active" },
-];
+import { fetchAffiliateBucket } from "../../../../api/affiliate";
 
 export default function Bucket() {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const loadAffiliateBucket = async () => {
+      try {
+        setLoading(true);
+        const response = await fetchAffiliateBucket();
+        if (response.data && response.data.length > 0) {
+          setProducts(response.data);
+        }
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadAffiliateBucket();
+  }, []);
+
   const getStatusVariant = (status) => {
     switch (status) {
-      case "Active":
+      case "approved":
         return "default";
-      case "Low Stock":
+      case "pending":
         return "secondary";
-      case "Out of Stock":
-        return "destructive";
       default:
         return "outline";
     }
   };
 
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (error) {
+    return <div>Error: {error}</div>;
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-5">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -89,47 +109,34 @@ export default function Bucket() {
                 <TableHead>Type</TableHead>
                 <TableHead>Price</TableHead>
                 <TableHead>Stock</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>DiscountRate</TableHead>
+                <TableHead>AffiliateCommission</TableHead>
+                {/* <TableHead className="text-right">Actions</TableHead> */}
               </TableRow>
             </TableHeader>
             <TableBody>
-              {products.map((product) => (
-                <TableRow key={product.id}>
-                  <TableCell className="font-medium">{product.name}</TableCell>
-                  <TableCell>{product.type}</TableCell>
-                  <TableCell>{product.price}</TableCell>
-                  <TableCell>{product.stock}</TableCell>
-                  <TableCell>
-                    <Badge variant={getStatusVariant(product.status)}>
-                      {product.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
-                          <Eye className="mr-2 h-4 w-4" />
-                          View
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600">
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+              {products.length > 0 ? (
+                products.map((product) => (
+                  <TableRow key={product._id}>
+                    <TableCell className="font-medium">{product.title}</TableCell>
+                    <TableCell>{product.type}</TableCell>
+                    <TableCell>₹{product.price}</TableCell>
+                    <TableCell>{product.isInStock ? "In Stock" : "Out of Stock"}</TableCell>
+                    <TableCell>
+                    {product.discountRate}%
+                    </TableCell>
+                    <TableCell >
+                    ₹{product.affiliateCommission}
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center">
+                    No products found in the bucket.
                   </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </CardContent>

@@ -1,8 +1,6 @@
 "use client";
-
 import { Copy, Users } from "lucide-react";
-import { useState, useEffect } from "react"; // Import useEffect
-
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -22,48 +20,42 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useSession } from "../../../context/SessionContext";
-// Make sure this path is correct for your API function
 import { getreferralLevelDataApi } from "../../../../api/referral";
 
 export default function ReferralsPage() {
-  const [currentPage, setCurrentPage] = useState(1); // Keep if you plan to implement pagination
-  const { loading: sessionLoading, session, user } = useSession(); // Renamed loading to sessionLoading
-  const [referralLevelData, setReferralLevelData] = useState(null); // State for fetched data
-  const [dataLoading, setDataLoading] = useState(true); // Loading state for API call
-  const [error, setError] = useState(null); // Error state for API call
+  const [currentPage, setCurrentPage] = useState(1);
+  const { loading: sessionLoading, session, user } = useSession();
+  const [referralLevelData, setReferralLevelData] = useState(null);
+  const [dataLoading, setDataLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Fetch referral level data when session is loaded and user ID is available
   useEffect(() => {
     const fetchReferralData = async () => {
       if (!sessionLoading && session?.id) {
         try {
-          setDataLoading(true); // Start loading for data fetch
-          setError(null); // Clear previous errors
+          setDataLoading(true);
+          setError(null);
           const response = await getreferralLevelDataApi(session.id);
-          // Assuming API returns { success: true, data: { level1: {...}, ... } }
           setReferralLevelData(response.data);
         } catch (err) {
           console.error("Failed to fetch referral level data:", err);
           setError("Failed to load referral data. Please try again.");
         } finally {
-          setDataLoading(false); // End loading
+          setDataLoading(false);
         }
       } else if (!sessionLoading && !session?.id) {
-        // If session is loaded but no userId (e.g., not logged in)
         setDataLoading(false);
         setError("Please log in to view your referral network.");
       }
     };
-
     fetchReferralData();
-  }, [sessionLoading, session?.id]); // Dependencies: re-run when session loading status or userId changes
+  }, [sessionLoading, session?.id]);
 
-  const referralCode = user?.referralCode || "Loading..."; // Handle loading state for referralCode
+  const referralCode = user?.referralCode || "Loading...";
 
   const copyReferralCode = () => {
     if (referralCode && referralCode !== "Loading...") {
       navigator.clipboard.writeText(referralCode);
-      // Optionally add a toast notification here
     }
   };
 
@@ -87,7 +79,7 @@ export default function ReferralsPage() {
         </TableHeader>
         <TableBody>
           {users.map((user, index) => (
-            <TableRow key={user.name || index}> {/* Use user.name as key if available, else index */}
+            <TableRow key={user.name || index}>
               <TableCell className="font-medium">{user.name}</TableCell>
               <TableCell>{user.joinDate}</TableCell>
               <TableCell className="text-green-600 font-medium">
@@ -99,7 +91,7 @@ export default function ReferralsPage() {
                   className={
                     user.status === "Active"
                       ? "text-green-700 border-green-200 bg-green-50"
-                      : "text-red-700 border-red-200 bg-red-50" // Assuming inactive status
+                      : "text-red-700 border-red-200 bg-red-50"
                   }
                 >
                   {user.status}
@@ -112,7 +104,6 @@ export default function ReferralsPage() {
     );
   };
 
-  // --- Overall Loading and Error States ---
   if (sessionLoading || dataLoading) {
     return (
       <div className="flex-1 flex items-center justify-center p-6 text-xl text-gray-700">
@@ -129,40 +120,39 @@ export default function ReferralsPage() {
     );
   }
 
-  // If no referralLevelData or no levels in it, display a message
   if (!referralLevelData || Object.keys(referralLevelData).length === 0) {
     return (
       <div className="flex-1 space-y-6 p-6">
-         <div className="flex items-center gap-4">
-            <div>
-              <h1 className="text-3xl font-bold ">Referrals</h1>
-              <p className="text-gray-500">
-                Track your referral network and earnings
-              </p>
-            </div>
+        <div className="flex items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold">Referrals</h1>
+            <p className="text-gray-500">
+              Track your referral network and earnings
+            </p>
           </div>
-          <Card className="border-purple-200">
-            <CardHeader>
-              <CardTitle className="">Your Referral Code</CardTitle>
-              <CardDescription className="">
-                Share this code with friends to earn commissions
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-4">
-                <div className="flex-1 p-3 bg-purple-50 rounded-lg border border-purple-200">
-                  <code className="text-lg font-mono ">{referralCode}</code>
-                </div>
-                <Button
-                  onClick={copyReferralCode}
-                  className="bg-purple-600 hover:bg-purple-700"
-                >
-                  <Copy className="mr-2 h-4 w-4" />
-                  Copy
-                </Button>
+        </div>
+        <Card className="border-purple-200">
+          <CardHeader>
+            <CardTitle>Your Referral Code</CardTitle>
+            <CardDescription>
+              Share this code with friends to earn commissions
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-4">
+              <div className="flex-1 p-3 bg-purple-50 rounded-lg border border-purple-200">
+                <code className="text-lg font-mono">{referralCode}</code>
               </div>
-            </CardContent>
-          </Card>
+              <Button
+                onClick={copyReferralCode}
+                className="bg-purple-600 hover:bg-purple-700"
+              >
+                <Copy className="mr-2 h-4 w-4" />
+                Copy
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
         <div className="text-center py-16 text-gray-700 text-lg">
           No referral network found yet. Start sharing your code!
         </div>
@@ -170,36 +160,30 @@ export default function ReferralsPage() {
     );
   }
 
-  // Use the fetched data for rendering
-  const levels = Object.keys(referralLevelData).sort((a, b) => {
-    const levelNumA = parseInt(a.replace('level', ''));
-    const levelNumB = parseInt(b.replace('level', ''));
-    return levelNumA - levelNumB;
-  });
-
+  // Define the levels you want to display
+  const levels = ['level1', 'level2', 'level3', 'level4', 'level5', 'level6'];
 
   return (
     <div className="flex-1 space-y-6 p-6">
       <div className="flex items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold ">Referrals</h1>
+          <h1 className="text-3xl font-bold">Referrals</h1>
           <p className="text-gray-500">
             Track your referral network and earnings
           </p>
         </div>
       </div>
-
       <Card className="border-purple-200">
         <CardHeader>
-          <CardTitle className="">Your Referral Code</CardTitle>
-          <CardDescription className="">
+          <CardTitle>Your Referral Code</CardTitle>
+          <CardDescription>
             Share this code with friends to earn commissions
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-4">
             <div className="flex-1 p-3 bg-purple-50 rounded-lg border border-purple-200">
-              <code className="text-lg font-mono ">{referralCode}</code>
+              <code className="text-lg font-mono">{referralCode}</code>
             </div>
             <Button
               onClick={copyReferralCode}
@@ -211,11 +195,9 @@ export default function ReferralsPage() {
           </div>
         </CardContent>
       </Card>
-
-      {/* Stats Cards */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
         {levels.map((levelKey, index) => {
-          const data = referralLevelData[levelKey];
+          const data = referralLevelData[levelKey] || { commission: `Level ${index + 1}`, users: [] };
           return (
             <Card key={levelKey} className="border-purple-100">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -234,20 +216,18 @@ export default function ReferralsPage() {
           );
         })}
       </div>
-
       <Card className="border-purple-200">
         <CardHeader>
-          <CardTitle className="">Referral Network</CardTitle>
-          <CardDescription className="">
+          <CardTitle>Referral Network</CardTitle>
+          <CardDescription>
             View your multi-level referral structure and earnings
           </CardDescription>
         </CardHeader>
-        <CardContent className="">
-          {/* Ensure default value matches one of your tabs */}
-          <Tabs defaultValue={levels[0] || "level1"} className="w-full">
-            <TabsList className="grid w-full mb-4 md:grid-cols-4 grid-cols-2 gap-1.5 bg-purple-100">
+        <CardContent>
+          <Tabs defaultValue={levels[0]} className="w-full">
+            <TabsList className="grid w-full mb-4 md:grid-cols-6 grid-cols-2 gap-1.5 bg-purple-100">
               {levels.map((levelKey, index) => {
-                const data = referralLevelData[levelKey];
+                const data = referralLevelData[levelKey] || { commission: `Level ${index + 1}` };
                 return (
                   <TabsTrigger key={levelKey} value={levelKey}>
                     Level {index + 1} ({data.commission})
@@ -255,18 +235,17 @@ export default function ReferralsPage() {
                 );
               })}
             </TabsList>
-
             {levels.map((levelKey, index) => {
-              const data = referralLevelData[levelKey];
+              const data = referralLevelData[levelKey] || { users: [] };
               return (
                 <TabsContent key={levelKey} value={levelKey} className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-semibold mt-5 sm:mt-5 md:mt-0">
+                    <h3 className="text-sm font-semibold mt-15 sm:mt-5 md:mt-0">
                       Level {index + 1} Referrals
-                      {index === 0 && " (Direct Referrals)"} {/* Add direct referrals label for level 1 */}
+                      {index === 0 && " (Direct Referrals)"}
                     </h3>
                     <Badge className="bg-purple-400 mt-7 md:mt-0 sm:mt-4">
-                      {data.commission} Commission
+                      {data.commission || `Level ${index + 1}`} Commission
                     </Badge>
                   </div>
                   {renderUserTable(data.users)}

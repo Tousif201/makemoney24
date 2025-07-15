@@ -5,9 +5,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Share2, ShoppingCart, Facebook, Twitter, Linkedin, Link } from "lucide-react";
+import { Share2, ShoppingCart, Facebook, Twitter, Linkedin, Link, MapPin } from "lucide-react";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom"; // Import useNavigate for navigation
+import { useNavigate } from "react-router-dom";
 
 export default function ProductActions({
   product,
@@ -26,8 +26,9 @@ export default function ProductActions({
   shareOnWhatsapp,
   shareOnLinkedIn,
   itemVariants,
+  vendorAddress, // Add vendorAddress as a prop
 }) {
-  const navigate = useNavigate(); // Initialize useNavigate
+  const navigate = useNavigate();
 
   const handleShare = async () => {
     if (navigator.share) {
@@ -50,7 +51,6 @@ export default function ProductActions({
   };
 
   const handleBuyNow = () => {
-    // Add logic to handle the buy now action, e.g., add to cart and navigate to checkout
     handleAddToCart();
     navigate('/checkout', { state: { product, selectedVariant, quantity } });
   };
@@ -75,7 +75,6 @@ export default function ProductActions({
           <ShoppingCart className="mr-2 h-5 w-5" />
           Add to Cart
         </Button>
-
         <Button
           size="lg"
           className="flex-1 bg-green-600 hover:bg-green-700 text-white shadow-lg transition-all duration-200 text-base py-3 rounded-lg"
@@ -92,8 +91,6 @@ export default function ProductActions({
         >
           Buy Now
         </Button>
-
-        {/* Share Button with Popover */}
         <Popover open={isSharePopoverOpen} onOpenChange={setIsSharePopoverOpen}>
           <PopoverTrigger asChild>
             <Button
@@ -153,6 +150,15 @@ export default function ProductActions({
           </PopoverContent>
         </Popover>
       </div>
+      {/* Conditionally render address for service type */}
+      {product.type === "service" && vendorAddress && (
+        <div className="flex items-center gap-2 p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
+          <MapPin className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+          <p className="text-gray-800 dark:text-gray-200">
+            {vendorAddress.addressLine1}, {vendorAddress.city}, {vendorAddress.state}, {vendorAddress.country} - {vendorAddress.pincode}
+          </p>
+        </div>
+      )}
     </motion.div>
   );
 }

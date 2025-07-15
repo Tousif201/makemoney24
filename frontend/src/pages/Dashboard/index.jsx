@@ -4,11 +4,11 @@ import VendorHome from "../../components/Dashboad/Vendor/VendorHome";
 import UserHome from "../../components/Dashboad/User/UserHome";
 import FranchiseHome from "../../components/Dashboad/Franchise/FranchiseHome";
 import SalesRepHome from "../../components/Dashboad/SalesRep/SalesRepHome";
-import { useSession } from "../../context/SessionContext";
 import AffiliateHome from "./Affiliate/AffiliateHome";
+import { useSession } from "../../context/SessionContext";
 
 function DashboardHome() {
-  const { user, loading } = useSession();
+  const { user, loading, session } = useSession();
 
   if (loading) {
     return <div>Loading session...</div>;
@@ -21,17 +21,12 @@ function DashboardHome() {
   return (
     <div>
       {/* Role-based dashboard views */}
-      {user.roles?.includes("admin") && <AdminHome />}
-
-      {user.roles?.includes("vendor") && <VendorHome />}
-
-      {user.roles?.includes("user") && <UserHome />}
-
-      {user.roles?.includes("franchise-admin") && <FranchiseHome />}
-
-      {user.roles?.includes("sales-rep") && <SalesRepHome />}
-
-      {/* {user.roles?.includes("affiliate") && <AffiliateHome />} */}
+      {session.role === "admin" && <AdminHome />}
+      {session.role === "vendor" && <VendorHome />}
+      {session.role === "user" && <UserHome />}
+      {session.role === "franchise-admin" && <FranchiseHome />}
+      {session.role === "sales-rep" && <SalesRepHome />}
+      {session.role === "affiliate" && <AffiliateHome />}
     </div>
   );
 }

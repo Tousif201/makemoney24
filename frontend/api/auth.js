@@ -157,3 +157,16 @@ export const fetchUserReferralPerformance = async (userId, date,authToken) => {
   }
 };
 
+export const loginAffiliate = async ({ email, password }) => {
+ try {
+  const response = await apiClient.post(`/login-affiliate`, {
+    email,
+    password,
+  });
+
+  return response.data;
+ } catch (error) {
+  console.error('Error in login as affiliate:', error);
+  throw error;
+}
+ } 

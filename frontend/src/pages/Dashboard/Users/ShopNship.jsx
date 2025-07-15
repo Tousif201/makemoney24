@@ -4,18 +4,21 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { toast } from "sonner";
+import { submitAffiliateRequest } from "../../../../api/affiliate";
 
 export const ShopNship = () => {
   const [formData, setFormData] = useState({
-    company: "",
-    addressLine1: "",
+    companyName: "",
+    address: "",
     city: "",
     state: "",
-    country: "",
     pincode: "",
     isDefault: false,
     termsAccepted: false,
   });
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -25,10 +28,33 @@ export const ShopNship = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
-    alert("Shop & Ship request submitted!");
+    setIsSubmitting(true);
+
+    try {
+      const response = await submitAffiliateRequest(formData);
+      toast.success("Success", {
+        description: "Shop & Ship request submitted successfully!",
+      });
+
+      // Reset form if needed
+      setFormData({
+        companyName: "",
+        address: "",
+        city: "",
+        state: "",
+        pincode: "",
+        isDefault: false,
+        termsAccepted: false,
+      });
+    } catch (error) {
+      toast.error("Error", {
+        description: error.response?.data?.message || "Failed to submit request",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -42,32 +68,29 @@ export const ShopNship = () => {
             Provide your shipping address to place a request.
           </p>
         </CardHeader>
-
         <CardContent>
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-1 gap-6">
             <div className="space-y-4">
               <div>
-                <Label htmlFor="company">Company Name</Label>
+                <Label htmlFor="companyName">Company Name</Label>
                 <Input
-                  id="company"
-                  name="company"
-                  value={formData.company}
+                  id="companyName"
+                  name="companyName"
+                  value={formData.companyName}
                   onChange={handleChange}
                   required
                 />
               </div>
-
               <div>
-                <Label htmlFor="addressLine1">Address Line 1</Label>
+                <Label htmlFor="address">Address</Label>
                 <Input
-                  id="addressLine1"
-                  name="addressLine1"
-                  value={formData.addressLine1}
+                  id="address"
+                  name="address"
+                  value={formData.address}
                   onChange={handleChange}
                   required
                 />
               </div>
-
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="city">City</Label>
@@ -90,18 +113,7 @@ export const ShopNship = () => {
                   />
                 </div>
               </div>
-
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* <div>
-                  <Label htmlFor="country">Country</Label>
-                  <Input
-                    id="country"
-                    name="country"
-                    value={formData.country}
-                    onChange={handleChange}
-                    required
-                  />
-                </div> */}
                 <div>
                   <Label htmlFor="pincode">Pincode</Label>
                   <Input
@@ -113,7 +125,6 @@ export const ShopNship = () => {
                   />
                 </div>
               </div>
-
               <div className="flex items-center space-x-3">
                 <Switch
                   id="isDefault"
@@ -125,8 +136,6 @@ export const ShopNship = () => {
                 <Label htmlFor="isDefault">Set as Default Address</Label>
               </div>
             </div>
-
-            {/* Terms & Conditions + Submit */}
             <div className="space-y-6 flex flex-col justify-between">
               <div className="flex items-center justify-center space-x-3 mt-2">
                 <input
@@ -145,9 +154,12 @@ export const ShopNship = () => {
                   </a>
                 </Label>
               </div>
-
-              <Button type="submit" className="w-full text-base font-semibold tracking-wide py-2 rounded-md">
-                🚀 Submit Shop & Ship Request
+              <Button
+                type="submit"
+                className="w-full text-base font-semibold tracking-wide py-2 rounded-md"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Submitting..." : "🚀 Submit Shop & Ship Request"}
               </Button>
             </div>
           </form>

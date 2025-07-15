@@ -33,11 +33,11 @@ import {
 
 // Dummy data
 const networkMembers = [
-  { id: 1, name: "Sarah Connor", level: "Level 1", joined: "2024-01-10", sales: "$2,340", status: "Active" },
-  { id: 2, name: "Mike Johnson", level: "Level 1", joined: "2024-01-08", sales: "$1,890", status: "Active" },
-  { id: 3, name: "Lisa Wang", level: "Level 2", joined: "2024-01-05", sales: "$3,120", status: "Active" },
-  { id: 4, name: "Tom Brown", level: "Level 1", joined: "2024-01-03", sales: "$890", status: "Inactive" },
-  { id: 5, name: "Anna Lee", level: "Level 2", joined: "2024-01-01", sales: "$4,560", status: "Active" },
+  { id: 1, name: "Sarah Connor", level: "Level 1", joined: "2024-01-10", sales: "₹2,340", status: "Active" },
+  { id: 2, name: "Mike Johnson", level: "Level 1", joined: "2024-01-08", sales: "₹1,890", status: "Active" },
+  { id: 3, name: "Lisa Wang", level: "Level 2", joined: "2024-01-05", sales: "₹3,120", status: "Active" },
+  { id: 4, name: "Tom Brown", level: "Level 1", joined: "2024-01-03", sales: "₹890", status: "Inactive" },
+  { id: 5, name: "Anna Lee", level: "Level 2", joined: "2024-01-01", sales: "₹4,560", status: "Active" },
 ];
 
 // Stats Component
@@ -137,7 +137,7 @@ function NetworkTable({ members }) {
 // Main Page Component
 export default function AffiliateNetwork() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-5">
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Network</h2>
         <p className="text-muted-foreground">Manage your downline network and team</p>

@@ -10,7 +10,7 @@ import { Image as ImageIcon, Video, XCircle } from "lucide-react";
 import { createReview } from "../../api/review"; // Your review API
 import { uploadFiles } from "../../api/upload"; // Your file upload API
 
-const MAX_FILES = 3; // Maximum number of files a user can upload
+const MAX_FILES = 4; // Maximum number of files a user can upload
 const MAX_FILE_SIZE_MB = 10; // Max file size in MB
 
 export default function LeaveReviewForm({
@@ -223,7 +223,6 @@ export default function LeaveReviewForm({
   return (
     <form onSubmit={handleSubmitReview} className="space-y-6 ">
       <h3 className="text-2xl font-bold mb-4 text-gray-800">Leave a Review</h3>
-
       {/* Star Rating Input */}
       <div>
         <Label

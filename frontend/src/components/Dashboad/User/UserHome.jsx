@@ -13,7 +13,8 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
-
+import { LayoutDashboard } from "lucide-react";
+import { useSession } from "../../../context/SessionContext";
 // Assuming these are available from a UI library like Shadcn UI
 import { Button } from "@/components/ui/button";
 import {
@@ -25,7 +26,6 @@ import {
 } from "@/components/ui/card";
 
 // Assuming these are custom contexts/APIs
-import { useSession } from "../../../context/SessionContext";
 import { getUserHomeAnalytics } from "../../../../api/analytics";
 
 export default function UserHome() {
@@ -233,8 +233,17 @@ export default function UserHome() {
         </div>
       </div>
 
+      {/* <div className="my-6">
+      <Link to="/dashboard/affiliate">
+          <button className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300">
+            <LayoutDashboard className="w-5 h-5" />
+            Go to ShopNship Dashboard
+          </button>
+        </Link>
+    </div> */}
+
       {/* Stats Grid */}
-      <div className="grid gap-1 md:gap-4 grid-cols-3 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-1 md:gap-4 grid-cols-2 md:grid-cols-2 lg:grid-cols-4">
         {defaultStats.map(
           (stat) => (
             <Card key={stat.title} className="border-purple-100">

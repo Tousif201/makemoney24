@@ -1,12 +1,16 @@
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Star } from "lucide-react";
-
+import { useSession } from "../../context/SessionContext";
+import { toast } from "sonner";
+import { addAffiliateUserBucket } from "../../../api/affiliate";
 export default function ProductInfo({
   product,
   averageRating,
   totalReviewsCount,
 }) {
+  const { user } = useSession();
+  // console.log(user, "sesion context user");
   return (
     <motion.div>
       <div className="flex items-center gap-3 mb-2">
@@ -23,9 +27,33 @@ export default function ProductInfo({
           {product.type.charAt(0).toUpperCase() + product.type.slice(1)}
         </Badge>
       </div>
-      <h1 className="text-xl lg:text-2xl font-extrabold leading-tight text-gray-900 dark:text-white">
-        {product.title}
-      </h1>
+
+      {/* Title and Add to Bucket button */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+        <h1 className="text-xl lg:text-2xl font-extrabold leading-tight text-gray-900 dark:text-white">
+          {product.title}
+        </h1>
+
+        {user?.roles?.includes("affiliate") && (
+          <button
+            className="bg-orange-400 hover:bg-orange-400 text-white text-sm font-semibold px-4 py-2 rounded-md shadow-sm transition cursor-pointer"
+            onClick={async () => {
+              try {
+                const res = await addAffiliateUserBucket(product._id);
+                toast.success(res.message || "Product added to bucket!");
+              } catch (err) {
+                console.error(err);
+                toast.error(err.response?.data?.message || "Failed to add to bucket");
+              }
+            }}
+          >
+            ➕Add to your Bucket
+          </button>
+        )}
+
+
+      </div>
+
       {/* Rating section */}
       <div className="flex items-center gap-4 mb-2">
         <div className="flex items-center">
@@ -43,6 +71,7 @@ export default function ProductInfo({
           </span>
         </div>
       </div>
+
       {/* Price display */}
       <div className="flex flex-wrap items-baseline gap-4">
         {/* Final Price */}
@@ -80,9 +109,9 @@ export default function ProductInfo({
       {/* Conditionally render exchange and return policy */}
       {product.type === "product" && (
         <div className="mt-4">
-          <p className="text-sm text-gray-600 dark:text-gray-300">
-            Exchange and Return Policy: Our exchange and return policy allows you to return or exchange this product within 30 days of purchase, provided it is in its original condition.
-          </p>
+          {/* <p className="text-sm text-gray-600 dark:text-gray-300">
+            Exchange and Return Policy: Our exchange and return policy allow you to return or exchange this product within 30 days of purchase, provided it is in its original condition.
+          </p> */}
         </div>
       )}
     </motion.div>

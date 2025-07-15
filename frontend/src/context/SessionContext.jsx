@@ -59,6 +59,7 @@ export const SessionProvider = ({ children }) => {
 
       setSession(decoded); // Ensure session is up-to-date if token hasn't changed
       const userProfile = await getUserProfile(decoded.id);
+      // console.log(userProfile,decoded.id,"context session")
 
       // Check if userProfile exists and if the account status is suspended
       if (userProfile && userProfile.accountStatus === "suspended") {
@@ -113,7 +114,7 @@ export const SessionProvider = ({ children }) => {
   }, [refreshSession]); // Dependency on refreshSession to ensure it runs on mount
 
   return (
-    <SessionContext.Provider value={{ session, user, loading, refreshSession }}>
+    <SessionContext.Provider value={{ session,user, loading, refreshSession, }}>
       {children}
     </SessionContext.Provider>
   );

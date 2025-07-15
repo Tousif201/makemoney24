@@ -192,11 +192,11 @@ export const sidebarConfig = {
 
   affiliate: [
 
-    {
-      label: "Home",
-      icon: HomeIcon,
-      href: "/dashboard/home",
-    },
+    // {
+    //   label: "Home",
+    //   icon: HomeIcon,
+    //   href: "/dashboard",
+    // },
     {
       label: "Bucket",
       icon: Milestone,

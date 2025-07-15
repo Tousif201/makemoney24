@@ -68,6 +68,7 @@ export default function ProductDetailPage() {
       setLoading(true);
       setError(null);
       const { data } = await getProductServiceById(productId);
+      console.log("product detail",data)
       setProduct(data);
       if (data.type === "product" && data.variants && data.variants.length > 0) {
         setSelectedColor(data.variants[0].color);
@@ -362,6 +363,7 @@ export default function ProductDetailPage() {
               shareOnWhatsapp={shareOnWhatsapp}
               shareOnLinkedIn={shareOnLinkedIn}
               itemVariants={itemVariants}
+             vendorAddress = {product.vendorAddress}
             />
 
             {/* Conditionally render exchange and return policy link */}
