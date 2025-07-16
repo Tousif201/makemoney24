@@ -43,8 +43,7 @@ const MobileBottomNav = () => {
           <div className="p-2 rounded-lg">
             <HandCoins size={24} />
           </div>
-          <span className="font-semibold">EMI</span>{" "}
-          {/* Added a span for more control over text styling */}
+          <span className="font-semibold">EMI</span>
         </Link>
 
         <Link
@@ -56,6 +55,7 @@ const MobileBottomNav = () => {
           </div>
           Help
         </Link>
+
         {isAuthentticated ? (
           <Link
             to="/dashboard"
@@ -110,17 +110,12 @@ const Footer = () => {
               </address>
 
               <p className="text-gray-400 text-sm">
-                Mobile:{" "}
-                <a href="tel:+919876543210" className="hover:text-white">
-                  +91-98765 43210
-                </a>
-                <br />
                 Email:{" "}
                 <a
-                  href="mailto:contact@makemoney24.com"
+                  href="mailto:info@makemoney24hrs.com"
                   className="hover:text-white"
                 >
-                  contact@makemoney24.com
+                  info@makemoney24hrs.com
                 </a>
               </p>
 
@@ -153,7 +148,7 @@ const Footer = () => {
                   <Youtube size={20} />
                 </a>
                 <a
-                  href="mailto:contact@makemoney24.com"
+                  href="mailto:info@makemoney24hrs.com"
                   className="text-gray-400 hover:text-yellow-400 transition"
                   aria-label="Email"
                 >
