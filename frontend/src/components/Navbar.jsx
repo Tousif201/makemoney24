@@ -401,6 +401,14 @@ export default function Navbar() {
           >
             About
           </NavLinkItem>
+          
+          <NavLinkItem
+            to="/return"
+            className="block text-gray-700 hover:text-purple-600"
+            onClick={() => setIsOpen(false)} // Close menu on click
+          >
+            Return & Refund policy
+          </NavLinkItem>
 
            <NavLinkItem
             to="/buisness-plan"

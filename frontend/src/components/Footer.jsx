@@ -180,7 +180,7 @@ const Footer = () => {
                 </li>
                 <li>
                   <Link to="/return" className="hover:text-white">
-                    Return
+                    Return & Refund Policy
                   </Link>
                 </li>
                 <li>

@@ -65,7 +65,7 @@ function CommissionStats() {
           <TrendingUp className="h-4 w-4 text-blue-600" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">10%</div>
+          <div className="text-2xl font-bold">2 - 50%</div>
           <p className="text-xs text-muted-foreground">Current tier rate</p>
         </CardContent>
       </Card>
