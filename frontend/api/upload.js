@@ -26,7 +26,7 @@ export const uploadFiles = async (files) => {
   if (!files || files.length === 0) {
     throw new Error("No files provided for upload.");
   }
-
+console.log("chal rha hai ")
   const formData = new FormData();
   files.forEach((file) => {
     formData.append("files", file); // 'files' must match the Multer field name in your backend

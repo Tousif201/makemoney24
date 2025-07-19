@@ -39,3 +39,39 @@ export const getAffiliateDashboardData = async () => {
       throw error;
     }
   };
+export const getAffiliateCommissionData = async () => {
+    try {
+      const token = localStorage.getItem("authToken");
+      // console.log(token,"my token pp");
+      const response = await apiClient.get("/commission" , {
+        headers: {
+          // Your backend expects a token to identify the user
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      // The backend nests the data inside a 'data' property
+      return response.data.data;
+    } catch (error) {
+      // Log the error and re-throw it to be handled by the component
+      console.error("Error fetching affiliate dashboard data:", error.response?.data?.message || error.message);
+      throw error;
+    }
+  };
+export const getAffiliateNetworkData = async () => {
+    try {
+      const token = localStorage.getItem("authToken");
+      // console.log(token,"my token pp");
+      const response = await apiClient.get("/network" , {
+        headers: {
+          // Your backend expects a token to identify the user
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      // The backend nests the data inside a 'data' property
+      return response.data.data;
+    } catch (error) {
+      // Log the error and re-throw it to be handled by the component
+      console.error("Error fetching affiliate dashboard data:", error.response?.data?.message || error.message);
+      throw error;
+    }
+  };
