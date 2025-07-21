@@ -172,7 +172,7 @@ export default function About() {
               <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center mb-4">
                 <ShoppingBag className="h-6 w-6 text-purple-600" />
               </div>
-              <CardTitle>MakeMoney24</CardTitle>
+              <CardTitle>Shree Labh</CardTitle>
               <CardDescription>E-commerce Platform</CardDescription>
             </CardHeader>
             <CardContent>

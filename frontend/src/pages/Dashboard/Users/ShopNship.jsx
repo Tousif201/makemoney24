@@ -35,7 +35,7 @@ export const ShopNship = () => {
     try {
       const response = await submitAffiliateRequest(formData);
       toast.success("Success", {
-        description: "Shop & Ship request submitted successfully!",
+        description: "ShopNhip request submitted successfully!",
       });
 
       // Reset form if needed
@@ -62,7 +62,7 @@ export const ShopNship = () => {
       <Card className="w-full max-w-4xl shadow-xl border border-indigo-200 rounded-2xl">
         <CardHeader className="text-center">
           <CardTitle className="text-3xl font-bold text-indigo-900">
-            🛒 Shop & Ship Request
+            🛒 ShopNShip Request
           </CardTitle>
           <p className="text-gray-500 text-sm mt-1">
             Provide your shipping address to place a request.

@@ -113,13 +113,13 @@ export default function Navbar() {
       <div className="w-full max-w-7xl mx-auto py-2 px-4 flex justify-between items-center">
         {/* Logo */}
         <Link to="/" className="flex items-center space-x-2 py-1">
-          <img
+          {/* <img
             src={logo}
             alt="MakeMoney Logo"
             className="w-14 h-14 object-contain"
-          />
+          /> */}
           <span className="text-2xl font-extrabold text-gray-800 hidden sm:block tracking-tight">
-            MakeMoney
+           Shree Labh
           </span>
         </Link>
 
@@ -369,14 +369,14 @@ export default function Navbar() {
                         {/* If a category has no children, render it as a direct link */}
                         {(!category.children ||
                           category.children.length === 0) && (
-                          <Link
-                            to={`/browse?categories=${category._id}`}
-                            className="block text-gray-700 hover:text-purple-600 transition-colors duration-200 text-base "
-                            onClick={() => setIsOpen(false)}
-                          >
-                            {category.name}
-                          </Link>
-                        )}
+                            <Link
+                              to={`/browse?categories=${category._id}`}
+                              className="block text-gray-700 hover:text-purple-600 transition-colors duration-200 text-base "
+                              onClick={() => setIsOpen(false)}
+                            >
+                              {category.name}
+                            </Link>
+                          )}
                       </div>
                     ))}
                   </ScrollArea>
@@ -401,7 +401,7 @@ export default function Navbar() {
           >
             About
           </NavLinkItem>
-          
+
           <NavLinkItem
             to="/return"
             className="block text-gray-700 hover:text-purple-600"
@@ -410,33 +410,33 @@ export default function Navbar() {
             Return & Refund policy
           </NavLinkItem>
 
-           <NavLinkItem
+          <NavLinkItem
             to="/buisness-plan"
             className="block text-gray-700 hover:text-purple-600  "
             onClick={() => setIsOpen(false)} // Close menu on click
           >
             Business Plan
           </NavLinkItem>
-            <NavLinkItem
+          <NavLinkItem
             to="/tnc"
             className="block text-gray-700 hover:text-purple-600 "
             onClick={() => setIsOpen(false)} // Close menu on click
           >
-             Terms & Conditions
+            Terms & Conditions
           </NavLinkItem>
-            <NavLinkItem
+          <NavLinkItem
             to="/privacy-policy"
             className="block text-gray-700 hover:text-purple-600 "
             onClick={() => setIsOpen(false)} // Close menu on click
           >
             Privacy Policy
           </NavLinkItem>
-            <NavLinkItem
+          <NavLinkItem
             to="/company-policy"
             className="block text-gray-700 hover:text-purple-600 "
             onClick={() => setIsOpen(false)} // Close menu on click
           >
-           Company Policy
+            Company Policy
           </NavLinkItem>
 
 

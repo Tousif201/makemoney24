@@ -15,7 +15,7 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { DollarSign, TrendingUp, Download, AlertCircle } from "lucide-react";
+import { DollarSign, TrendingUp, Download, AlertCircle, IndianRupee } from "lucide-react";
 import { getAffiliateCommissionData } from "../../../../../api/affiliate2";// Adjust the import path to your api function
 
 // Helper to format currency
@@ -43,7 +43,7 @@ function CommissionStats({ totalEarnings }) {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
-          <DollarSign className="h-4 w-4 text-green-600" />
+          <IndianRupee className="h-4 w-4 text-green-600" />
         </CardHeader>
         <CardContent>
           {/* Displaying dynamic data */}

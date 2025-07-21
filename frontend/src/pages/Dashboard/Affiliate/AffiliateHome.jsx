@@ -117,7 +117,7 @@ export default function AffiliateHome() {
             to={dashboardData?.productReferralLink || "#"}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full sm:w-auto truncate hover:underline hover:text-blue-500 text-orange-700"
+            className="w-full sm:w-auto truncate hover:text-blue-500 text-green-700"
           >
             {dashboardData?.productReferralLink || "Link not available"}
           </Link>

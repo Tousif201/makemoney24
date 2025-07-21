@@ -22,6 +22,8 @@ import {
   DollarSign,
   Loader2,
   XCircle,
+  InfoIcon,
+  IndianRupee,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -95,8 +97,7 @@ export default function CreateProduct() {
       } catch (error) {
         console.error("Error fetching all categories:", error);
         setCategoryError(
-          `Failed to load categories: ${
-            error.response?.data?.message || error.message
+          `Failed to load categories: ${error.response?.data?.message || error.message
           }`
         );
         setAllCategories([]);
@@ -131,7 +132,7 @@ export default function CreateProduct() {
       [name]: type === "checkbox" ? checked : value,
     }));
   };
-  
+
   // --- New Category Handlers ---
   const handleTypeChange = (value) => {
     setSelectedLevel1("");
@@ -216,8 +217,7 @@ export default function CreateProduct() {
     } catch (error) {
       console.error("Failed to delete media:", error);
       toast.error(
-        `Failed to delete media: ${
-          error.response?.data?.message || error.message
+        `Failed to delete media: ${error.response?.data?.message || error.message
         }`
       );
     } finally {
@@ -346,8 +346,7 @@ export default function CreateProduct() {
     } catch (error) {
       console.error("Failed to delete variant media:", error);
       toast.error(
-        `Failed to delete variant media: ${
-          error.response?.data?.message || error.message
+        `Failed to delete variant media: ${error.response?.data?.message || error.message
         }`
       );
     } finally {
@@ -359,7 +358,7 @@ export default function CreateProduct() {
     e.preventDefault();
     setFormError(null);
     setFormSuccess(null);
-    
+
     if (
       !formData.vendorId ||
       !formData.categoryId ||
@@ -399,7 +398,7 @@ export default function CreateProduct() {
           return variant;
         })
       );
-      
+
       setIsUploading(false);
 
       const payload = {
@@ -418,7 +417,7 @@ export default function CreateProduct() {
         })),
         isBookable: formData.type === "service" ? formData.isBookable : undefined,
       };
-      
+
       await createProductService(payload);
 
       toast.success("Product/Service created successfully!");
@@ -449,9 +448,8 @@ export default function CreateProduct() {
       setSelectedLevel3("");
     } catch (apiError) {
       console.error("Error creating product:", apiError);
-      const errorMessage = `Failed to create product: ${
-        apiError.response?.data?.message || apiError.message
-      }`;
+      const errorMessage = `Failed to create product: ${apiError.response?.data?.message || apiError.message
+        }`;
       setFormError(errorMessage);
       toast.error(errorMessage);
     } finally {
@@ -504,7 +502,7 @@ export default function CreateProduct() {
       </div>
     );
   }
-  
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 md:p-6 lg:p-8">
       <div className="max-w-4xl mx-auto">
@@ -702,13 +700,13 @@ export default function CreateProduct() {
               </div>
             </CardContent>
           </Card>
-          
-         {/* //pricing  varient*/}
 
-         <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+          {/* //pricing  varient*/}
+
+          <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center gap-2 text-xl">
-                <DollarSign className="h-5 w-5 text-green-600" />
+                <IndianRupee className="h-5 w-5 text-green-600" />
                 Pricing & Variants
               </CardTitle>
             </CardHeader>
@@ -764,52 +762,31 @@ export default function CreateProduct() {
                   className="h-11"
                   max="100"
                 />
-              </div>
+              </div> <br />
               <div className="space-y-2">
-                <TooltipProvider delayDuration={500}>
-                  {/* Label Tooltip */}
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Label
-                        htmlFor="affiliatecomission"
-                        className="text-sm font-medium text-slate-700 flex items-center gap-1 cursor-pointer"
-                      >
-                        Affiliate Commission (%) <Info className="w-4 h-4 text-muted-foreground" />
-                      </Label>
-                    </TooltipTrigger>
-                    <TooltipContent
-                      side="bottom"
-                      sideOffset={8}
-                      className="text-xs text-red-500 bg-white border rounded shadow-md w-[250px] sm:w-auto text-wrap"
-                    >
-                      The % commission given to ShopNShip user if they resale the products.
-                    </TooltipContent>
-                  </Tooltip>
+                <Label
+                  htmlFor="affiliatecomission"
+                  className="text-sm font-medium text-slate-700 flex items-center gap-1"
+                >
+                  Affiliate Commission (%)
+                </Label>
 
-                  {/* Input Tooltip */}
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Input
-                        id="affiliatecomission"
-                        name="affiliatecomission"
-                        type="number"
-                        value={formData.affiliatecomission}
-                        onChange={handleChange}
-                        placeholder="0.00"
-                        className="h-11"
-                        max="100"
-                      />
-                    </TooltipTrigger>
-                    <TooltipContent
-                      side="bottom"
-                      sideOffset={8}
-                      className="text-xs text-red-500 bg-white border rounded shadow-md w-[250px] sm:w-auto text-wrap"
-                    >
-                      The % commission given to ShopNShip user if they resale the products.
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                <Input
+                  id="affiliatecomission"
+                  name="affiliatecomission"
+                  type="number"
+                  value={formData.affiliatecomission}
+                  onChange={handleChange}
+                  placeholder="0.00"
+                  className="h-11"
+                  max="100"
+                />
+
+                <div className="text-xs flex flex-row gap-2 text-red-500 bg-white border rounded shadow-md p-2 w-[250px] sm:w-auto">
+                <InfoIcon className="h-5 text-blue-500 "/> The Percent (%) commission given to ShopNShip user if they resale the products.
+                </div>
               </div>
+
               {/* Variant Section */}
               {formData.type === "product" && (
                 <div className="space-y-4 col-span-2">

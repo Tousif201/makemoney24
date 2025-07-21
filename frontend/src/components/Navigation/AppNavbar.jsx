@@ -77,7 +77,7 @@ function AppNavbar() {
   return (
     <TooltipProvider>
       <nav className="border-2 border-purple-700 rounded-xl md:mx-10 mx-6 my-6">
-        <div className="mx-auto px-6 py-1 sm:px-6">
+        <div className="mx-auto px-0 py-1 sm:px-6">
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center">
               <div className="md:hidden">

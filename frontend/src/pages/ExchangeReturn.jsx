@@ -20,7 +20,7 @@ export default function ExchangeReturn() {
       {/* Policy Content */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-6 text-gray-700 leading-relaxed text-justify">
         <p>
-          Makemoney24 Private Limited ("Company" or "Multivendor") is glad for you to be part of our community and for having a shopping experience on <a href="https://makemoney24hrs.com/" className="text-blue-600 underline" target="_blank" rel="noopener noreferrer">https://makemoney24hrs.com/</a> (hereinafter referred to as the "Platform").
+        Shree Labh Private Limited ("Company" or "Multivendor") is glad for you to be part of our community and for having a shopping experience on <a href="https://makemoney24hrs.com/" className="text-blue-600 underline" target="_blank" rel="noopener noreferrer">https://makemoney24hrs.com/</a> (hereinafter referred to as the "Platform").
         </p>
         <p>
           It is completely understood that the company is not taking any charge except the amount on shopping which is taken and the product is provided to the person in return. After the shopping, the incentive is generated on the basis of reference or purchasing from the company and all the taxes have been paid to the Government of India.

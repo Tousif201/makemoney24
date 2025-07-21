@@ -19,12 +19,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from "@/components/ui/select";
 import {
   Search,
@@ -61,7 +61,7 @@ export default function AdminVendorsPage() {
         // Map frontend sort values to backend expected values
         const sortParam = sortBy === "revenue-low-high" ? "lowToHigh" : "highToLow";
         const data = await getAllVendors(sortParam);
-        console.log("frontend data console of vendors",data);
+        console.log("frontend data console of vendors", data);
         setVendors(data);
       } catch (err) {
         console.error("Error fetching vendors:", err);
@@ -108,6 +108,19 @@ export default function AdminVendorsPage() {
     });
   };
 
+  const handleApproval = async (vendorId, isApproved) => {
+    try {
+      // Optional: call API here if needed
+      console.log(`${isApproved ? "Approving" : "Rejecting"} vendor ${vendorId}`);
+      // You can call an API like:
+      // await updateVendorStatus(vendorId, isApproved);
+      // Then optionally refresh data
+    } catch (error) {
+      console.error("Failed to update vendor status:", error);
+    }
+  };
+
+
   // Helper to format currency
   const formatCurrency = (amount) => {
     if (!amount && amount !== 0) return "₹0";
@@ -121,7 +134,7 @@ export default function AdminVendorsPage() {
         return (
           <div className="flex items-center">
             <Badge className=" bg-white text-xl">
-              🥇 
+              🥇
             </Badge>
           </div>
         );
@@ -129,7 +142,7 @@ export default function AdminVendorsPage() {
         return (
           <div className="flex items-center ">
             <Badge className=" bg-white text-white text-xl">
-              🥈 
+              🥈
             </Badge>
           </div>
         );
@@ -201,7 +214,7 @@ export default function AdminVendorsPage() {
                   className="pl-10"
                 />
               </div>
-              
+
               {/* Sort Dropdown */}
               <div className="w-full md:w-auto md:min-w-[200px]">
                 <Select value={sortBy} onValueChange={setSortBy}>
@@ -231,6 +244,8 @@ export default function AdminVendorsPage() {
                     <TableHead>Commission Rate</TableHead>
                     <TableHead>Sales Rep</TableHead>
                     <TableHead>Join Date</TableHead>
+                    <TableHead className="flex justify-center  items-center">Action</TableHead>
+
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -294,7 +309,31 @@ export default function AdminVendorsPage() {
                         <TableCell className="whitespace-nowrap">
                           {formatDate(vendor.createdAt)}
                         </TableCell>
+
+                        <TableCell className="whitespace-nowrap">
+                          <div className="flex gap-2 ">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleApproval(vendor._id, true)}
+                              className="bg-green-500 text-white"
+                            >
+                              Approve
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleApproval(vendor._id, false)}
+                            >
+                              Reject
+                            </Button>
+                          </div>
+                        </TableCell>
+
+
                       </TableRow>
+
+
                     ))
                   ) : (
                     <TableRow>
@@ -302,6 +341,8 @@ export default function AdminVendorsPage() {
                         No vendor data available.
                       </TableCell>
                     </TableRow>
+
+
                   )}
                 </TableBody>
               </Table>

@@ -22,11 +22,12 @@ function SidebarHeaderContent() {
         asChild
       >
         <Link to="#">
-          <img
+          {/* <img
             src={logo}
             className="h-20 w-20 text-gray-900 dark:text-purple rounded-2xl"
             alt="Logo" // Added alt text for accessibility
-          />
+          /> */}
+         <h1 className="text-2xl font-bold"> Shree Labs</h1>
         </Link>
       </SidebarMenuButton>
     </SidebarHeader>

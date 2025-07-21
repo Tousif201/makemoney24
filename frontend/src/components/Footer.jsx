@@ -98,7 +98,7 @@ const Footer = () => {
                 to="/"
                 className="text-2xl font-bold text-white hover:text-indigo-400 transition"
               >
-                MakeMoney24 Private Limited
+                Shree Labh Private Limited
               </Link>
 
               <address className="not-italic text-gray-400 text-sm leading-relaxed">
