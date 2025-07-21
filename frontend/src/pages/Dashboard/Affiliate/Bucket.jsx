@@ -69,7 +69,6 @@ export default function Bucket() {
   if (error) {
     return <div>Error: {error}</div>;
   }
-
   return (
     <div className="space-y-6 p-5">
       {/* Header */}
@@ -78,10 +77,7 @@ export default function Bucket() {
           <h2 className="text-3xl font-bold tracking-tight">Product Bucket</h2>
           <p className="text-muted-foreground">Manage your product inventory</p>
         </div>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Add New Product
-        </Button>
+       
       </div>
 
       {/* Search & Filter */}
