@@ -29,39 +29,31 @@ import {
 import {
   Search,
   Plus,
-  Filter,
-  MoreHorizontal,
-  Eye,
-  Edit,
-  Trash2,
   Loader2,
   ArrowUpDown,
 } from "lucide-react";
 import { CreateVendorDialog } from "../../../components/Dashboad/SalesRep/CreateVendorDialog";
-import { getAllVendors } from "../../../../api/Vendors"; // Ensure this path is correct
+// **MODIFIED**: Import approveVendor
+import { getAllVendors, approveVendor } from "../../../../api/Vendors";
 import { Link } from "react-router-dom";
 
 export default function AdminVendorsPage() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState("revenue-high-low"); // Default high to low
+  const [sortBy, setSortBy] = useState("revenue-high-low");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // New states for API data, loading, and error
   const [vendors, setVendors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch data when component mounts or sort changes
   useEffect(() => {
     const fetchVendors = async () => {
       setLoading(true);
-      setError(null); // Clear previous errors
+      setError(null);
       try {
-        // Map frontend sort values to backend expected values
         const sortParam = sortBy === "revenue-low-high" ? "lowToHigh" : "highToLow";
         const data = await getAllVendors(sortParam);
-        console.log("frontend data console of vendors", data);
         setVendors(data);
       } catch (err) {
         console.error("Error fetching vendors:", err);
@@ -72,25 +64,45 @@ export default function AdminVendorsPage() {
     };
 
     fetchVendors();
-  }, [sortBy]); // Re-fetch when sort changes
+  }, [sortBy]);
 
-  // Filter vendors based on search term (only name, email, pincode, owner name)
+  // **MODIFIED**: New handler to call the approval API
+  const handleApproveClick = async (vendorId) => {
+    try {
+      // Call the new API function
+      const result = await approveVendor(vendorId);
+      console.log(result.message); // Log success message from backend
+
+      // Optimistically update the UI to reflect the new approval status
+      setVendors((currentVendors) =>
+        currentVendors.map((vendor) =>
+          vendor._id === vendorId
+            ? { ...vendor, isAdminApproved: true } // Update the specific vendor
+            : vendor
+        )
+      );
+      // Optional: Show a success toast notification to the user
+    } catch (apiError) {
+      console.error("Failed to approve vendor:", apiError);
+      // Optional: Show an error toast notification to the user
+      setError(apiError.message || "An error occurred during approval.");
+    }
+  };
+
   const filteredVendors = vendors.filter((vendor) => {
     const matchesSearch =
       (vendor.name &&
         vendor.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (vendor.userEmail &&
-        vendor.userEmail.toLowerCase().includes(searchTerm.toLowerCase())) || // Search by owner email (flattened)
+        vendor.userEmail.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (vendor.userName &&
-        vendor.userName.toLowerCase().includes(searchTerm.toLowerCase())) || // Search by owner name (flattened)
+        vendor.userName.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (vendor.pincode &&
         vendor.pincode.toLowerCase().includes(searchTerm.toLowerCase()));
     return matchesSearch;
   });
 
-  // Since sorting is now handled by backend, we don't need to sort here
   const sortedVendors = filteredVendors;
-
   const totalPages = Math.ceil(sortedVendors.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedVendors = sortedVendors.slice(
@@ -98,7 +110,6 @@ export default function AdminVendorsPage() {
     startIndex + itemsPerPage
   );
 
-  // Helper to format date (using createdAt from timestamps)
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
     return new Date(dateString).toLocaleDateString("en-IN", {
@@ -108,58 +119,20 @@ export default function AdminVendorsPage() {
     });
   };
 
-  const handleApproval = async (vendorId, isApproved) => {
-    try {
-      // Optional: call API here if needed
-      console.log(`${isApproved ? "Approving" : "Rejecting"} vendor ${vendorId}`);
-      // You can call an API like:
-      // await updateVendorStatus(vendorId, isApproved);
-      // Then optionally refresh data
-    } catch (error) {
-      console.error("Failed to update vendor status:", error);
-    }
-  };
-
-
-  // Helper to format currency
   const formatCurrency = (amount) => {
     if (!amount && amount !== 0) return "₹0";
     return `₹${amount.toLocaleString("en-IN")}`;
   };
 
-  // Helper to get rank badge
   const getRankBadge = (rank) => {
     switch (rank) {
-      case 1:
-        return (
-          <div className="flex items-center">
-            <Badge className=" bg-white text-xl">
-              🥇
-            </Badge>
-          </div>
-        );
-      case 2:
-        return (
-          <div className="flex items-center ">
-            <Badge className=" bg-white text-white text-xl">
-              🥈
-            </Badge>
-          </div>
-        );
-      case 3:
-        return (
-          <div className="flex items-center ">
-            <Badge className=" bg-white text-white text-xl">
-              🥉
-            </Badge>
-          </div>
-        );
-      default:
-        return <span className="font-medium">{rank}</span>;
+      case 1: return <Badge className="bg-white text-xl">🥇</Badge>;
+      case 2: return <Badge className="bg-white text-xl">🥈</Badge>;
+      case 3: return <Badge className="bg-white text-xl">🥉</Badge>;
+      default: return <span className="font-medium">{rank}</span>;
     }
   };
 
-  // Render loading state
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -169,7 +142,6 @@ export default function AdminVendorsPage() {
     );
   }
 
-  // Render error state
   if (error) {
     return (
       <div className="flex justify-center items-center h-screen text-red-600 text-lg">
@@ -208,14 +180,13 @@ export default function AdminVendorsPage() {
               <div className="relative w-full md:max-w-sm">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
-                  placeholder="Search vendors by name, email, or pincode..."
+                  placeholder="Search vendors..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
                 />
               </div>
 
-              {/* Sort Dropdown */}
               <div className="w-full md:w-auto md:min-w-[200px]">
                 <Select value={sortBy} onValueChange={setSortBy}>
                   <SelectTrigger className="w-full">
@@ -244,8 +215,7 @@ export default function AdminVendorsPage() {
                     <TableHead>Commission Rate</TableHead>
                     <TableHead>Sales Rep</TableHead>
                     <TableHead>Join Date</TableHead>
-                    <TableHead className="flex justify-center  items-center">Action</TableHead>
-
+                    <TableHead className="text-center">Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -256,48 +226,36 @@ export default function AdminVendorsPage() {
                           {getRankBadge(startIndex + index + 1)}
                         </TableCell>
                         <TableCell className="font-medium">
-                          <Link to={`${vendor._id}`}>
-                            {vendor._id}
-                          </Link>
+                          <Link to={`${vendor._id}`}>{vendor._id}</Link>
                         </TableCell>
                         <TableCell className="max-w-[180px] truncate">
-                          <div className="font-medium truncate">
-                            {vendor.name}
-                          </div>
+                          <div className="font-medium truncate">{vendor.name}</div>
                           <div className="text-sm text-muted-foreground truncate">
                             Owner: {vendor.userName || "N/A"}
                           </div>
                         </TableCell>
-                        <TableCell className="whitespace-nowrap">
-                          <Badge variant="outline">
-                            {vendor.totalOrders || 0}
-                          </Badge>
+                        <TableCell>
+                          <Badge variant="outline">{vendor.totalOrders || 0}</Badge>
                         </TableCell>
-                        <TableCell className="whitespace-nowrap">
+                        <TableCell>
                           <div>{vendor.userEmail || "N/A"}</div>
                           <div className="text-sm text-muted-foreground">
                             {vendor.userPhone || "N/A"}
                           </div>
                         </TableCell>
-                        <TableCell className="whitespace-nowrap">
+                        <TableCell>
                           <div className="font-medium text-green-600">
                             {formatCurrency(vendor.totalRevenue)}
                           </div>
                         </TableCell>
-                        <TableCell className="whitespace-nowrap">
-                          {vendor.pincode}
+                        <TableCell>{vendor.pincode}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{vendor.commissionRate}%</Badge>
                         </TableCell>
-                        <TableCell className="whitespace-nowrap">
-                          <Badge variant="outline">
-                            {vendor.commissionRate}%
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="whitespace-nowrap">
+                        <TableCell>
                           {vendor.salesRepName ? (
                             <div>
-                              <div className="font-medium">
-                                {vendor.salesRepName}
-                              </div>
+                              <div className="font-medium">{vendor.salesRepName}</div>
                               <div className="text-sm text-muted-foreground">
                                 {vendor.salesRepEmail || "N/A"}
                               </div>
@@ -306,43 +264,33 @@ export default function AdminVendorsPage() {
                             <Badge variant="secondary">None</Badge>
                           )}
                         </TableCell>
-                        <TableCell className="whitespace-nowrap">
-                          {formatDate(vendor.createdAt)}
-                        </TableCell>
+                        <TableCell>{formatDate(vendor.createdAt)}</TableCell>
 
-                        <TableCell className="whitespace-nowrap">
-                          <div className="flex gap-2 ">
+                        {/* **MODIFIED**: Action column with integrated API call */}
+                        <TableCell className="whitespace-nowrap text-center">
+                          {vendor.isAdminApproved ? (
+                            <Badge className="bg-green-100 text-green-800 border border-green-300 px-3 py-1 text-sm">
+                              Approved
+                            </Badge>
+                          ) : (
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleApproval(vendor._id, true)}
-                              className="bg-green-500 text-white"
+                              onClick={() => handleApproveClick(vendor._id)}
+                              className="bg-green-500 hover:bg-green-600 text-white"
                             >
                               Approve
                             </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => handleApproval(vendor._id, false)}
-                            >
-                              Reject
-                            </Button>
-                          </div>
+                          )}
                         </TableCell>
-
-
                       </TableRow>
-
-
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={10} className="h-24 text-center">
+                      <TableCell colSpan={11} className="h-24 text-center">
                         No vendor data available.
                       </TableCell>
                     </TableRow>
-
-
                   )}
                 </TableBody>
               </Table>
@@ -358,34 +306,16 @@ export default function AdminVendorsPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() =>
-                    setCurrentPage((prev) => Math.max(prev - 1, 1))
-                  }
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1}
                 >
                   Previous
                 </Button>
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                    (page) => (
-                      <Button
-                        key={page}
-                        variant={currentPage === page ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setCurrentPage(page)}
-                        className="w-8 h-8 p-0"
-                      >
-                        {page}
-                      </Button>
-                    )
-                  )}
-                </div>
+                <span>Page {currentPage} of {totalPages}</span>
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() =>
-                    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                  }
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                   disabled={currentPage === totalPages}
                 >
                   Next

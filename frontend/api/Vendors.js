@@ -112,3 +112,20 @@ export const AddVendorAddress = async (addressData) => {
     throw error;
   }
 };
+
+
+export const approveVendor = async (vendorId) => {
+  try {
+    // The interceptor already handles adding the token.
+    const token = localStorage.getItem("authToken");
+    if (!token) throw new Error("Token not found");
+
+    // This makes a PATCH request to a route like `/api/vendors/${vendorId}/approve`
+    // Ensure your backend router is configured to handle this PATCH request.
+    const response = await apiClient.patch(`/${vendorId}/approve`);
+    return response.data;
+  } catch (error) {
+    console.error("Error approving vendor:", error);
+    throw error.response?.data || { message: "Failed to approve vendor" };
+  }
+};
