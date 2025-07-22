@@ -19,7 +19,7 @@ export default function TermsAndConditions() {
                 Effective Date: 05-06-2025
               </Badge>
               <p className="text-gray-700 leading-relaxed">
-                By accessing or using Make Money 24's services, you agree to be
+                By accessing or using Shree Labh Enterprises, you agree to be
                 bound by the following Terms and Conditions. Please read them
                 carefully.
               </p>
@@ -35,7 +35,7 @@ export default function TermsAndConditions() {
             </CardHeader>
             <CardContent className="space-y-4">
               <p>
-                Makemoney24 (Shree Labh Enterprises) is owned and operated by Make Money 24 (Shree Labh Enterprises) (“we” or “us”), a company incorporated under the laws of India.
+              Shree Labh Enterprises is owned and operated by  (Shree Labh Enterprises) (“we” or “us”), a company incorporated under the laws of India.
               </p>
               <p>
                 Please note that this is a business/commercial site and can be accessed only by a valid account holder. Your access and use of the Site is subject to the following terms and conditions (“Website Terms and Conditions”) and all applicable laws. By accessing and browsing this Site, you accept, without limitation or qualification, the Website Terms and Conditions. If you do not agree with any of the below Terms and Conditions, do not use this Site.
@@ -49,11 +49,11 @@ export default function TermsAndConditions() {
                 Unless otherwise specified, this site is intended for two categories of people:
               </p>
               <ul className="list-disc list-inside ml-4 space-y-1">
-                <li>Make Money 24 (Shree Labh Enterprises)</li>
+                <li>Shree Labh Enterprises Pvt Ltd</li>
                 <li>Customers</li>
               </ul>
               <p>
-                Each category in turn is bound by an additional agreement. Make Money 24 is bound by the “Make Money 24 (Shree Labh Enterprises) Agreement”; and a customer is bound by the “Customer Agreement”. These agreements are referenced on the relevant sections of the website. It is your responsibility to review and comply with the appropriate agreement.
+                Each category in turn is bound by an additional agreement. Shree Labh Enterprises is bound by the “ (Shree Labh Enterprises) Agreement”; and a customer is bound by the “Customer Agreement”. These agreements are referenced on the relevant sections of the website. It is your responsibility to review and comply with the appropriate agreement.
               </p>
               <p>
                 This website is operated by us from India and intended for users within India. If you access this website from outside India, you do so at your own risk and must comply with your local laws.
@@ -82,7 +82,7 @@ export default function TermsAndConditions() {
 
               <h3 className="font-semibold mt-6">Intellectual Property Rights</h3>
               <p>
-                All rights, title, and interest in the content and design of this site are owned by Make Money 24. Users are prohibited from reproducing, distributing, or displaying any content without explicit written permission.
+                All rights, title, and interest in the content and design of this site are owned by Shree Labh Enterprises. Users are prohibited from reproducing, distributing, or displaying any content without explicit written permission.
               </p>
             </CardContent>
           </Card>

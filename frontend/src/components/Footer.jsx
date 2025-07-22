@@ -193,7 +193,7 @@ const Footer = () => {
           </div>
 
           <div className="border-t border-gray-800 mt-10 pt-6 text-center text-sm text-gray-500">
-            <p>© 2025 MakeMoney24 Private Limited. All rights reserved.</p>
+            <p>© 2025 Shree Labh Enterprises Private Limited. All rights reserved.</p>
           </div>
         </div>
       </footer>

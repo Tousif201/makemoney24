@@ -28,7 +28,7 @@ export default function AffiliateHome() {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-// const token = localStorage.getItem("authToken")
+  // const token = localStorage.getItem("authToken")
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -43,10 +43,10 @@ export default function AffiliateHome() {
         setLoading(false);
       }
     };
-  
+
     fetchData();
   }, []);
-  
+
 
 
   const handleCopyClick = () => {
@@ -61,21 +61,22 @@ export default function AffiliateHome() {
       title: "Total Commission Earned",
       value: `₹${dashboardData.totalCommissionEarned.toLocaleString()}`,
       icon: IndianRupee,
-      color: "text-green-600",
+      color: "bg-gradient-to-tr from-green-400 via-emerald-500 to-green-600 text-white",
     },
     {
       title: "Total Products Sold",
       value: dashboardData.totalProductSaled,
       icon: Package,
-      color: "text-purple-600",
+      color: "bg-gradient-to-tr from-purple-400 via-violet-500 to-purple-600 text-white",
     },
     {
       title: "Total Affiliate Orders",
       value: dashboardData.totalAffiliateOrders,
       icon: ShoppingCart,
-      color: "text-blue-600",
+      color: "bg-gradient-to-tr from-blue-400 via-sky-500 to-blue-600 text-white",
     },
   ] : [];
+
 
   // Helper for rendering recent activity icons
   const getActivityIcon = (type) => {
@@ -86,7 +87,7 @@ export default function AffiliateHome() {
       default: return <Package className="h-4 w-4" />;
     }
   };
-  
+
   // 4. Conditional Rendering based on state
   if (loading) {
     return <div className="p-5 text-center">Loading Dashboard...</div>;

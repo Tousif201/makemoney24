@@ -118,8 +118,11 @@ export default function Navbar() {
             alt="MakeMoney Logo"
             className="w-14 h-14 object-contain"
           /> */}
-          <span className="text-2xl font-extrabold text-gray-800 hidden sm:block tracking-tight">
+          {/* <span className="text-2xl font-extrabold text-gray-800 hidden sm:block tracking-tight">
            Shree Labh
+          </span> */}
+          <span className="text-sm md:text-2xl font-extrabold text-gray-800  tracking-tight">
+           Shree Labh Enterprises
           </span>
         </Link>
 
