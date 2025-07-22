@@ -19,7 +19,7 @@ export default function CompanyPolicy() {
       title: "Company Overview",
       icon: <Building2 className="h-5 w-5" />,
       content:
-        "Make Money 24 is an eCommerce platform dedicated to empowering online sellers through innovative tools, marketing solutions, and customer support. We are committed to transparency, trust, and growth for both our users and our internal team.",
+        "Shree Labh Enterprises is an eCommerce platform dedicated to empowering online sellers through innovative tools, marketing solutions, and customer support. We are committed to transparency, trust, and growth for both our users and our internal team.",
     },
     {
       id: "conduct",
@@ -86,7 +86,7 @@ export default function CompanyPolicy() {
       title: "Intellectual Property",
       icon: <Copyright className="h-5 w-5" />,
       content: [
-        "All content created by employees for the company is the property of Make Money 24.",
+        "All content created by employees for the company is the property of Shree Labh Enterprises.",
         "Do not use or share copyrighted material without appropriate licenses or permissions.",
       ],
     },
@@ -104,7 +104,7 @@ export default function CompanyPolicy() {
       title: "Policy Updates",
       icon: <RefreshCw className="h-5 w-5" />,
       content:
-        "Make Money 24 reserves the right to modify this policy at any time. Employees will be informed of significant changes in writing.",
+        "Shree Labh Enterprises reserves the right to modify this policy at any time. Employees will be informed of significant changes in writing.",
     },
   ];
 
@@ -115,7 +115,7 @@ export default function CompanyPolicy() {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-4">
             <Building2 className="h-8 w-8 text-blue-600" />
-            <h1 className="text-4xl font-bold text-gray-900">Make Money 24</h1>
+            <h1 className="text-4xl font-bold text-gray-900">Shree Labh Enterprises</h1>
           </div>
           <Badge variant="secondary" className="text-lg px-4 py-2">
             Company Policy

@@ -124,7 +124,7 @@ export default function PrivacyPolicy() {
                 Effective Date: [Insert Date]
               </Badge>
               <p className="text-gray-700 leading-relaxed">
-                At Make Money 24, we are committed to protecting your privacy
+                At Shree Labh Enterprises, we are committed to protecting your privacy
                 and handling your personal data with care. This Privacy Policy
                 explains how we collect, use, disclose, and protect your
                 information when you use our platform.
