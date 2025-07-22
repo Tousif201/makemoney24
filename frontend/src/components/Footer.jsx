@@ -98,7 +98,7 @@ const Footer = () => {
                 to="/"
                 className="text-2xl font-bold text-white hover:text-indigo-400 transition"
               >
-                Shree Labh Private Limited
+                Shree Labh Enterprises
               </Link>
 
               <address className="not-italic text-gray-400 text-sm leading-relaxed">
@@ -115,7 +115,7 @@ const Footer = () => {
                   href="mailto:info@makemoney24hrs.com"
                   className="hover:text-white"
                 >
-                  info@makemoney24hrs.com
+                  info@ShreeLabhEnterprises.com
                 </a>
               </p>
 

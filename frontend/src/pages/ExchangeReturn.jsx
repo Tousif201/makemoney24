@@ -40,7 +40,7 @@ export default function ExchangeReturn() {
             href="mailto:info@makemoney24hrs.com"
             className="text-blue-600 underline"
           >
-            info@makemoney24hrs.com
+            info@ShreeLabhEnterprises.com
           </a>{" "}
           or write to us at <strong>Shree Labh Enterprises</strong>.
         </p>

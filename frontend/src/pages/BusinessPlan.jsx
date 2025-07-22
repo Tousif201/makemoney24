@@ -3,7 +3,6 @@ import { Badge } from "@/components/ui/badge";
 import {
   Target,
   Users,
-  DollarSign,
   TrendingUp,
   Globe,
   AlertTriangle,

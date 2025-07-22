@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/select";
 import { Paperclip, X } from "lucide-react";
 
-// Import your API functions and toast
+// Import your API functions and toastz
 import { createTicket as createTicketApi } from "../../../api/ticket";
 import { useSession } from "../../context/SessionContext";
 import { toast } from "sonner";
