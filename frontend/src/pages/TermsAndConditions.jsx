@@ -49,7 +49,7 @@ export default function TermsAndConditions() {
                 Unless otherwise specified, this site is intended for two categories of people:
               </p>
               <ul className="list-disc list-inside ml-4 space-y-1">
-                <li>Shree Labh Enterprises Pvt Ltd</li>
+                <li>Shree Labh Enterprises</li>
                 <li>Customers</li>
               </ul>
               <p>
